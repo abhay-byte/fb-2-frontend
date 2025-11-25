@@ -24,6 +24,7 @@
 | Multi-Core | Parallel Monte Carlo | Independent sample sets | O(n) | Multi-core FP, result aggregation |
 | Multi-Core | Parallel JSON Parsing | Chunk-based processing | O(n) | Multi-core string ops, validation |
 | Multi-Core | Parallel N-Queens | Search space division | O(N!) | Multi-core search, work-stealing |
+| Scoring | Overall CPU Score | Weighted Aggregation | O(1) | Performance normalization and scoring |
 
 All CPU tests in this benchmark suite are implemented in Rust for optimal performance and memory safety. Rust provides the low-level control needed for accurate performance measurements while preventing common memory-related errors that could affect benchmark results.
 
@@ -797,29 +798,70 @@ Scaling Efficiency % = (Multi-thread Performance / Single-thread Performance) / 
 
 ### Formula for Converting Raw Performance to Normalized Score
 
-The raw performance metrics are converted to normalized scores using:
+The CPU benchmark implements a weighted scoring system that combines single-core and multi-core performance metrics:
 
+**Individual Test Score Calculation:**
 ```
-Normalized Score = (Device Performance / Baseline Performance) × 10
-```
-
-For time-based metrics (lower is better):
-```
-Normalized Score = (Baseline Time / Device Time) × 100
+Individual Test Score = Operations Per Second / 1,000
 ```
 
-For throughput-based metrics (higher is better):
+**Weighted Aggregation Formula:**
 ```
-Normalized Score = (Device Throughput / Baseline Throughput) × 100
+Weighted Score = (Single-Core Score × 0.35) + (Multi-Core Score × 0.65)
 ```
 
-### Baseline Reference Device Detail
+Where:
+- Single-Core Score is the sum of all individual single-core test scores
+- Multi-Core Score is the sum of all individual multi-core test scores
+- 35% weight is given to single-core performance
+- 65% weight is given to multi-core performance
 
-The baseline device used for normalization is the Google Pixel 3 (2018) with:
-- CPU: Snapdragon 845 (4×2.8 GHz Kryo 385 Gold + 4×1.8 GHz Kryo 385 Silver)
-- Cores: 8-core (4+4 big.LITTLE configuration)
-- Architecture: ARM64 with 64-bit support
-- Baseline performance values established through extensive testing
+**Normalization Formula:**
+```
+Final CPU Score = (Weighted Score / Number of Tests) × 100 × Normalization Factor
+```
+
+The normalization factor (0.00178) scales the score to the target range (~10,000 for modern CPUs).
+
+### Scoring System Implementation Details
+
+Each benchmark test contributes to the final score with different normalization factors based on the scale of operations per second:
+
+**Single-Core Test Normalization:**
+- Prime Generation: ops/sec ÷ 100,000,000
+- Fibonacci Recursive: ops/sec × 0.5
+- Matrix Multiplication: ops/sec ÷ 100,000,000
+- Hash Computing: throughput ÷ 1,000,000 (converts to MB/s)
+- String Sorting: ops/sec ÷ 100,000
+- Ray Tracing: rays/sec ÷ 10,000,000
+- Compression: throughput ÷ 100,000,000
+- Monte Carlo π: samples/sec ÷ 100,000,000
+- JSON Parsing: elements/sec ÷ 100,000,000
+- N-Queens: solutions/sec × 0.5
+
+**Multi-Core Test Normalization:**
+- Prime Generation: ops/sec ÷ 100,000
+- Fibonacci Memoized: ops/sec × 0.1
+- Matrix Multiplication: ops/sec ÷ 10,000
+- Hash Computing: throughput ÷ 1,000,000
+- String Sorting: ops/sec ÷ 100,000
+- Ray Tracing: rays/sec ÷ 10,000,000
+- Compression: throughput ÷ 10,000,000
+- Monte Carlo π: samples/sec ÷ 10,000,000
+- JSON Parsing: elements/sec ÷ 10,000,000
+- N-Queens: solutions/sec × 10.0
+
+### Normalization Explanation
+
+The normalization process serves several purposes:
+
+1. **Scale Balancing**: Different benchmarks produce vastly different scales of operations per second. Normalization ensures that no single test dominates the overall score.
+
+2. **Weighted Importance**: The system applies 35% weight to single-core performance and 65% to multi-core performance, reflecting the modern computing landscape where multi-threading is increasingly important.
+
+3. **Cross-Platform Comparison**: Normalization allows for fair comparison between different CPU architectures and performance levels.
+
+4. **Target Score Range**: The final normalization factor (0.00178) adjusts the score to a readable range, with typical modern CPUs scoring around 10,000 points.
 
 ### CPU Category Weight in Global Scoring
 
@@ -829,7 +871,186 @@ CPU benchmarks contribute 35% to the overall system benchmark score:
 - Multi-threading: 8% of total score
 - Memory Interface: 5% of total score
 
-## 6. Optimization & Anti-Cheat Policy
+## 6. Output Format & Example Results
+
+### Standard Output Format
+
+The CPU benchmark produces the following output structure when executed:
+
+```
+========================================
+ CPU BENCHMARK RESULTS
+========================================
+Running benchmarks for Slow tier device
+
+Running warmup iterations...
+Completed 3 warmup iterations
+
+Running benchmarks...
+Starting Single-Core Prime Generation benchmark...
+Completed Single-Core Prime Generation in [time]
+Starting Single-Core Fibonacci Recursive benchmark...
+Completed Single-Core Fibonacci Recursive in [time]
+...
+Completed 10 single-core benchmarks
+Starting Multi-Core Prime Generation benchmark...
+Completed Multi-Core Prime Generation in [time]
+...
+Completed 10 multi-core benchmarks
+
+Total benchmark time: [total_time]
+
+-- Individual Test Scores --
+[Algorithm Name] (Single): [score]
+[Algorithm Name] (Multi): [score]
+...
+
+-- Category Summary Scores --
+Single-Core Score: [score]
+Multi-Core Score: [score]
+
+-- Weighted Scoring --
+Combined Weighted Score: [score]
+
+Final Normalized Score: [score]
+Normalization Factor Used: 0.00178
+Raw Score (before normalization): [score]
+Rating: [rating]
+
+Note: CPU Score is a weighted combination of all benchmarks,
+with single-core performance having 35% weight and multi-core 65% weight.
+Higher scores indicate better CPU performance.
+```
+
+### Example Output
+
+Sample output from a modern CPU (simulated):
+
+```
+========================================
+ CPU BENCHMARK RESULTS
+========================================
+Running benchmarks for Slow tier device
+
+Running warmup iterations...
+Completed 3 warmup iterations
+
+Running benchmarks...
+Starting Single-Core Prime Generation benchmark...
+Completed Single-Core Prime Generation in 45.23ms
+Starting Single-Core Fibonacci Recursive benchmark...
+Completed Single-Core Fibonacci Recursive in 12.45ms
+Starting Single-Core Matrix Multiplication benchmark...
+Completed Single-Core Matrix Multiplication in 89.12ms
+Starting Single-Core Hash Computing benchmark...
+Completed Single-Core Hash Computing in 67.89ms
+Starting Single-Core String Sorting benchmark...
+Completed Single-Core String Sorting in 34.56ms
+Starting Single-Core Ray Tracing benchmark...
+Completed Single-Core Ray Tracing in 156.78ms
+Starting Single-Core Compression benchmark...
+Completed Single-Core Compression in 45.21ms
+Starting Single-Core Monte Carlo π benchmark...
+Completed Single-Core Monte Carlo π in 23.45ms
+Starting Single-Core JSON Parsing benchmark...
+Completed Single-Core JSON Parsing in 78.90ms
+Starting Single-Core N-Queens benchmark...
+Completed Single-Core N-Queens in 11.23ms
+Completed 10 single-core benchmarks
+Starting Multi-Core Prime Generation benchmark...
+Completed Multi-Core Prime Generation in 15.67ms
+Starting Multi-Core Fibonacci Memoized benchmark...
+Completed Multi-Core Fibonacci Memoized in 4.23ms
+Starting Multi-Core Matrix Multiplication benchmark...
+Completed Multi-Core Matrix Multiplication in 28.90ms
+Starting Multi-Core Hash Computing benchmark...
+Completed Multi-Core Hash Computing in 18.45ms
+Starting Multi-Core String Sorting benchmark...
+Completed Multi-Core String Sorting in 8.76ms
+Starting Multi-Core Ray Tracing benchmark...
+Completed Multi-Core Ray Tracing in 45.12ms
+Starting Multi-Core Compression benchmark...
+Completed Multi-Core Compression in 12.34ms
+Starting Multi-Core Monte Carlo π benchmark...
+Completed Multi-Core Monte Carlo π in 6.78ms
+Starting Multi-Core JSON Parsing benchmark...
+Completed Multi-Core JSON Parsing in 23.45ms
+Starting Multi-Core N-Queens benchmark...
+Completed Multi-Core N-Queens in 3.21ms
+Completed 10 multi-core benchmarks
+
+Total benchmark time: 850.23ms
+
+-- Individual Test Scores --
+Prime Generation (Single): 45.23
+Fibonacci Recursive (Single): 12.45
+Matrix Multiplication (Single): 89.12
+Hash Computing (Single): 67.89
+String Sorting (Single): 34.56
+Ray Tracing (Single): 156.78
+Compression (Single): 45.21
+Monte Carlo π (Single): 23.45
+JSON Parsing (Single): 78.90
+N-Queens (Single): 11.23
+Prime Generation (Multi): 15.67
+Fibonacci Memoized (Multi): 4.23
+Matrix Multiplication (Multi): 28.90
+Hash Computing (Multi): 18.45
+String Sorting (Multi): 8.76
+Ray Tracing (Multi): 45.12
+Compression (Multi): 12.34
+Monte Carlo π (Multi): 6.78
+JSON Parsing (Multi): 23.45
+N-Queens (Multi): 3.21
+
+-- Category Summary Scores --
+Single-Core Score: 604.82
+Multi-Core Score: 167.11
+
+-- Weighted Scoring --
+Combined Weighted Score: 321.96
+
+Final Normalized Score: 9850.42
+Normalization Factor Used: 0.00178
+Raw Score (before normalization): 5534000.00
+Rating: ★★★★☆ (High Performance)
+
+Note: CPU Score is a weighted combination of all benchmarks,
+with single-core performance having 35% weight and multi-core 65% weight.
+Higher scores indicate better CPU performance.
+```
+
+### Expected Score Ranges
+
+The normalized CPU scores are categorized as follows:
+
+- **Exceptional Performance**: 15,000+ points
+  - Latest flagship processors (e.g., Apple M2/M3, Snapdragon 8 Gen 2/3)
+  - High-end desktop processors
+
+- **High Performance**: 10,000 - 14,999 points
+  - Mid-to-high range mobile processors (e.g., Snapdragon 888, Dimensity 1200)
+  - Recent generation laptop processors
+
+- **Good Performance**: 6,000 - 9,999 points
+  - Mid-range processors (e.g., Snapdragon 700 series, Dimensity 800 series)
+  - Older flagship processors
+
+- **Moderate Performance**: 3,000 - 5,999 points
+  - Entry-to-mid-range processors (e.g., Snapdragon 600 series)
+  - Budget processors from a few generations ago
+
+- **Basic Performance**: 1,000 - 2,999 points
+  - Older budget processors
+  - Low-power embedded processors
+
+- **Low Performance**: < 1,000 points
+  - Very old or extremely low-power processors
+  - Some IoT or embedded systems
+
+These ranges are calibrated using the normalization factor to ensure consistent comparison across different architectures and generations.
+
+## 7. Optimization & Anti-Cheat Policy
 
 ### Detection of Governor Manipulation
 
@@ -888,7 +1109,7 @@ A benchmark run is rejected if:
 - Cross-reference with device hardware capabilities
 - Validate consistency across multiple test runs
 
-## Data Collected
+## 8. Data Collected
 
 During the CPU benchmark tests, the following data is collected and stored in the database:
 

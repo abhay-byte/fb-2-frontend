@@ -1,0 +1,20 @@
+[package]
+name = "cpu_benchmark"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "cpu_benchmark"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[dependencies]
+rayon = "1.10"
+sha2 = "0.10"
+md5 = "0.7"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rand = "0.8"
+num_cpus = "1.16"
+jni = "0.21"
+
+[dev-dependencies]

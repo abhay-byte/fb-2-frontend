@@ -1,0 +1,463 @@
+//! CPU Benchmark CLI Application
+//!
+//! This is the main entry point for the CPU benchmark suite.
+//! It provides a command-line interface to run various CPU benchmarks.
+
+use cpu_benchmark::{types::{BenchmarkConfig, DeviceTier, WorkloadParams}, utils};
+use std::time::Instant;
+
+// Normalization factor to scale the final score to the target range (~10,000)
+const NORMALIZATION_FACTOR: f64 = 0.00178; // Adjusted to bring score ~10,000
+
+fn main() {
+    println!("========================================");
+    println!(" CPU BENCHMARK RESULTS");
+    println!("========================================");
+    
+    // Always run benchmark in slow mode as required
+    let device_tier = DeviceTier::Slow;
+    
+    println!("Running benchmarks for {:?} tier device", device_tier);
+    
+    // Create benchmark configuration
+    let mut config = BenchmarkConfig {
+        iterations: 3,
+        warmup: true,
+        warmup_count: 3,
+        device_tier,
+    };
+    
+    utils::validate_config(&mut config);
+    
+    // Get workload parameters based on device tier
+    let params = utils::get_workload_params(&config.device_tier);
+    
+    // Run warmup iterations if enabled
+    if config.warmup {
+        println!("\nRunning warmup iterations...");
+        run_warmup(&params);
+    }
+    
+    // Run the actual benchmarks
+    println!("\nRunning benchmarks...");
+    let start_time = Instant::now();
+    
+    // Single-core benchmarks
+    let single_core_results = run_single_core_benchmarks(&params);
+    println!("Completed {} single-core benchmarks", single_core_results.len());
+    
+    // Multi-core benchmarks
+    let multi_core_results = run_multi_core_benchmarks(&params);
+    println!("Completed {} multi-core benchmarks", multi_core_results.len());
+    
+    let total_time = start_time.elapsed();
+    println!("\nTotal benchmark time: {:?}", total_time);
+    
+    // Display results
+    display_results(&single_core_results, &multi_core_results);
+}
+
+fn run_warmup(params: &WorkloadParams) {
+    // Run a quick version of each benchmark for warmup
+    let _ = cpu_benchmark::algorithms::single_core_prime_generation(params);
+    let _ = cpu_benchmark::algorithms::single_core_fibonacci_recursive(params);
+    let _ = cpu_benchmark::algorithms::single_core_matrix_multiplication(params);
+}
+
+/// Calculate individual scores for each benchmark result
+fn calculate_individual_scores(results: &[cpu_benchmark::types::BenchmarkResult]) -> Vec<cpu_benchmark::types::BenchmarkScore> {
+    results
+        .iter()
+        .map(|result| {
+            // Simple linear formula: score = ops_per_sec / 1_000
+            let score = result.ops_per_second / 1_000.0;
+            
+            cpu_benchmark::types::BenchmarkScore {
+                name: result.name.clone(),
+                ops_per_second: result.ops_per_second,
+                score,
+            }
+        })
+        .collect()
+}
+
+fn run_single_core_benchmarks(params: &WorkloadParams) -> Vec<cpu_benchmark::types::BenchmarkResult> {
+    use std::time::Instant;
+    
+    let mut results = Vec::new();
+    
+    // Single-core prime generation
+    println!("Starting Single-Core Prime Generation benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_prime_generation(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Prime Generation in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core fibonacci recursive
+    println!("Starting Single-Core Fibonacci Recursive benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_fibonacci_recursive(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Fibonacci Recursive in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core matrix multiplication
+    println!("Starting Single-Core Matrix Multiplication benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_matrix_multiplication(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Matrix Multiplication in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core hash computing
+    println!("Starting Single-Core Hash Computing benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_hash_computing(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Hash Computing in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core string sorting
+    println!("Starting Single-Core String Sorting benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_string_sorting(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core String Sorting in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core ray tracing
+    println!("Starting Single-Core Ray Tracing benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_ray_tracing(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Ray Tracing in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core compression
+    println!("Starting Single-Core Compression benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_compression(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Compression in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core monte carlo pi
+    println!("Starting Single-Core Monte Carlo π benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_monte_carlo_pi(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core Monte Carlo π in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core json parsing
+    println!("Starting Single-Core JSON Parsing benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_json_parsing(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core JSON Parsing in {:?}", elapsed);
+    results.push(result);
+    
+    // Single-core nqueens
+    println!("Starting Single-Core N-Queens benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::single_core_nqueens(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Single-Core N-Queens in {:?}", elapsed);
+    results.push(result);
+    
+    results
+}
+
+fn run_multi_core_benchmarks(params: &WorkloadParams) -> Vec<cpu_benchmark::types::BenchmarkResult> {
+    use std::time::Instant;
+    
+    let mut results = Vec::new();
+    
+    // Multi-core prime generation
+    println!("Starting Multi-Core Prime Generation benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_prime_generation(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Prime Generation in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core fibonacci memoized
+    println!("Starting Multi-Core Fibonacci Memoized benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_fibonacci_memoized(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Fibonacci Memoized in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core matrix multiplication
+    println!("Starting Multi-Core Matrix Multiplication benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_matrix_multiplication(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Matrix Multiplication in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core hash computing
+    println!("Starting Multi-Core Hash Computing benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_hash_computing(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Hash Computing in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core string sorting
+    println!("Starting Multi-Core String Sorting benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_string_sorting(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core String Sorting in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core ray tracing
+    println!("Starting Multi-Core Ray Tracing benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_ray_tracing(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Ray Tracing in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core compression
+    println!("Starting Multi-Core Compression benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_compression(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Compression in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core monte carlo pi
+    println!("Starting Multi-Core Monte Carlo π benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_monte_carlo_pi(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core Monte Carlo π in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core json parsing
+    println!("Starting Multi-Core JSON Parsing benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_json_parsing(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core JSON Parsing in {:?}", elapsed);
+    results.push(result);
+    
+    // Multi-core nqueens
+    println!("Starting Multi-Core N-Queens benchmark...");
+    let start_time = Instant::now();
+    let result = cpu_benchmark::algorithms::multi_core_nqueens(params);
+    let elapsed = start_time.elapsed();
+    println!("Completed Multi-Core N-Queens in {:?}", elapsed);
+    results.push(result);
+    
+    results
+}
+
+fn display_results(
+    single_core_results: &[cpu_benchmark::types::BenchmarkResult],
+    multi_core_results: &[cpu_benchmark::types::BenchmarkResult]
+) {
+    // Calculate and display individual benchmark scores
+    let single_core_scores = calculate_individual_scores(single_core_results);
+    let multi_core_scores = calculate_individual_scores(multi_core_results);
+    
+    println!("\n-- Individual Test Scores --");
+    for score in &single_core_scores {
+        println!("{} (Single): {:.2}", score.name.replace("Single-Core ", ""), score.score);
+    }
+    for score in &multi_core_scores {
+        println!("{} (Multi): {:.2}", score.name.replace("Multi-Core ", ""), score.score);
+    }
+    
+    // Calculate and display summary category scores
+    let single_core_score: f64 = single_core_scores.iter().map(|score| score.score).sum();
+    let multi_core_score: f64 = multi_core_scores.iter().map(|score| score.score).sum();
+    
+    println!("\n-- Category Summary Scores --");
+    println!("Single-Core Score: {:.0}", single_core_score);
+    println!("Multi-Core Score: {:.0}", multi_core_score);
+    
+    // Calculate and display final CPU score
+    let cpu_score = calculate_cpu_score(single_core_results, multi_core_results);
+    
+    // Print the weighted combined score before normalization
+    println!("\n-- Weighted Scoring --");
+    let single_core_weight = 0.35;
+    let multi_core_weight = 0.65;
+    let weighted_score = (single_core_score * single_core_weight) + (multi_core_score * multi_core_weight);
+    println!("Combined Weighted Score: {:.2}", weighted_score);
+    
+    display_cpu_score(cpu_score);
+}
+
+/// Calculate final CPU score based on all benchmark results
+fn calculate_cpu_score(
+    single_core_results: &[cpu_benchmark::types::BenchmarkResult],
+    multi_core_results: &[cpu_benchmark::types::BenchmarkResult]
+) -> f64 {
+    // Weighted scoring system combining single-core and multi-core performance
+    // Each test contributes to the final score based on its importance and performance
+    
+    let mut total_score = 0.0;
+    
+    // Updated weights: single-core 35%, multi-core 65%
+    let single_core_weight = 0.35;  // 35% weight to single-core performance
+    let multi_core_weight = 0.65;   // 65% weight to multi-core performance
+    
+    // Calculate single-core score
+    let mut single_core_score = 0.0;
+    for result in single_core_results {
+        // Normalize score based on ops_per_second, with higher values being better
+        // Using logarithmic scale to prevent any single test from dominating
+        if result.is_valid && result.ops_per_second > 0.0 {
+            // Different benchmarks have different scales, so normalize each one
+            let normalized_score = match result.name.as_str() {
+                "Single-Core Prime Generation" => {
+                    // Prime generation ops/sec tend to be very high
+                    result.ops_per_second / 100_000_000.0
+                },
+                "Single-Core Fibonacci Recursive" => {
+                    // Fibonacci ops/sec are typically low, so scale differently
+                    result.ops_per_second * 0.5
+                },
+                "Single-Core Matrix Multiplication" => {
+                    // Matrix ops/sec are high
+                    result.ops_per_second / 100_000_000.0
+                },
+                "Single-Core Hash Computing" => {
+                    // Hash throughput in bytes/sec, normalize to MB/s
+                    result.ops_per_second / 1_000_000.0
+                },
+                "Single-Core String Sorting" => {
+                    // Sorting ops/sec
+                    result.ops_per_second / 100_000.0
+                },
+                "Single-Core Ray Tracing" => {
+                    // Rays per second
+                    result.ops_per_second / 10_000_000.0
+                },
+                "Single-Core Compression" => {
+                    // Compression throughput
+                    result.ops_per_second / 100_000_000.0
+                },
+                "Single-Core Monte Carlo π" => {
+                    // Samples per second
+                    result.ops_per_second / 100_000_000.0
+                },
+                "Single-Core JSON Parsing" => {
+                    // Elements parsed per second
+                    result.ops_per_second / 100_000_000.0
+                },
+                "Single-Core N-Queens" => {
+                    // Solutions per second
+                    result.ops_per_second * 0.5
+                },
+                _ => result.ops_per_second / 1_000_000.0
+            };
+            
+            single_core_score += normalized_score;
+        }
+    }
+    
+    // Calculate multi-core score
+    let mut multi_core_score = 0.0;
+    for result in multi_core_results {
+        if result.is_valid && result.ops_per_second > 0.0 {
+            let normalized_score = match result.name.as_str() {
+                "Multi-Core Prime Generation" => {
+                    result.ops_per_second / 100_000.0
+                },
+                "Multi-Core Fibonacci Memoized" => {
+                    result.ops_per_second * 0.1
+                },
+                "Multi-Core Matrix Multiplication" => {
+                    result.ops_per_second / 100_000.0
+                },
+                "Multi-Core Hash Computing" => {
+                    result.ops_per_second / 1_000_000.0
+                },
+                "Multi-Core String Sorting" => {
+                    result.ops_per_second / 100_000.0
+                },
+                "Multi-Core Ray Tracing" => {
+                    result.ops_per_second / 10_000_000.0
+                },
+                "Multi-Core Compression" => {
+                    result.ops_per_second / 10_000_000.0
+                },
+                "Multi-Core Monte Carlo π" => {
+                    result.ops_per_second / 10_000_000.0
+                },
+                "Multi-Core JSON Parsing" => {
+                    result.ops_per_second / 10_000_000.0
+                },
+                "Multi-Core N-Queens" => {
+                    result.ops_per_second * 10.0
+                },
+                _ => result.ops_per_second / 1_000_000.0
+            };
+            
+            multi_core_score += normalized_score;
+        }
+    }
+    
+    // Calculate final weighted score
+    // Each benchmark contributes equally to its category score, then categories are weighted
+    let avg_single_core_score = if !single_core_results.is_empty() {
+        single_core_score / single_core_results.len() as f64
+    } else {
+        0.0
+    };
+    
+    let avg_multi_core_score = if !multi_core_results.is_empty() {
+        multi_core_score / multi_core_results.len() as f64
+    } else {
+        0.0
+    };
+    
+    let final_raw_score = (avg_single_core_score * single_core_weight) + (avg_multi_core_score * multi_core_weight);
+    
+    // Scale to a more readable score range (typically 0-20000+ for modern CPUs)
+    // Apply a more reasonable scaling factor
+    let final_score = final_raw_score * 100.0;
+    
+    // Apply normalization factor to bring score to target range (~10,000)
+    final_score * NORMALIZATION_FACTOR
+}
+
+
+/// Display the final CPU score with rating
+fn display_cpu_score(normalized_score: f64) {
+    // Calculate the raw score by reversing the normalization
+    let raw_score = normalized_score / NORMALIZATION_FACTOR;
+    
+    println!("\nFinal Normalized Score: {:.2}", normalized_score);
+    println!("Normalization Factor Used: {:.6}", NORMALIZATION_FACTOR);
+    println!("Raw Score (before normalization): {:.2}", raw_score);
+    
+    // Determine rating based on normalized score
+    let rating = if normalized_score >= 15000.0 {
+        "★★★ (Exceptional Performance)"
+    } else if normalized_score >= 10000.0 {
+        "★★★★☆ (High Performance)"
+    } else if normalized_score >= 600.0 {
+        "★★★☆☆ (Good Performance)"
+    } else if normalized_score >= 300.0 {
+        "★★☆☆☆ (Moderate Performance)"
+    } else if normalized_score >= 1000.0 {
+        "★☆☆☆ (Basic Performance)"
+    } else {
+        "☆☆☆☆ (Low Performance)"
+    };
+    
+    println!("Rating: {}", rating);
+    
+    // Add comment about the scoring system
+    println!("\nNote: CPU Score is a weighted combination of all benchmarks,");
+    println!("with single-core performance having 35% weight and multi-core 65% weight.");
+    println!("Higher scores indicate better CPU performance.");
+}
