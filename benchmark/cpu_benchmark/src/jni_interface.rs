@@ -40,6 +40,7 @@ macro_rules! impl_jni_benchmark {
             _class: JClass,
             params_json: JString,
         ) -> jstring {
+            // Get the params JSON string from Java (for logging purposes only)
             let params_str: String = match env.get_string(&params_json) {
                 Ok(s) => s.into(),
                 Err(e) => {
@@ -52,17 +53,27 @@ macro_rules! impl_jni_benchmark {
             #[cfg(target_os = "android")]
             error!("Received params JSON for {}: {}", $log_name, params_str);
             
-            let params: crate::types::WorkloadParams = match serde_json::from_str(&params_str) {
-                Ok(p) => p,
-                Err(e) => {
-                    #[cfg(target_os = "android")]
-                    error!("Failed to parse JSON for {}: {:?}", $log_name, e);
-                    return std::ptr::null_mut();
+            // For Android builds, ignore the JSON parameters and use slow-tier parameters
+            let params: crate::types::WorkloadParams =
+            if cfg!(target_os = "android") {
+                #[cfg(target_os = "android")]
+                error!("Applying Android slow-tier override for individual benchmark function: {}", $log_name);
+                crate::utils::get_workload_params(&crate::types::DeviceTier::Slow)
+            } else {
+                // For non-Android builds, parse the JSON parameters as before
+                match serde_json::from_str(&params_str) {
+                    Ok(p) => p,
+                    Err(e) => {
+                        #[cfg(target_os = "android")]
+                        error!("Failed to parse JSON for {}: {:?}", $log_name, e);
+                        return std::ptr::null_mut();
+                    }
                 }
             };
             
             #[cfg(target_os = "android")]
-            error!("Successfully parsed WorkloadParams for {}, calling benchmark...", $log_name);
+            error!("Using WorkloadParams for {} - prime_range: {}, matrix_size: {}, hash_data_size_mb: {}",
+                   $log_name, params.prime_range, params.matrix_size, params.hash_data_size_mb);
             
             let result = $rust_func(&params);
             
@@ -249,7 +260,14 @@ pub extern "C" fn Java_com_ivarna_finalbenchmark2_cpuBenchmark_CpuBenchmarkNativ
     error!("Successfully parsed BenchmarkConfig, calling benchmark suite...");
     
     // Get workload parameters based on device tier
-    let params = crate::utils::get_workload_params(&config.device_tier);
+    // For Android builds, always use Slow tier to ensure consistent, manageable benchmark times
+    let params =
+    if cfg!(target_os = "android") {
+        error!("Running benchmarks for Slow tier device (Android-specific override)");
+        crate::utils::get_workload_params(&crate::types::DeviceTier::Slow)
+    } else {
+        crate::utils::get_workload_params(&config.device_tier)
+    };
     
     // Run warmup iterations if enabled
     if config.warmup {

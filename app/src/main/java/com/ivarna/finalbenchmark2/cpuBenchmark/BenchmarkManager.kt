@@ -24,7 +24,7 @@ class BenchmarkManager {
                 iterations = 3,
                 warmup = true,
                 warmupCount = 3,
-                deviceTier = "Mid"
+                deviceTier = "Slow"
             )
             
             val configJson = """{
@@ -170,17 +170,17 @@ class BenchmarkManager {
     private suspend fun runNativeBenchmarkFunction(functionName: String): BenchmarkResult {
         // Create default parameters for the benchmark
         val paramsJson = """{
-            "prime_range": 10000,
-            "fibonacci_n_range": [10, 15],
-            "matrix_size": 50,
-            "hash_data_size_mb": 1,
-            "string_count": 1000,
-            "ray_tracing_resolution": [64, 64],
+            "prime_range": 1000000,
+            "fibonacci_n_range": [30, 38],
+            "matrix_size": 500,
+            "hash_data_size_mb": 25,
+            "string_count": 250000,
+            "ray_tracing_resolution": [256, 256],
             "ray_tracing_depth": 2,
-            "compression_data_size_mb": 1,
-            "monte_carlo_samples": 10000,
-            "json_data_size_mb": 1,
-            "nqueens_size": 8
+            "compression_data_size_mb": 25,
+            "monte_carlo_samples": 25000000,
+            "json_data_size_mb": 2,
+            "nqueens_size": 12
         }"""
         
         Log.d("BenchmarkManager", "About to call native function: $functionName with params: $paramsJson")
