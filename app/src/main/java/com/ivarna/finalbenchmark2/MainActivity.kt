@@ -7,9 +7,8 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.ivarna.finalbenchmark2.navigation.BenchmarkNavigation
+import com.ivarna.finalbenchmark2.navigation.MainNavigation
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 
 class MainActivity : ComponentActivity() {
@@ -19,7 +18,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             FinalBenchmark2Theme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    BenchmarkNavigation(
+                    MainNavigation(
                         modifier = Modifier.padding(innerPadding)
                     )
                 }

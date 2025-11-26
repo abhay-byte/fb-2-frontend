@@ -53,21 +53,14 @@ macro_rules! impl_jni_benchmark {
             #[cfg(target_os = "android")]
             error!("Received params JSON for {}: {}", $log_name, params_str);
             
-            // For Android builds, ignore the JSON parameters and use slow-tier parameters
+            // Parse JSON parameters and use them directly (no platform-specific overrides)
             let params: crate::types::WorkloadParams =
-            if cfg!(target_os = "android") {
-                #[cfg(target_os = "android")]
-                error!("Applying Android slow-tier override for individual benchmark function: {}", $log_name);
-                crate::utils::get_workload_params(&crate::types::DeviceTier::Slow)
-            } else {
-                // For non-Android builds, parse the JSON parameters as before
-                match serde_json::from_str(&params_str) {
-                    Ok(p) => p,
-                    Err(e) => {
-                        #[cfg(target_os = "android")]
-                        error!("Failed to parse JSON for {}: {:?}", $log_name, e);
-                        return std::ptr::null_mut();
-                    }
+            match serde_json::from_str(&params_str) {
+                Ok(p) => p,
+                Err(e) => {
+                    #[cfg(target_os = "android")]
+                    error!("Failed to parse JSON for {}: {:?}", $log_name, e);
+                    return std::ptr::null_mut();
                 }
             };
             
@@ -259,20 +252,30 @@ pub extern "C" fn Java_com_ivarna_finalbenchmark2_cpuBenchmark_CpuBenchmarkNativ
     #[cfg(target_os = "android")]
     error!("Successfully parsed BenchmarkConfig, calling benchmark suite...");
     
-    // Get workload parameters based on device tier
-    // For Android builds, always use Slow tier to ensure consistent, manageable benchmark times
-    let params =
-    if cfg!(target_os = "android") {
-        error!("Running benchmarks for Slow tier device (Android-specific override)");
-        crate::utils::get_workload_params(&crate::types::DeviceTier::Slow)
-    } else {
-        crate::utils::get_workload_params(&config.device_tier)
-    };
+    // Get workload parameters based on the requested device tier (no platform-specific overrides)
+    let params = crate::utils::get_workload_params(&config.device_tier);
     
     // Run warmup iterations if enabled
     if config.warmup {
         run_warmup(&params);
     }
+    
+    // Log debug information about the workload parameters being used
+    #[cfg(target_os = "android")]
+    error!("Workload parameters for tier {:?}: {}", config.device_tier, serde_json::json!({
+        "tier": format!("{:?}", config.device_tier),
+        "prime_range": params.prime_range,
+        "matrix_size": params.matrix_size,
+        "hash_data_size_mb": params.hash_data_size_mb,
+        "string_count": params.string_count,
+        "monte_carlo_samples": params.monte_carlo_samples,
+        "json_data_size_mb": params.json_data_size_mb,
+        "fibonacci_n_range": [params.fibonacci_n_range.0, params.fibonacci_n_range.1],
+        "ray_tracing_resolution": [params.ray_tracing_resolution.0, params.ray_tracing_resolution.1],
+        "ray_tracing_depth": params.ray_tracing_depth,
+        "compression_data_size_mb": params.compression_data_size_mb,
+        "nqueens_size": params.nqueens_size
+    }));
     
     // Run the actual benchmarks
     let single_core_results = run_single_core_benchmarks(&params);

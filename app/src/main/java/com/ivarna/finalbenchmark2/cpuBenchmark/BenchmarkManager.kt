@@ -34,20 +34,11 @@ class BenchmarkManager {
                 "device_tier": "${config.deviceTier}"
             }"""
             
-            // In a real implementation, we would call the native function
-            // val result = CpuBenchmarkNative.runCpuBenchmarkSuite(configJson)
+            // Execute the actual benchmark suite
+            val resultJson = CpuBenchmarkNative.runCpuBenchmarkSuite(configJson)
             
-            // For now, simulate the benchmark execution with actual native calls
-            runIndividualBenchmarks()
-            
-            // Generate summary result
-            val summaryJson = """{
-                "single_core_score": ${(8000..12000).random() / 100.0},
-                "multi_core_score": ${(15000..25000).random() / 100.0},
-                "final_score": ${(12000..20000).random() / 100.0},
-                "normalized_score": ${(80..95).random()},
-                "rating": "${"★".repeat((3..5).random())}"
-            }"""
+            // Calculate summary from the actual results
+            val summaryJson = calculateSummaryFromResults(resultJson)
             
             _benchmarkComplete.emit(summaryJson)
         } catch (e: Exception) {
@@ -66,101 +57,156 @@ class BenchmarkManager {
         }
     }
     
+    /**
+     * Calculates the summary from the actual benchmark results
+     */
+    private fun calculateSummaryFromResults(resultsJson: String?): String {
+        if (resultsJson.isNullOrEmpty()) {
+            return """{
+                "single_core_score": 0.0,
+                "multi_core_score": 0.0,
+                "final_score": 0.0,
+                "normalized_score": 0.0,
+                "rating": "★"
+            }"""
+        }
+        
+        // Parse the results to extract single-core and multi-core results
+        val singleCoreScore = calculateSingleCoreScore(resultsJson)
+        val multiCoreScore = calculateMultiCoreScore(resultsJson)
+        
+        // Calculate final weighted score (average of single and multi core)
+        val finalScore = (singleCoreScore + multiCoreScore) / 2.0
+        
+        // Calculate normalized score (scaled to 0-100 range)
+        val normalizedScore = if (finalScore > 0) {
+            minOf(finalScore / 1000000.0 * 100.0, 100.0)  // Scale appropriately
+        } else {
+            0.0
+        }
+        
+        // Determine rating based on normalized score
+        val rating = when {
+            normalizedScore >= 90 -> "★★★★★"
+            normalizedScore >= 75 -> "★★★★☆"
+            normalizedScore >= 60 -> "★★★☆☆"
+            normalizedScore >= 45 -> "★★☆☆☆"
+            normalizedScore >= 30 -> "★☆☆☆☆"
+            else -> "☆☆☆☆☆"
+        }
+        
+        return """{
+            "single_core_score": $singleCoreScore,
+            "multi_core_score": $multiCoreScore,
+            "final_score": $finalScore,
+            "normalized_score": $normalizedScore,
+            "rating": "$rating"
+        }"""
+    }
+    
+    /**
+     * Calculates single-core score from the benchmark results
+     */
+    private fun calculateSingleCoreScore(resultsJson: String): Double {
+        // In a real implementation, we would parse the JSON and calculate the score
+        // For now, we'll simulate based on the results we have
+        // Since the native code returns the actual results, we'll need to parse them
+        // Extract single-core results and calculate an average score
+        return extractAverageScoreFromResults(resultsJson, "single_core_results")
+    }
+    
+    /**
+     * Calculates multi-core score from the benchmark results
+     */
+    private fun calculateMultiCoreScore(resultsJson: String): Double {
+        // Extract multi-core results and calculate an average score
+        return extractAverageScoreFromResults(resultsJson, "multi_core_results")
+    }
+    
+    /**
+     * Extracts average score from results based on category
+     */
+    private fun extractAverageScoreFromResults(resultsJson: String, category: String): Double {
+        // This is a simplified approach - in a real implementation, we'd use a proper JSON parser
+        // Look for the specified category and extract ops_per_second values
+        
+        // Find the start of the category array
+        val categoryStart = resultsJson.indexOf("\"$category\"")
+        if (categoryStart == -1) return 0.0
+        
+        // Find the array content
+        var braceCount = 0
+        var startIdx = resultsJson.indexOf('[', categoryStart)
+        if (startIdx == -1) return 0.0
+        
+        var idx = startIdx
+        var arrayContent = ""
+        
+        // Extract the array content
+        for (i in idx until resultsJson.length) {
+            val ch = resultsJson[i]
+            if (ch == '[') {
+                if (braceCount == 0) startIdx = i
+                braceCount++
+            } else if (ch == ']') {
+                braceCount--
+                if (braceCount == 0) {
+                    arrayContent = resultsJson.substring(startIdx + 1, i)
+                    break
+                }
+            }
+        }
+        
+        if (arrayContent.isEmpty()) return 0.0
+        
+        // Extract ops_per_second values from each result object
+        val opsValues = mutableListOf<Double>()
+        var objStart = 0
+        var bracketCount = 0
+        var inObject = false
+        
+        for (i in arrayContent.indices) {
+            val ch = arrayContent[i]
+            if (ch == '{') {
+                if (bracketCount == 0) {
+                    objStart = i
+                    inObject = true
+                }
+                bracketCount++
+            } else if (ch == '}') {
+                bracketCount--
+                if (bracketCount == 0 && inObject) {
+                    val objStr = arrayContent.substring(objStart, i + 1)
+                    val opsPerSecond = extractOpsPerSecond(objStr)
+                    if (opsPerSecond > 0) {
+                        opsValues.add(opsPerSecond)
+                    }
+                    inObject = false
+                }
+            }
+        }
+        
+        return if (opsValues.isNotEmpty()) {
+            opsValues.average()
+        } else {
+            0.0
+        }
+    }
+    
+    /**
+     * Extracts ops_per_second value from a result object string
+     */
+    private fun extractOpsPerSecond(resultObj: String): Double {
+        val opsPattern = "\"ops_per_second\"\\s*:\\s*([0-9]+\\.?[0-9]*)".toRegex()
+        val match = opsPattern.find(resultObj)
+        return match?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+    }
+    
     private suspend fun runIndividualBenchmarks() {
-        // List of all benchmark tests
-        val singleCoreTests = listOf(
-            "Single-Core Prime Generation" to "runSingleCorePrimeGeneration",
-            "Single-Core Fibonacci Recursive" to "runSingleCoreFibonacciRecursive",
-            "Single-Core Matrix Multiplication" to "runSingleCoreMatrixMultiplication",
-            "Single-Core Hash Computing" to "runSingleCoreHashComputing",
-            "Single-Core String Sorting" to "runSingleCoreStringSorting",
-            "Single-Core Ray Tracing" to "runSingleCoreRayTracing",
-            "Single-Core Compression" to "runSingleCoreCompression",
-            "Single-Core Monte Carlo Pi" to "runSingleCoreMonteCarloPi",
-            "Single-Core JSON Parsing" to "runSingleCoreJsonParsing",
-            "Single-Core N-Queens" to "runSingleCoreNqueens"
-        )
-        
-        val multiCoreTests = listOf(
-            "Multi-Core Prime Generation" to "runMultiCorePrimeGeneration",
-            "Multi-Core Fibonacci Memoized" to "runMultiCoreFibonacciMemoized",
-            "Multi-Core Matrix Multiplication" to "runMultiCoreMatrixMultiplication",
-            "Multi-Core Hash Computing" to "runMultiCoreHashComputing",
-            "Multi-Core String Sorting" to "runMultiCoreStringSorting",
-            "Multi-Core Ray Tracing" to "runMultiCoreRayTracing",
-            "Multi-Core Compression" to "runMultiCoreCompression",
-            "Multi-Core Monte Carlo Pi" to "runMultiCoreMonteCarloPi",
-            "Multi-Core JSON Parsing" to "runMultiCoreJsonParsing",
-            "Multi-Core N-Queens" to "runMultiCoreNqueens"
-        )
-        
-        // Run single-core tests
-        singleCoreTests.forEach { (testName, functionName) ->
-            _benchmarkEvents.emit(BenchmarkEvent(
-                testName = testName,
-                mode = "SINGLE",
-                state = "PENDING",
-                timeMs = 0,
-                score = 0.0
-            ))
-            
-            delay(10) // Small delay to simulate setup
-            
-            _benchmarkEvents.emit(BenchmarkEvent(
-                testName = testName,
-                mode = "SINGLE",
-                state = "RUNNING",
-                timeMs = 0,
-                score = 0.0
-            ))
-            
-            // Run the actual test function by calling the native library
-            Log.d("BenchmarkManager", "Starting benchmark: $functionName")
-            val result = runNativeBenchmarkFunction(functionName)
-            Log.d("BenchmarkManager", "Completed benchmark: $functionName with result: $result")
-            
-            _benchmarkEvents.emit(BenchmarkEvent(
-                testName = testName,
-                mode = "SINGLE",
-                state = "COMPLETED",
-                timeMs = result.executionTimeMs.toLong(),
-                score = result.opsPerSecond
-            ))
-        }
-        
-        // Run multi-core tests
-        multiCoreTests.forEach { (testName, functionName) ->
-            _benchmarkEvents.emit(BenchmarkEvent(
-                testName = testName,
-                mode = "MULTI",
-                state = "PENDING",
-                timeMs = 0,
-                score = 0.0
-            ))
-            
-            delay(10) // Small delay to simulate setup
-            
-            _benchmarkEvents.emit(BenchmarkEvent(
-                testName = testName,
-                mode = "MULTI",
-                state = "RUNNING",
-                timeMs = 0,
-                score = 0.0
-            ))
-            
-            // Run the actual test function by calling the native library
-            Log.d("BenchmarkManager", "Starting benchmark: $functionName")
-            val result = runNativeBenchmarkFunction(functionName)
-            Log.d("BenchmarkManager", "Completed benchmark: $functionName with result: $result")
-            
-            _benchmarkEvents.emit(BenchmarkEvent(
-                testName = testName,
-                mode = "MULTI",
-                state = "COMPLETED",
-                timeMs = result.executionTimeMs.toLong(),
-                score = result.opsPerSecond
-            ))
-        }
+        // This function is now deprecated as we use the native suite call
+        // Individual benchmarks are handled by the native code
+        // This function remains for compatibility but doesn't execute anything
+        Log.d("BenchmarkManager", "runIndividualBenchmarks is deprecated - using native suite call instead")
     }
     
     /**
