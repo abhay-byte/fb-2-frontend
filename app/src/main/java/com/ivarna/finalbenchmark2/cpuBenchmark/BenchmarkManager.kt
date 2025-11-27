@@ -238,140 +238,180 @@ class BenchmarkManager {
                         CpuBenchmarkNative.runSingleCorePrimeGeneration(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCorePrimeGeneration: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreFibonacciRecursive" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreFibonacciRecursive", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreFibonacciRecursive(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreFibonacciRecursive: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreMatrixMultiplication" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreMatrixMultiplication", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreMatrixMultiplication(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreMatrixMultiplication: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreHashComputing" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreHashComputing", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreHashComputing(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreHashComputing: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreStringSorting" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreStringSorting", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreStringSorting(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreStringSorting: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreRayTracing" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreRayTracing", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreRayTracing(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreRayTracing: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreCompression" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreCompression", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreCompression(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreCompression: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreMonteCarloPi" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreMonteCarloPi", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreMonteCarloPi(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreMonteCarloPi: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreJsonParsing" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreJsonParsing", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreJsonParsing(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreJsonParsing: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runSingleCoreNqueens" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runSingleCoreNqueens", paramsJson) {
                         CpuBenchmarkNative.runSingleCoreNqueens(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runSingleCoreNqueens: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCorePrimeGeneration" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCorePrimeGeneration", paramsJson) {
                         CpuBenchmarkNative.runMultiCorePrimeGeneration(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCorePrimeGeneration: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreFibonacciMemoized" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreFibonacciMemoized", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreFibonacciMemoized(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreFibonacciMemoized: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreMatrixMultiplication" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreMatrixMultiplication", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreMatrixMultiplication(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreMatrixMultiplication: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreHashComputing" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreHashComputing", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreHashComputing(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreHashComputing: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreStringSorting" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreStringSorting", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreStringSorting(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreStringSorting: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreRayTracing" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreRayTracing", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreRayTracing(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreRayTracing: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreCompression" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreCompression", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreCompression(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreCompression: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreMonteCarloPi" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreMonteCarloPi", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreMonteCarloPi(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreMonteCarloPi: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreJsonParsing" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreJsonParsing", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreJsonParsing(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreJsonParsing: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 "runMultiCoreNqueens" -> {
                     val resultJson = CpuBenchmarkNative.callNativeFunction("runMultiCoreNqueens", paramsJson) {
                         CpuBenchmarkNative.runMultiCoreNqueens(paramsJson)
                     }
                     Log.d("BenchmarkManager", "Result from runMultiCoreNqueens: $resultJson")
-                    parseBenchmarkResultJson(resultJson ?: "")
+                    val result = parseBenchmarkResultJson(resultJson ?: "")
+                    Log.d("BenchmarkManager", "Parsed result: $result")
+                    result
                 }
                 else -> {
                     Log.w("BenchmarkManager", "Unknown function name: $functionName, falling back to simulation")
@@ -389,7 +429,9 @@ class BenchmarkManager {
             Log.e("BenchmarkManager", "Error calling native function: $functionName", e)
             e.printStackTrace()
             // Return a simulated result in case of other errors
-            simulateBenchmarkResult(functionName)
+            val simulatedResult = simulateBenchmarkResult(functionName)
+            Log.d("BenchmarkManager", "Returning simulated result: $simulatedResult")
+            simulatedResult
         }
     }
     
@@ -470,9 +512,11 @@ class BenchmarkManager {
         }
         
         val opsPerSecond = when {
-            functionName.contains("Multi") -> (15000..25000).random() / 100.0
-            else -> (8000..12000).random() / 100.0
+            functionName.contains("Multi") -> (15000..25000).random().toDouble()
+            else -> (8000..12000).random().toDouble()
         }
+        
+        Log.d("BenchmarkManager", "Simulated result for $functionName: opsPerSecond=$opsPerSecond, executionTime=$executionTime")
         
         return BenchmarkResult(
             name = functionName.replace("run", "").replace("Core", "-Core ").trim(),

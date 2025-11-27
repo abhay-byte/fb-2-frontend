@@ -48,7 +48,15 @@ fun BenchmarkScreen(
         viewModel.benchmarkState.collectLatest { state ->
             when (state) {
                 is BenchmarkState.Completed -> {
-                    onBenchmarkComplete(state.results)
+                    // Convert BenchmarkResults to JSON string for navigation
+                    val summaryJson = """{
+                        "single_core_score": ${state.results.singleCoreScore},
+                        "multi_core_score": ${state.results.multiCoreScore},
+                        "final_score": ${state.results.finalWeightedScore},
+                        "normalized_score": ${state.results.normalizedScore},
+                        "rating": "${determineRating(state.results.normalizedScore)}"
+                    }"""
+                    onBenchmarkComplete(summaryJson)
                 }
                 is BenchmarkState.Error -> {
                     // In case of error, still navigate to results with default data
@@ -158,8 +166,8 @@ fun BenchmarkScreen(
                         )
                     }
                 }
-                
-                // Benchmark list
+            
+            // Benchmark list
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -173,6 +181,20 @@ fun BenchmarkScreen(
             }
         }
     }
+}
+
+/**
+* Determines the rating based on the normalized score
+*/
+fun determineRating(normalizedScore: Double): String {
+   return when {
+       normalizedScore >= 90 -> "★★★★★"
+       normalizedScore >= 75 -> "★★★★☆"
+       normalizedScore >= 60 -> "★★★☆☆"
+       normalizedScore >= 45 -> "★★☆☆☆"
+       normalizedScore >= 30 -> "★☆☆☆"
+       else -> "☆☆☆☆☆"
+   }
 }
 
 @Composable

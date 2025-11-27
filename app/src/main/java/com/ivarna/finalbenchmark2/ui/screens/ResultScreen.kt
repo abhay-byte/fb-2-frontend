@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import org.json.JSONObject
+import android.util.Log
 
 data class BenchmarkSummary(
     val singleCoreScore: Double,
@@ -30,15 +31,19 @@ fun ResultScreen(
     onBackToHome: () -> Unit
 ) {
     val summary = try {
+        Log.d("ResultScreen", "Received summary JSON: $summaryJson")
         val jsonObject = JSONObject(summaryJson)
-        BenchmarkSummary(
+        val summary = BenchmarkSummary(
             singleCoreScore = jsonObject.optDouble("single_core_score", 0.0),
             multiCoreScore = jsonObject.optDouble("multi_core_score", 0.0),
             finalScore = jsonObject.optDouble("final_score", 0.0),
             normalizedScore = jsonObject.optDouble("normalized_score", 0.0),
             rating = jsonObject.optString("rating", "★")
         )
+        Log.d("ResultScreen", "Parsed summary: $summary")
+        summary
     } catch (e: Exception) {
+        Log.e("ResultScreen", "Error parsing summary JSON: ${e.message}", e)
         // Fallback values in case of JSON parsing error
         BenchmarkSummary(
             singleCoreScore = 0.0,
@@ -94,15 +99,15 @@ fun ResultScreen(
                             value = String.format("%.2f", summary.multiCoreScore)
                         )
                         
-                        // Core Ratio
-                        val coreRatio = if (summary.multiCoreScore != 0.0) {
-                            (summary.singleCoreScore / summary.multiCoreScore * 10).toInt()
+                        // Core Ratio (Multi-Core / Single-Core as ratio, not percentage)
+                        val coreRatio = if (summary.singleCoreScore > 0) {
+                            summary.multiCoreScore / summary.singleCoreScore
                         } else {
-                            0
+                            0.0
                         }
                         ScoreItem(
-                            title = "Core Ratio (SC:MC %)",
-                            value = "$coreRatio%"
+                            title = "Core Ratio (MC:SC)",
+                            value = String.format("%.2fx", coreRatio)
                         )
                         
                         // Final Weighted Score

@@ -19,10 +19,19 @@ data class BenchmarkProgress(
     val totalBenchmarks: Int = 0
 )
 
+data class BenchmarkResults(
+    val individualScores: List<BenchmarkResult>,
+    val singleCoreScore: Double,
+    val multiCoreScore: Double,
+    val coreRatio: Double,
+    val finalWeightedScore: Double,
+    val normalizedScore: Double
+)
+
 sealed class BenchmarkState {
     object Idle : BenchmarkState()
     data class Running(val progress: BenchmarkProgress) : BenchmarkState()
-    data class Completed(val results: String) : BenchmarkState()
+    data class Completed(val results: BenchmarkResults) : BenchmarkState()
     data class Error(val message: String) : BenchmarkState()
 }
 
@@ -116,36 +125,50 @@ class BenchmarkViewModel : ViewModel() {
                     )
                 }
                 
-                // Calculate summary from the actual results
-                val singleCoreResults = results.filter { !it.name.contains("Multi") }
-                    .map { result ->
-                        """{
-                            "name": "${result.name}",
-                            "execution_time_ms": ${result.executionTimeMs},
-                            "ops_per_second": ${result.opsPerSecond},
-                            "is_valid": ${result.isValid},
-                            "metrics_json": ${result.metricsJson}
-                        }"""
-                    }.joinToString(",", "[", "]")
+                // Calculate aggregate scores from the actual results
+                val singleCoreResultsList = results.filter { !it.name.contains("Multi") }
+                val multiCoreResultsList = results.filter { it.name.contains("Multi") }
                 
-                val multiCoreResults = results.filter { it.name.contains("Multi") }
-                    .map { result ->
-                        """{
-                            "name": "${result.name}",
-                            "execution_time_ms": ${result.executionTimeMs},
-                            "ops_per_second": ${result.opsPerSecond},
-                            "is_valid": ${result.isValid},
-                            "metrics_json": ${result.metricsJson}
-                        }"""
-                    }.joinToString(",", "[", "]")
+                val singleCoreScore = if (singleCoreResultsList.isNotEmpty()) {
+                    singleCoreResultsList.map { it.opsPerSecond }.average()
+                } else 0.0
                 
-                val resultsJson = """{
-                    "single_core_results": $singleCoreResults,
-                    "multi_core_results": $multiCoreResults
-                }"""
+                val multiCoreScore = if (multiCoreResultsList.isNotEmpty()) {
+                    multiCoreResultsList.map { it.opsPerSecond }.average()
+                } else 0.0
                 
-                val summaryJson = benchmarkManager.calculateSummaryFromResults(resultsJson)
-                _benchmarkState.value = BenchmarkState.Completed(summaryJson)
+                val coreRatio = if (singleCoreScore > 0) {
+                    multiCoreScore / singleCoreScore
+                } else {
+                    0.0
+                }
+                
+                val finalWeightedScore = (singleCoreScore + multiCoreScore) / 2.0
+                
+                // Calculate normalized score (scaled to 0-100 range)
+                val normalizedScore = if (finalWeightedScore > 0) {
+                    kotlin.math.min(finalWeightedScore / 1000000.0 * 100.0, 100.0)  // Scale appropriately
+                } else {
+                    0.0
+                }
+                
+                Log.d("BenchmarkViewModel", "Individual Results: $results")
+                Log.d("BenchmarkViewModel", "Single-Core Score: $singleCoreScore")
+                Log.d("BenchmarkViewModel", "Multi-Core Score: $multiCoreScore")
+                Log.d("BenchmarkViewModel", "Core Ratio: $coreRatio")
+                Log.d("BenchmarkViewModel", "Final Weighted Score: $finalWeightedScore")
+                Log.d("BenchmarkViewModel", "Normalized Score: $normalizedScore")
+                
+                val benchmarkResults = BenchmarkResults(
+                    individualScores = results,
+                    singleCoreScore = singleCoreScore,
+                    multiCoreScore = multiCoreScore,
+                    coreRatio = coreRatio,
+                    finalWeightedScore = finalWeightedScore,
+                    normalizedScore = normalizedScore
+                )
+                
+                _benchmarkState.value = BenchmarkState.Completed(benchmarkResults)
                 
             } catch (e: Exception) {
                 Log.e("BenchmarkViewModel", "Error during benchmark execution", e)
