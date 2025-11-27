@@ -15,6 +15,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.activity.ComponentActivity
+import com.ivarna.finalbenchmark2.MainActivity
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.theme.ThemeMode
 import com.ivarna.finalbenchmark2.utils.ThemePreferences
@@ -40,15 +41,19 @@ fun SettingsScreen() {
                 }
                 themePreferences.setThemeMode(themeMode)
                 
-                // Apply theme immediately using AppCompatDelegate
-                when (themeMode) {
-                    ThemeMode.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                    ThemeMode.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                    ThemeMode.SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                // Use the activity's updateTheme method to handle theme change properly
+                val activity = context as? ComponentActivity
+                if (activity is MainActivity) {
+                    activity.updateTheme(themeMode)
+                } else {
+                    // Fallback to the default approach if not MainActivity
+                    when (themeMode) {
+                        ThemeMode.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                        ThemeMode.DARK -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                        ThemeMode.SYSTEM -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                    }
+                    activity?.recreate()
                 }
-                
-                // Recreate the activity to apply the theme immediately
-                (context as? ComponentActivity)?.recreate()
             }
         }
     }

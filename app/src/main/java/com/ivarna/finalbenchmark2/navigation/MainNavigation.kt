@@ -25,19 +25,18 @@ import com.ivarna.finalbenchmark2.ui.screens.*
 import com.ivarna.finalbenchmark2.navigation.FrostedGlassNavigationBar
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
+import dev.chrisbanes.haze.hazeChild
 
 @Composable
 fun MainNavigation(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    hazeState: HazeState // Accept hazeState as parameter, no default
 ) {
     val navController = rememberNavController()
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
     val context = LocalContext.current
     
-    // Create HazeState for blur effect
-    val hazeState = remember { HazeState() }
-
     // Define the bottom navigation items with custom icons
     val bottomNavigationItems = listOf(
         BottomNavigationItem(

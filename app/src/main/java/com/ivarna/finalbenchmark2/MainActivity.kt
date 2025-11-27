@@ -20,6 +20,7 @@ import com.ivarna.finalbenchmark2.ui.theme.LocalThemeMode
 import com.ivarna.finalbenchmark2.ui.theme.provideThemeMode
 import com.ivarna.finalbenchmark2.utils.ThemePreferences
 import com.ivarna.finalbenchmark2.ui.theme.ThemeMode
+import dev.chrisbanes.haze.HazeState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,9 +40,11 @@ class MainActivity : ComponentActivity() {
             // Provide theme mode to the composition
             provideThemeMode(currentThemeMode) {
                 FinalBenchmark2Theme {
+                    val hazeState = remember { HazeState() }
                     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                         MainNavigation(
-                            modifier = Modifier.padding(innerPadding)
+                            modifier = Modifier.padding(innerPadding),
+                            hazeState = hazeState
                         )
                     }
                 }
