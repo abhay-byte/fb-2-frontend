@@ -1,6 +1,7 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
 import android.content.Context
+import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -20,16 +21,39 @@ import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.theme.ThemeMode
 import com.ivarna.finalbenchmark2.utils.ThemePreferences
 import com.ivarna.finalbenchmark2.utils.PowerConsumptionPreferences
+import com.ivarna.finalbenchmark2.utils.RootUtils
+import com.ivarna.finalbenchmark2.utils.RootAccessPreferences
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen() {
     val context = LocalContext.current
     val themePreferences = remember { ThemePreferences(context) }
+    val rootAccessPreferences = remember { RootAccessPreferences(context) }
     
     val themes = listOf("Light", "Dark", "System Default")
     val currentThemeMode = themePreferences.getThemeMode()
     var selectedThemeIndex by remember { mutableStateOf(getThemeIndex(currentThemeMode)) }
+    
+    // Root access state
+    var useRootAccess by remember { mutableStateOf(rootAccessPreferences.getUseRootAccess()) }
+    var isDeviceRooted by remember { mutableStateOf(false) }
+    var canExecuteRoot by remember { mutableStateOf(false) }
+    var isRootCheckLoading by remember { mutableStateOf(true) }
+    
+    // Check root status in background to avoid blocking UI
+    LaunchedEffect(Unit) {
+        Log.d("SettingsScreen", "Starting root access check...")
+        isDeviceRooted = RootUtils.isDeviceRooted()
+        if (isDeviceRooted) {
+            Log.d("SettingsScreen", "Device is rooted, checking if root commands work...")
+            canExecuteRoot = RootUtils.canExecuteRootCommand()
+        } else {
+            Log.d("SettingsScreen", "Device is not rooted")
+        }
+        Log.d("SettingsScreen", "Root access check completed. Rooted: $isDeviceRooted, Can execute: $canExecuteRoot")
+        isRootCheckLoading = false
+    }
     
     // Update theme when selection changes
     val onThemeChange: (Int) -> Unit = remember {
@@ -59,6 +83,14 @@ fun SettingsScreen() {
         }
     }
     
+    // Handle root access toggle
+    val onRootAccessChange: (Boolean) -> Unit = remember {
+        { enabled ->
+            useRootAccess = enabled
+            rootAccessPreferences.setUseRootAccess(enabled)
+        }
+    }
+    
     FinalBenchmark2Theme {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -79,6 +111,63 @@ fun SettingsScreen() {
                         .fillMaxWidth()
                         .padding(bottom = 16.dp)
                 )
+                
+                // Root Access Card (at the top)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Text(
+                                    text = "Use Root Access",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                
+                                if (isRootCheckLoading) {
+                                    Text(
+                                        text = "Checking root access...",
+                                        fontSize = 14.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                } else {
+                                    Text(
+                                        text = if (isDeviceRooted) {
+                                            if (canExecuteRoot) "Root access available and working" else "Root access available but not working"
+                                        } else {
+                                            "No root access detected"
+                                        },
+                                        fontSize = 14.sp,
+                                        color = if (isDeviceRooted && canExecuteRoot) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(top = 4.dp)
+                                    )
+                                }
+                            }
+                            
+                            Switch(
+                                checked = useRootAccess,
+                                onCheckedChange = { onRootAccessChange(it) },
+                                enabled = !isRootCheckLoading && isDeviceRooted  // Only enable if not loading and device is rooted
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 // Theme Settings Card
                 Card(
