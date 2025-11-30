@@ -255,7 +255,9 @@ fun HomeScreen(
                                 // Display core utilization in a compact grid
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(2),
-                                    modifier = Modifier.fillMaxWidth()
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(max = 300.dp) // Limit the height to avoid infinite constraints
                                 ) {
                                     items(coreUtilizations.size) { index ->
                                         val coreIndex = index
