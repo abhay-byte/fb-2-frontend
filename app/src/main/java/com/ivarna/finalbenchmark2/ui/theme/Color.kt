@@ -113,7 +113,7 @@ val SkyBreezePrimaryLight = Color(0xFFDBEAFE)
 val SkyBreezePrimaryDark = Color(0xFF1E40AF)
 val SkyBreezeSuccess = Color(0xFF10B981)
 val SkyBreezeWarning = Color(0xFFF59E0B)
-val SkyBreezeError = Color(0xFFEF444)
+val SkyBreezeError = Color(0xFFEF4444)
 val SkyBreezeInfo = Color(0xFF06B6D4)
 val SkyBreezeBorder = Color(0xFFE2E8F0)
 
@@ -145,9 +145,7 @@ val MintFreshError = Color(0xFFDC2626)
 val MintFreshInfo = Color(0xFF3B82F6)
 val MintFreshBorder = Color(0xFFE5E7EB)
 
-// AMOLED Black Theme Colors
-val AmoledBlackBg = Color(0xFF000000)
-val AmoledBlackSurface = Color(0xFF0000)
+// AMOLED Black Theme Colors - Colors defined in Theme.kt directly as Color.Black
 val AmoledBlackTextPrimary = Color(0xFFFFFFFF)
 val AmoledBlackTextSecondary = Color(0xFFCCCCCC)
 val AmoledBlackPrimary = Color(0xFF3B82F6)
