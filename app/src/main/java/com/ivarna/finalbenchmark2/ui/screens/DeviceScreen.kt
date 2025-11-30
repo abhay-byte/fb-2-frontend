@@ -18,6 +18,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.ivarna.finalbenchmark2.ui.components.CpuUtilizationGraph
+import com.ivarna.finalbenchmark2.ui.viewmodels.DeviceViewModel
 
 // Utility functions unique to DeviceScreen
 fun calculateScreenSize(displayMetrics: android.util.DisplayMetrics): Double {
@@ -39,9 +42,15 @@ fun gcd(a: Int, b: Int): Int {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DeviceScreen() {
+fun DeviceScreen(viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val context = LocalContext.current
-    val deviceInfo = DeviceInfoCollector.getDeviceInfo(context)
+    val deviceInfo by viewModel.deviceInfo.collectAsState()
+    
+    // Initialize the ViewModel with context
+    LaunchedEffect(context) {
+        viewModel.updateDeviceInfo(context)
+        viewModel.initialize(context)
+    }
     
     val tabs = listOf(
         "Info",
@@ -101,7 +110,7 @@ fun DeviceScreen() {
                 ) {
                     when (selectedTabIndex) {
                         0 -> InfoTab(deviceInfo)
-                        1 -> CpuTab(deviceInfo)
+                        1 -> CpuTab(deviceInfo, viewModel)
                         2 -> GpuTab(deviceInfo)
                         3 -> MemoryTab(deviceInfo)
                         4 -> ScreenTab(context)
@@ -159,7 +168,12 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
     }
 }
 @Composable
-fun CpuTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
+fun CpuTab(
+    deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo,
+    viewModel: DeviceViewModel
+) {
+    val cpuHistory by viewModel.cpuHistory.collectAsState()
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -178,6 +192,14 @@ fun CpuTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
+                
+        // CPU Utilization Graph Card
+        CpuUtilizationGraph(
+            dataPoints = cpuHistory,
+            modifier = Modifier.fillMaxWidth()
+        )
+                
+        Spacer(modifier = Modifier.height(16.dp))
                 
         DeviceInfoCard("CPU Architecture") {
             InfoRow("Architecture", deviceInfo.cpuArchitecture)
