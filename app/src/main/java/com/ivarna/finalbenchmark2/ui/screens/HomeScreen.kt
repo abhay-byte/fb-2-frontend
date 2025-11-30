@@ -169,6 +169,8 @@ fun HomeScreen(
                 // CPU Utilization Card - Added below temperature card
                 val cpuUtilizationUtils = remember { CpuUtilizationUtils(context) }
                 var cpuUtilization by remember { mutableStateOf(0f) }
+                var coreUtilizations by remember { mutableStateOf<Map<Int, Float>>(emptyMap()) }
+                var allCoreFrequencies by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
                 var cpuUtilizationInitialized by remember { mutableStateOf(false) }
                 var isExpanded by remember { mutableStateOf(false) }
                 
@@ -179,6 +181,8 @@ fun HomeScreen(
                     while (true) {
                         delay(1000)
                         cpuUtilization = cpuUtilizationUtils.getCpuUtilizationPercentage()
+                        coreUtilizations = cpuUtilizationUtils.getCoreUtilizationPercentages()
+                        allCoreFrequencies = cpuUtilizationUtils.getAllCoreFrequencies()
                     }
                 }
                 
@@ -247,10 +251,6 @@ fun HomeScreen(
                             // Expanded content
                             if (isExpanded) {
                                 Spacer(modifier = Modifier.height(12.dp))
-                                
-                                // Get core utilization data
-                                val coreUtilizations = remember { cpuUtilizationUtils.getCoreUtilizationPercentages() }
-                                val allCoreFrequencies = remember { cpuUtilizationUtils.getAllCoreFrequencies() }
                                 
                                 // Display core utilization in a compact grid
                                 LazyVerticalGrid(
