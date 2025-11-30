@@ -44,9 +44,10 @@ fun DeviceScreen() {
     val deviceInfo = DeviceInfoCollector.getDeviceInfo(context)
     
     val tabs = listOf(
-        "Device Info",
+        "Info",
         "CPU",
         "GPU",
+        "Memory",
         "Screen",
         "OS",
         "Hardware",
@@ -99,13 +100,14 @@ fun DeviceScreen() {
                         .padding(top = 8.dp)  // Add spacing at top of each tab view
                 ) {
                     when (selectedTabIndex) {
-                        0 -> DeviceInfoTab(deviceInfo)
+                        0 -> InfoTab(deviceInfo)
                         1 -> CpuTab(deviceInfo)
                         2 -> GpuTab(deviceInfo)
-                        3 -> ScreenTab(context)
-                        4 -> OsTab(deviceInfo)
-                        5 -> HardwareTab(deviceInfo)
-                        6 -> SensorsTab(context)
+                        3 -> MemoryTab(deviceInfo)
+                        4 -> ScreenTab(context)
+                        5 -> OsTab(deviceInfo)
+                        6 -> HardwareTab(deviceInfo)
+                        7 -> SensorsTab(context)
                     }
                 }
             }
@@ -114,7 +116,7 @@ fun DeviceScreen() {
 }
 
 @Composable
-fun DeviceInfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
+fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -146,52 +148,6 @@ fun DeviceInfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                 
         Spacer(modifier = Modifier.height(16.dp))
                 
-        // CPU Information
-        DeviceInfoCard("CPU Information") {
-            InfoRow("Total Cores", deviceInfo.totalCores.toString())
-            InfoRow("Big Cores", deviceInfo.bigCores.toString())
-            InfoRow("Small Cores", deviceInfo.smallCores.toString())
-            InfoRow("Cluster Topology", deviceInfo.clusterTopology)
-                    
-            // CPU Frequencies
-            Text(
-                text = "CPU Frequencies",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-            )
-            deviceInfo.cpuFrequencies.forEach { (core, freq) ->
-                InfoRow("Core $core", freq)
-            }
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        // GPU Information
-        DeviceInfoCard("GPU Information") {
-            InfoRow("Model", deviceInfo.gpuModel)
-            InfoRow("Vendor", deviceInfo.gpuVendor)
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        // Memory Information
-        DeviceInfoCard("Memory Information") {
-            InfoRow("Total RAM", formatBytes(deviceInfo.totalRam))
-            InfoRow("Available RAM", formatBytes(deviceInfo.availableRam))
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        // Storage Information
-        DeviceInfoCard("Storage Information") {
-            InfoRow("Total Storage", formatBytes(deviceInfo.totalStorage))
-            InfoRow("Free Storage", formatBytes(deviceInfo.freeStorage))
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
         // System Information
         DeviceInfoCard("System Information") {
             InfoRow("Android Version", "${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})")
@@ -202,7 +158,6 @@ fun DeviceInfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
         }
     }
 }
-
 @Composable
 fun CpuTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
     Column(
@@ -430,6 +385,41 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
             InfoRow("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available")
             InfoRow("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available")
             InfoRow("Thermal Status", deviceInfo.thermalStatus ?: "Not available")
+        }
+    }
+}
+
+@Composable
+fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Text(
+            text = "Memory Information",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+                
+        DeviceInfoCard("RAM Information") {
+            InfoRow("Total RAM", formatBytes(deviceInfo.totalRam))
+            InfoRow("Available RAM", formatBytes(deviceInfo.availableRam))
+        }
+                
+        Spacer(modifier = Modifier.height(16.dp))
+                
+        DeviceInfoCard("Storage Information") {
+            InfoRow("Total Storage", formatBytes(deviceInfo.totalStorage))
+            InfoRow("Free Storage", formatBytes(deviceInfo.freeStorage))
         }
     }
 }
