@@ -73,7 +73,9 @@ fun HistoryScreen() {
             color = MaterialTheme.colorScheme.background
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 56.dp)  // Add top padding to account for status bar area
             ) {
                 // Header
                 Text(

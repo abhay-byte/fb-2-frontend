@@ -111,7 +111,10 @@ fun SettingsScreen() {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(16.dp)
+                    .padding(top = 56.dp, // Add top padding to account for status bar area
+                             start = 16.dp,
+                             end = 16.dp,
+                             bottom = 16.dp)
             ) {
                 // Header
                 Text(

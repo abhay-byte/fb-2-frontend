@@ -25,7 +25,23 @@ import dev.chrisbanes.haze.HazeState
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Enable edge to edge for full screen experience
         enableEdgeToEdge()
+        
+        // Use WindowInsetsController to hide system bars for full-screen immersive mode
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+            window.insetsController?.let {
+                it.hide(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+                it.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                android.view.View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or android.view.View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or android.view.View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            )
+        }
         
         val themePreferences = ThemePreferences(this)
         val themeMode = themePreferences.getThemeMode()
@@ -41,7 +57,10 @@ class MainActivity : ComponentActivity() {
             provideThemeMode(currentThemeMode) {
                 FinalBenchmark2Theme(themeMode = currentThemeMode) {
                     val hazeState = remember { HazeState() }
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
+                    Scaffold(
+                        modifier = Modifier.fillMaxSize(),
+                        topBar = {} // Empty top bar to remove any system app bar
+                    ) { innerPadding ->
                         MainNavigation(
                             modifier = Modifier.padding(innerPadding),
                             hazeState = hazeState
