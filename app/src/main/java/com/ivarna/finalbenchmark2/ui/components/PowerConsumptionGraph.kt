@@ -29,6 +29,10 @@ fun PowerConsumptionGraph(
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val onSurfaceVariantColor = MaterialTheme.colorScheme.onSurfaceVariant
     val surfaceVariantColor = MaterialTheme.colorScheme.surfaceVariant
+    val secondaryColor = MaterialTheme.colorScheme.secondary
+    val errorColor = MaterialTheme.colorScheme.error
+    val errorContainerColor = MaterialTheme.colorScheme.errorContainer
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
     
     // Calculate dynamic Y-axis range based on data with padding
     val (minPower, maxPower) = remember(dataPoints) {
@@ -95,7 +99,7 @@ fun PowerConsumptionGraph(
                     Text(
                         text = String.format("%.2f W", abs(currentPower)),
                         style = MaterialTheme.typography.titleSmall,
-                        color = if (currentPower >= 0) Color(0xFFA5D6A7) else Color(0xFFFFCDD2)  // Charging: light green, Discharging: light red
+                        color = if (currentPower >= 0) secondaryColor else errorColor  // Charging: secondary, Discharging: error
                     )
                 }
                 
@@ -111,7 +115,7 @@ fun PowerConsumptionGraph(
                         Text(
                             text = String.format("%.2f W", abs(avgPower)),
                             style = MaterialTheme.typography.titleSmall,
-                            color = if (avgPower >= 0) Color(0xFFA5D6A7) else Color(0xFFFFCDD2)  // Charging: light green, Discharging: light red
+                            color = if (avgPower >= 0) secondaryColor else errorColor  // Charging: secondary, Discharging: error
                         )
                     }
                 }
@@ -275,11 +279,19 @@ fun PowerConsumptionGraph(
                                 }
                             }
                             
-                            // Draw the line - use different colors for charging vs discharging
-                            // According to the new requirement: discharge (negative) = light red, charge (positive) = light green
+                            // Draw the line - use theme-aware colors for charging vs discharging
+                            // Use Material Design colors that adapt to theme and are visible in both light/dark modes
+                            val lineColor = if (currentPower >= 0) {
+                                // Charging: use secondary color (visible in both themes)
+                                secondaryColor
+                            } else {
+                                // Discharging: use error color (red-like, visible in both themes)
+                                errorColor
+                            }
+                            
                             drawPath(
                                 path = path,
-                                color = if (currentPower >= 0) Color(0xFFA5D6A7) else Color(0xFFFFCDD2), // Charging: light green, Discharging: light red
+                                color = lineColor,
                                 style = Stroke(width = 3f)
                             )
                             
@@ -295,8 +307,16 @@ fun PowerConsumptionGraph(
                                 val x = padding + (timeProgress * graphWidth)
                                 val y = padding + (powerProgress * graphHeight)
                                 
+                                val pointColor = if (point.powerWatts >= 0) {
+                                    // Charging: use secondary color
+                                    secondaryColor
+                                } else {
+                                    // Discharging: use error color
+                                    errorColor
+                                }
+                                
                                 drawCircle(
-                                    color = if (point.powerWatts >= 0) Color(0xFFA5D6A7) else Color(0xFFFFCDD2), // Charging: light green, Discharging: light red
+                                    color = pointColor,
                                     radius = 4f,
                                     center = Offset(x, y)
                                 )
@@ -359,10 +379,10 @@ fun PowerConsumptionGraph(
             }
             
             val statusColor = when {
-                currentPower > 15f -> Color(0xFFFFCDD2) // High discharge (light red)
-                currentPower > 8f -> Color(0xFFFFE0B2) // Moderate discharge (light orange)
-                currentPower < 0f -> Color(0xFFA5D6A7) // Charging (light green)
-                else -> MaterialTheme.colorScheme.tertiary
+                currentPower > 15f -> errorColor // High discharge (error color)
+                currentPower > 8f -> errorContainerColor // Moderate discharge
+                currentPower < 0f -> secondaryColor // Charging (secondary color)
+                else -> tertiaryColor
             }
             
             Row(
