@@ -1,6 +1,9 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -41,6 +44,7 @@ fun calculateAspectRatio(width: Int, height: Int): String {
 fun gcd(a: Int, b: Int): Int {
     return if (b == 0) a else gcd(b, a % b)
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -244,6 +248,13 @@ fun CpuTab(
 
 @Composable
 fun GpuTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
+    val context = LocalContext.current
+    val gpuInfoUtils = remember { com.ivarna.finalbenchmark2.utils.GpuInfoUtils(context) }
+    val viewModel: com.ivarna.finalbenchmark2.ui.viewmodels.GpuInfoViewModel =
+        viewModel { com.ivarna.finalbenchmark2.ui.viewmodels.GpuInfoViewModel(gpuInfoUtils) }
+    
+    val gpuInfoState by viewModel.gpuInfoState.collectAsState()
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -262,30 +273,461 @@ fun GpuTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
-                
-        DeviceInfoCard("GPU Details") {
-            InfoRow("Model", deviceInfo.gpuModel)
-            InfoRow("Vendor", deviceInfo.gpuVendor)
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("GPU Capabilities") {
-            // Placeholder for GPU capabilities
-            InfoRow("OpenGL Version", "To be implemented")
-            InfoRow("Vulkan Support", "To be implemented")
-            InfoRow("Compute Units", "To be implemented")
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("GPU Performance") {
-            // Placeholder for GPU performance metrics
-            InfoRow("Graphics Score", "To be implemented")
-            InfoRow("Compute Score", "To be implemented")
+        
+        when (gpuInfoState) {
+            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
+                Box(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
+                DeviceInfoCard("Error") {
+                    InfoRow("Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                }
+            }
+            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
+                val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
+                GpuInfoContent(gpuInfo)
+            }
         }
     }
 }
+
+@Composable
+fun GpuInfoContent(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo) {
+    // GPU Overview Card
+    GpuOverviewCard(gpuInfo.basicInfo, gpuInfo.frequencyInfo)
+    
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    // OpenGL Information Card
+    OpenGLInfoCard(gpuInfo.openGLInfo)
+    
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    // Vulkan Information Card
+    VulkanInfoCard(gpuInfo.vulkanInfo)
+    
+    Spacer(modifier = Modifier.height(16.dp))
+    
+    // Advanced Capabilities Card
+    AdvancedCapabilitiesCard(gpuInfo.openGLInfo?.capabilities)
+}
+
+@Composable
+fun GpuOverviewCard(basicInfo: com.ivarna.finalbenchmark2.utils.GpuBasicInfo, frequencyInfo: com.ivarna.finalbenchmark2.utils.GpuFrequencyInfo?) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        onClick = { expanded = !expanded }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "GPU Overview",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+            }
+            
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                InfoRow("GPU Name", basicInfo.name)
+                InfoRow("Vendor", basicInfo.vendor)
+                InfoRow("Driver Version", basicInfo.driverVersion)
+                InfoRow("OpenGL ES", basicInfo.openGLVersion)
+                InfoRow("Vulkan", basicInfo.vulkanVersion ?: "Not Supported")
+                
+                if (frequencyInfo != null) {
+                    InfoRow("Current Frequency", if (frequencyInfo.currentFrequency != null) "${frequencyInfo.currentFrequency} MHz" else "N/A - Permission/Access Issue")
+                    InfoRow("Max Frequency", if (frequencyInfo.maxFrequency != null) "${frequencyInfo.maxFrequency} MHz" else "N/A - Permission/Access Issue")
+                } else {
+                    InfoRow("Current Frequency", "N/A - Not Available")
+                    InfoRow("Max Frequency", "N/A - Not Available")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun OpenGLInfoCard(openGLInfo: com.ivarna.finalbenchmark2.utils.OpenGLInfo?) {
+    if (openGLInfo == null) {
+        DeviceInfoCard("OpenGL Information") {
+            InfoRow("Status", "Information not available")
+        }
+        return
+    }
+    
+    var expanded by remember { mutableStateOf(false) }
+    var extensionsExpanded by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        onClick = { expanded = !expanded }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "OpenGL Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+            }
+            
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                InfoRow("Version", openGLInfo.version)
+                InfoRow("GLSL Version", openGLInfo.glslVersion)
+                InfoRow("Extensions", "${openGLInfo.extensions.size} extensions")
+                
+                // Extensions list
+                if (openGLInfo.extensions.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "OpenGL Extensions (${openGLInfo.extensions.size}):",
+                            fontWeight = FontWeight.Medium
+                        )
+                        IconButton(onClick = { extensionsExpanded = !extensionsExpanded }) {
+                            Icon(
+                                imageVector = if (extensionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = if (extensionsExpanded) "Hide" else "Show"
+                            )
+                        }
+                    }
+                    
+                    if (extensionsExpanded) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 200.dp)
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(8.dp)
+                        ) {
+                            items(openGLInfo.extensions.size) { index ->
+                                Text(
+                                    text = openGLInfo.extensions[index],
+                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(vertical = 2.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VulkanInfoCard(vulkanInfo: com.ivarna.finalbenchmark2.utils.VulkanInfo?) {
+    if (vulkanInfo == null) {
+        DeviceInfoCard("Vulkan Information") {
+            InfoRow("Status", "Information not available")
+        }
+        return
+    }
+    
+    var expanded by remember { mutableStateOf(false) }
+    var extensionsExpanded by remember { mutableStateOf(false) }
+    var featuresExpanded by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        onClick = { expanded = !expanded }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Vulkan Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+            }
+            
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                InfoRow("Supported", if (vulkanInfo.supported) "Yes" else "No")
+                if (vulkanInfo.supported) {
+                    vulkanInfo.apiVersion?.let { InfoRow("API Version", it) }
+                    vulkanInfo.driverVersion?.let { InfoRow("Driver Version", it) }
+                    vulkanInfo.physicalDeviceName?.let { InfoRow("Physical Device", it) }
+                    vulkanInfo.physicalDeviceType?.let { InfoRow("Device Type", it) }
+                    
+                    // Extensions
+                    val totalExtensions = vulkanInfo.instanceExtensions.size + vulkanInfo.deviceExtensions.size
+                    InfoRow("Total Extensions", "$totalExtensions extensions")
+                    
+                    // Extensions list
+                    if (totalExtensions > 0) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Vulkan Extensions ($totalExtensions):",
+                                fontWeight = FontWeight.Medium
+                            )
+                            IconButton(onClick = { extensionsExpanded = !extensionsExpanded }) {
+                                Icon(
+                                    imageVector = if (extensionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (extensionsExpanded) "Hide" else "Show"
+                                )
+                            }
+                        }
+                        
+                        if (extensionsExpanded) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 200.dp)
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                                    .padding(8.dp)
+                            ) {
+                                // Instance extensions
+                                if (vulkanInfo.instanceExtensions.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            text = "Instance Extensions:",
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(bottom = 4.dp)
+                                        )
+                                    }
+                                    items(vulkanInfo.instanceExtensions.size) { index ->
+                                        Text(
+                                            text = vulkanInfo.instanceExtensions[index],
+                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                            fontSize = 12.sp,
+                                            modifier = Modifier.padding(vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                
+                                // Device extensions
+                                if (vulkanInfo.deviceExtensions.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            text = "Device Extensions:",
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                                        )
+                                    }
+                                    items(vulkanInfo.deviceExtensions.size) { index ->
+                                        Text(
+                                            text = vulkanInfo.deviceExtensions[index],
+                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                            fontSize = 12.sp,
+                                            modifier = Modifier.padding(vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Features (if available)
+                    if (vulkanInfo.features != null) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Text(
+                                text = "Vulkan Features:",
+                                fontWeight = FontWeight.Medium
+                            )
+                            IconButton(onClick = { featuresExpanded = !featuresExpanded }) {
+                                Icon(
+                                    imageVector = if (featuresExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = if (featuresExpanded) "Hide" else "Show"
+                                )
+                            }
+                        }
+                        
+                        if (featuresExpanded) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        color = MaterialTheme.colorScheme.surface,
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                                    .padding(8.dp)
+                            ) {
+                                val features = vulkanInfo.features
+                                InfoRow("Geometry Shader", if (features.geometryShader) "✓" else "✗")
+                                InfoRow("Tessellation Shader", if (features.tessellationShader) "✓" else "✗")
+                                InfoRow("Multi Viewport", if (features.multiViewport) "✓" else "✗")
+                                InfoRow("Sparse Binding", if (features.sparseBinding) "✓" else "✗")
+                                InfoRow("Variable Multisample Rate", if (features.variableMultisampleRate) "✓" else "✗")
+                                InfoRow("Protected Memory", if (features.protectedMemory) "✓" else "✗")
+                                InfoRow("Sampler YCbCr Conversion", if (features.samplerYcbcrConversion) "✓" else "✗")
+                                InfoRow("Shader Draw Parameters", if (features.shaderDrawParameters) "✓" else "✗")
+                            }
+                        }
+                    }
+                    
+                    // Memory heaps (if available)
+                    if (vulkanInfo.memoryHeaps != null) {
+                        Text(
+                            text = "Memory Heaps:",
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                        vulkanInfo.memoryHeaps.forEach { heap ->
+                            InfoRow(
+                                "Heap ${heap.index}",
+                                "${formatBytes(heap.size)} (${heap.flags})"
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AdvancedCapabilitiesCard(capabilities: com.ivarna.finalbenchmark2.utils.OpenGLCapabilities?) {
+    if (capabilities == null) {
+        DeviceInfoCard("Advanced Capabilities") {
+            InfoRow("Status", "Information not available")
+        }
+        return
+    }
+    
+    var expanded by remember { mutableStateOf(false) }
+    
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        onClick = { expanded = !expanded }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Advanced Capabilities",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+            }
+            
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                InfoRow("Max Texture Size", "${capabilities.maxTextureSize} x ${capabilities.maxTextureSize}")
+                InfoRow("Max Renderbuffer Size", "${capabilities.maxRenderbufferSize} x ${capabilities.maxRenderbufferSize}")
+                InfoRow("Max Viewport", "${capabilities.maxViewportWidth} x ${capabilities.maxViewportHeight}")
+                InfoRow("Max Fragment Uniform Vectors", capabilities.maxFragmentUniformVectors.toString())
+                InfoRow("Max Vertex Attributes", capabilities.maxVertexAttributes.toString())
+                
+                if (capabilities.supportedTextureCompressionFormats.isNotEmpty()) {
+                    InfoRow("Texture Compression", capabilities.supportedTextureCompressionFormats.joinToString(", "))
+                }
+            }
+        }
+    }
+}
+
 
 @Composable
 fun ScreenTab(context: android.content.Context) {
