@@ -133,8 +133,20 @@ fun DeviceScreen(viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compo
 
 @Composable
 fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: DeviceViewModel? = null) {
+    val context = LocalContext.current
     val powerHistory by viewModel?.powerHistory?.collectAsState() ?:
         remember { mutableStateOf(emptyList<com.ivarna.finalbenchmark2.ui.components.PowerDataPoint>()) }
+    
+    // State for GPU info
+    var gpuInfoState by remember {
+        mutableStateOf<com.ivarna.finalbenchmark2.utils.GpuInfoState>(com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading)
+    }
+    
+    // Load GPU info
+    LaunchedEffect(Unit) {
+        val gpuInfoUtils = com.ivarna.finalbenchmark2.utils.GpuInfoUtils(context)
+        gpuInfoState = gpuInfoUtils.getGpuInfo()
+    }
     
     Column(
         modifier = Modifier
@@ -215,17 +227,35 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
                     isLastItem = false
                 )
             }
+            // GPU Information Section Header
             item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("GPU Model", deviceInfo.gpuModel),
-                    isLastItem = false
+                Text(
+                    text = "GPU Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
                 )
             }
+            // GPU Info Content based on state
             item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("GPU Vendor", deviceInfo.gpuVendor),
-                    isLastItem = false
-                )
+                when (gpuInfoState) {
+                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
+                        InfoRow("GPU Status", "Loading GPU information...")
+                    }
+                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
+                        val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
+                        InfoRow("GPU Name", gpuInfo.basicInfo.name)
+                        InfoRow("GPU Vendor", gpuInfo.basicInfo.vendor)
+                        InfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
+                        InfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion ?: "Not Supported")
+                    }
+                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
+                        InfoRow("GPU Status", "Error loading GPU info")
+                        InfoRow("GPU Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                    }
+                }
             }
             item {
                 com.ivarna.finalbenchmark2.ui.components.InformationRow(
@@ -1040,9 +1070,18 @@ fun OsTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
         }
     }
 }
-
 @Composable
 fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
+    val context = LocalContext.current
+    var gpuInfoState by remember {
+        mutableStateOf<com.ivarna.finalbenchmark2.utils.GpuInfoState>(com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading)
+    }
+    
+    LaunchedEffect(Unit) {
+        val gpuInfoUtils = com.ivarna.finalbenchmark2.utils.GpuInfoUtils(context)
+        gpuInfoState = gpuInfoUtils.getGpuInfo()
+    }
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1102,6 +1141,35 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                     itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC", deviceInfo.socName),
                     isLastItem = false
                 )
+            }
+            
+            // GPU Information Section Header
+            item {
+                Text(
+                    text = "GPU Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // GPU Info Content based on state
+            item {
+                when (gpuInfoState) {
+                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
+                        InfoRow("Status", "Loading GPU information...")
+                    }
+                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
+                        val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
+                        GpuInfoInHardwareTab(gpuInfo)
+                    }
+                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
+                        InfoRow("Status", "Error loading GPU info")
+                        InfoRow("Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                    }
+                }
             }
             
             // Memory Section Header
@@ -1293,6 +1361,41 @@ fun SensorsTab(context: android.content.Context) {
             // Placeholder for sensor capabilities
             InfoRow("Max Sensors", "To be implemented")
             InfoRow("Highest Precision", "To be implemented")
+        }
+    }
+}
+
+@Composable
+fun GpuInfoInHardwareTab(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo) {
+    // Basic GPU Info
+    InfoRow("GPU Name", gpuInfo.basicInfo.name)
+    InfoRow("Vendor", gpuInfo.basicInfo.vendor)
+    InfoRow("Driver Version", gpuInfo.basicInfo.driverVersion)
+    InfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
+    InfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion ?: "Not Supported")
+    
+    // GPU Frequency Info (if available)
+    if (gpuInfo.frequencyInfo != null) {
+        val currentFreq = gpuInfo.frequencyInfo.currentFrequency
+        val maxFreq = gpuInfo.frequencyInfo.maxFrequency
+        if (currentFreq != null) InfoRow("Current Frequency", "${currentFreq} MHz")
+        if (maxFreq != null) InfoRow("Max Frequency", "${maxFreq} MHz")
+    }
+    
+    // OpenGL Info (if available)
+    gpuInfo.openGLInfo?.let { openGLInfo ->
+        InfoRow("OpenGL Version", openGLInfo.version)
+        InfoRow("GLSL Version", openGLInfo.glslVersion)
+        InfoRow("OpenGL Extensions", "${openGLInfo.extensions.size} extensions")
+    }
+    
+    // Vulkan Info (if available)
+    gpuInfo.vulkanInfo?.let { vulkanInfo ->
+        if (vulkanInfo.supported) {
+            vulkanInfo.apiVersion?.let { InfoRow("Vulkan API Version", it) }
+            vulkanInfo.driverVersion?.let { InfoRow("Vulkan Driver Version", it) }
+            vulkanInfo.physicalDeviceName?.let { InfoRow("Vulkan Physical Device", it) }
+            InfoRow("Vulkan Extensions", "${vulkanInfo.instanceExtensions.size + vulkanInfo.deviceExtensions.size} total extensions")
         }
     }
 }
