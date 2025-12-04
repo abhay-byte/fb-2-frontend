@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
+import com.ivarna.finalbenchmark2.utils.formatBytes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -138,7 +139,6 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
@@ -154,19 +154,8 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
-                
-        // Device Model and Manufacturer
-        DeviceInfoCard("Device Information") {
-            InfoRow("Model", deviceInfo.deviceModel)
-            InfoRow("Manufacturer", deviceInfo.manufacturer)
-            InfoRow("Board", deviceInfo.board)
-            InfoRow("SoC", deviceInfo.socName)
-            InfoRow("Architecture", deviceInfo.cpuArchitecture)
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
         
-        // Power Consumption Graph Card
+        // Power Consumption Graph (at the top, scrolls with content)
         if (viewModel != null) {
             PowerConsumptionGraph(
                 dataPoints = powerHistory,
@@ -175,14 +164,125 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
             
             Spacer(modifier = Modifier.height(16.dp))
         }
-                
-        // System Information
-        DeviceInfoCard("System Information") {
-            InfoRow("Android Version", "${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})")
-            InfoRow("Kernel Version", deviceInfo.kernelVersion)
-            InfoRow("Thermal Status", deviceInfo.thermalStatus ?: "Not available")
-            InfoRow("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available")
-            InfoRow("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available")
+        
+        // Scrollable list for all device info
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            // Device info items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Model", "${deviceInfo.manufacturer} ${deviceInfo.deviceModel}"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Board", deviceInfo.board),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC", deviceInfo.socName),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Big Cores", deviceInfo.bigCores.toString()),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Small Cores", deviceInfo.smallCores.toString()),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("GPU Model", deviceInfo.gpuModel),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("GPU Vendor", deviceInfo.gpuVendor),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
+                    isLastItem = false
+                )
+            }
+            
+            // System Information Section Header
+            item {
+                Text(
+                    text = "System Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // System info items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Android Version", "${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Kernel Version", deviceInfo.kernelVersion),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Thermal Status", deviceInfo.thermalStatus ?: "Not available"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available"),
+                    isLastItem = true
+                )
+            }
         }
     }
 }
@@ -192,11 +292,34 @@ fun CpuTab(
     viewModel: DeviceViewModel
 ) {
     val cpuHistory by viewModel.cpuHistory.collectAsState()
+    val context = LocalContext.current
+    var cpuFreqUtils by remember { mutableStateOf<com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils?>(null) }
+    var coreFrequencies by remember { mutableStateOf<Map<Int, Pair<Long, Long>>>(emptyMap()) }
+    
+    // Initialize CPU frequency utilities
+    LaunchedEffect(context) {
+        cpuFreqUtils = com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils(context)
+    }
+    
+    // Update frequencies periodically
+    LaunchedEffect(cpuFreqUtils) {
+        if (cpuFreqUtils != null) {
+            // Update frequencies every 500ms
+            kotlinx.coroutines.delay(500)
+            while (true) {
+                try {
+                    coreFrequencies = cpuFreqUtils?.getAllCoreFrequencies() ?: emptyMap()
+                } catch (e: Exception) {
+                    // Handle any errors silently to avoid app crashes
+                }
+                kotlinx.coroutines.delay(500)
+            }
+        }
+    }
     
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
@@ -212,36 +335,126 @@ fun CpuTab(
                 .padding(bottom = 16.dp)
         )
                 
-        // CPU Utilization Graph Card
+        // CPU Utilization Graph
         CpuUtilizationGraph(
             dataPoints = cpuHistory,
             modifier = Modifier.fillMaxWidth()
         )
                 
         Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("CPU Architecture") {
-            InfoRow("Architecture", deviceInfo.cpuArchitecture)
-            InfoRow("Total Cores", deviceInfo.totalCores.toString())
-            InfoRow("Big Cores", deviceInfo.bigCores.toString())
-            InfoRow("Small Cores", deviceInfo.smallCores.toString())
-            InfoRow("Cluster Topology", deviceInfo.clusterTopology)
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("CPU Frequencies") {
-            deviceInfo.cpuFrequencies.forEach { (core, freq) ->
-                InfoRow("Core $core", freq)
+        
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            // CPU Architecture Section Header
+            item {
+                Text(
+                    text = "CPU Architecture",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
             }
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("CPU Performance") {
-            // Placeholder for CPU performance metrics
-            InfoRow("Performance Class", "To be implemented")
-            InfoRow("Instruction Sets", "To be implemented")
+            
+            // CPU Architecture items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Big Cores", deviceInfo.bigCores.toString()),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Small Cores", deviceInfo.smallCores.toString()),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Cluster Topology", deviceInfo.clusterTopology),
+                    isLastItem = false
+                )
+            }
+            
+            // Real-time CPU Frequencies Section Header
+            item {
+                Text(
+                    text = "Real-time CPU Frequencies",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // Real-time CPU Frequencies items
+            if (coreFrequencies.isNotEmpty()) {
+                coreFrequencies.forEach { (coreIndex, freqPair) ->
+                    val (currentFreq, maxFreq) = freqPair
+                    val currentFreqMhz = if (currentFreq > 0) "${currentFreq / 1000} MHz" else "Offline"
+                    val maxFreqMhz = if (maxFreq > 0) "${maxFreq / 1000} MHz" else "N/A"
+                    
+                    item {
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Core $coreIndex", "$currentFreqMhz / $maxFreqMhz"),
+                            isLastItem = false
+                        )
+                    }
+                }
+            } else {
+                // Fallback to static frequencies if real-time reading fails
+                deviceInfo.cpuFrequencies.forEach { (core, freq) ->
+                    item {
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Core $core", freq),
+                            isLastItem = false
+                        )
+                    }
+                }
+            }
+            
+            // CPU Performance Section Header
+            item {
+                Text(
+                    text = "CPU Performance",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // CPU Performance items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Performance Class", "To be implemented"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Instruction Sets", "To be implemented"),
+                    isLastItem = true
+                )
+            }
         }
     }
 }
@@ -833,7 +1046,6 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
@@ -848,29 +1060,119 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
-                
-        DeviceInfoCard("Main Hardware") {
-            InfoRow("Model", deviceInfo.deviceModel)
-            InfoRow("Manufacturer", deviceInfo.manufacturer)
-            InfoRow("Board", deviceInfo.board)
-            InfoRow("SoC", deviceInfo.socName)
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("Memory") {
-            InfoRow("Total RAM", formatBytes(deviceInfo.totalRam))
-            InfoRow("Available RAM", formatBytes(deviceInfo.availableRam))
-            InfoRow("Storage Total", formatBytes(deviceInfo.totalStorage))
-            InfoRow("Storage Free", formatBytes(deviceInfo.freeStorage))
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("Power & Thermal") {
-            InfoRow("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available")
-            InfoRow("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available")
-            InfoRow("Thermal Status", deviceInfo.thermalStatus ?: "Not available")
+        
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            // Main Hardware Section Header
+            item {
+                Text(
+                    text = "Main Hardware",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            
+            // Main hardware items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Model", deviceInfo.deviceModel),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Manufacturer", deviceInfo.manufacturer),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Board", deviceInfo.board),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC", deviceInfo.socName),
+                    isLastItem = false
+                )
+            }
+            
+            // Memory Section Header
+            item {
+                Text(
+                    text = "Memory",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // Memory items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytes(deviceInfo.availableRam)),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Storage Total", formatBytes(deviceInfo.totalStorage)),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Storage Free", formatBytes(deviceInfo.freeStorage)),
+                    isLastItem = false
+                )
+            }
+            
+            // Power & Thermal Section Header
+            item {
+                Text(
+                    text = "Power & Thermal",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // Power & Thermal items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available"),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Thermal Status", deviceInfo.thermalStatus ?: "Not available"),
+                    isLastItem = true
+                )
+            }
         }
     }
 }
@@ -880,7 +1182,6 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
@@ -895,17 +1196,63 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
-                
-        DeviceInfoCard("RAM Information") {
-            InfoRow("Total RAM", formatBytes(deviceInfo.totalRam))
-            InfoRow("Available RAM", formatBytes(deviceInfo.availableRam))
-        }
-                
-        Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("Storage Information") {
-            InfoRow("Total Storage", formatBytes(deviceInfo.totalStorage))
-            InfoRow("Free Storage", formatBytes(deviceInfo.freeStorage))
+        
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            // RAM Information Section Header
+            item {
+                Text(
+                    text = "RAM Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            
+            // RAM items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytes(deviceInfo.availableRam)),
+                    isLastItem = false
+                )
+            }
+            
+            // Storage Information Section Header
+            item {
+                Text(
+                    text = "Storage Information",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(top = 16.dp, bottom = 8.dp)
+                )
+            }
+            
+            // Storage items
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
+                    isLastItem = false
+                )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Free Storage", formatBytes(deviceInfo.freeStorage)),
+                    isLastItem = true
+                )
+            }
         }
     }
 }
