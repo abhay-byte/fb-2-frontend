@@ -502,6 +502,7 @@ fun GpuTab(
     }
     
     val gpuHistory by gpuViewModel.gpuHistory.collectAsState()
+    val gpuFrequencyState by gpuViewModel.gpuFrequencyState.collectAsState()
     
     LaunchedEffect(Unit) {
         val gpuInfoUtils = com.ivarna.finalbenchmark2.utils.GpuInfoUtils(context)
@@ -535,11 +536,6 @@ fun GpuTab(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        // Use the new GpuFrequencyCard component
-        com.ivarna.finalbenchmark2.ui.components.GpuFrequencyCard()
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
         // GPU Info Content based on state
         when (gpuInfoState) {
             is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
@@ -549,7 +545,7 @@ fun GpuTab(
             }
             is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
                 val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
-                GpuInfoContent(gpuInfo)
+                GpuInfoContent(gpuInfo, gpuFrequencyState)
             }
             is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
                 DeviceInfoCard("GPU Information") {
@@ -562,9 +558,9 @@ fun GpuTab(
 }
 
 @Composable
-fun GpuInfoContent(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo) {
+fun GpuInfoContent(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo, gpuFrequencyState: com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState = com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.NotSupported) {
     // GPU Overview Card
-    GpuOverviewCard(gpuInfo.basicInfo, gpuInfo.frequencyInfo)
+    GpuOverviewCard(gpuInfo.basicInfo, gpuInfo.frequencyInfo, gpuFrequencyState)
     
     Spacer(modifier = Modifier.height(16.dp))
     
@@ -583,7 +579,7 @@ fun GpuInfoContent(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo) {
 }
 
 @Composable
-fun GpuOverviewCard(basicInfo: com.ivarna.finalbenchmark2.utils.GpuBasicInfo, frequencyInfo: com.ivarna.finalbenchmark2.utils.GpuFrequencyInfo?) {
+fun GpuOverviewCard(basicInfo: com.ivarna.finalbenchmark2.utils.GpuBasicInfo, frequencyInfo: com.ivarna.finalbenchmark2.utils.GpuFrequencyInfo?, gpuFrequencyState: com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState = com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.NotSupported) {
     var expanded by remember { mutableStateOf(false) }
     
     Card(
@@ -627,12 +623,34 @@ fun GpuOverviewCard(basicInfo: com.ivarna.finalbenchmark2.utils.GpuBasicInfo, fr
                 InfoRow("OpenGL ES", basicInfo.openGLVersion)
                 InfoRow("Vulkan", basicInfo.vulkanVersion ?: "Not Supported")
                 
-                if (frequencyInfo != null) {
-                    InfoRow("Current Frequency", if (frequencyInfo.currentFrequency != null) "${frequencyInfo.currentFrequency} MHz" else "N/A - Permission/Access Issue")
-                    InfoRow("Max Frequency", if (frequencyInfo.maxFrequency != null) "${frequencyInfo.maxFrequency} MHz" else "N/A - Permission/Access Issue")
-                } else {
-                    InfoRow("Current Frequency", "N/A - Not Available")
-                    InfoRow("Max Frequency", "N/A - Not Available")
+                // Display frequency info from the frequency state if available, otherwise use static info
+                when (gpuFrequencyState) {
+                    is com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.Available -> {
+                        val data = gpuFrequencyState.data
+                        InfoRow("Current Frequency", "${data.currentFrequencyMhz} MHz")
+                        data.maxFrequencyMhz?.let { maxFreq -> InfoRow("Max Frequency", "${maxFreq} MHz") }
+                        data.minFrequencyMhz?.let { minFreq -> InfoRow("Min Frequency", "${minFreq} MHz") }
+                        data.governor?.let { governor -> InfoRow("Governor", governor) }
+                        data.utilizationPercent?.let { utilization -> InfoRow("Utilization", "${utilization}%") }
+                    }
+                    com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.RequiresRoot -> {
+                        InfoRow("Current Frequency", "Requires Root Access")
+                        InfoRow("Max Frequency", "Requires Root Access")
+                    }
+                    com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.NotSupported -> {
+                        // If real-time data not available, fallback to static frequency info
+                        if (frequencyInfo != null) {
+                            InfoRow("Current Frequency", if (frequencyInfo.currentFrequency != null) "${frequencyInfo.currentFrequency} MHz" else "N/A - Permission/Access Issue")
+                            InfoRow("Max Frequency", if (frequencyInfo.maxFrequency != null) "${frequencyInfo.maxFrequency} MHz" else "N/A - Permission/Access Issue")
+                        } else {
+                            InfoRow("Current Frequency", "N/A - Not Available")
+                            InfoRow("Max Frequency", "N/A - Not Available")
+                        }
+                    }
+                    is com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.Error -> {
+                        InfoRow("Current Frequency", "Error: ${gpuFrequencyState.message}")
+                        InfoRow("Max Frequency", "Error: ${gpuFrequencyState.message}")
+                    }
                 }
             }
         }
