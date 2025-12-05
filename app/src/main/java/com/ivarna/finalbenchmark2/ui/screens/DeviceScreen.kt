@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
+import com.ivarna.finalbenchmark2.utils.CpuNativeBridge
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
 import com.ivarna.finalbenchmark2.utils.formatBytes
 import com.ivarna.finalbenchmark2.ui.components.CpuUtilizationGraph
@@ -439,10 +440,10 @@ fun CpuTab(
                 )
             }
             
-            // Real-time CPU Frequencies Section Header
+            // CPU Frequencies Section Header
             item {
                 Text(
-                    text = "Real-time CPU Frequencies",
+                    text = "CPU Frequencies",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -477,10 +478,10 @@ fun CpuTab(
                 }
             }
             
-            // CPU Performance Section Header
+            // Processor Details Section Header
             item {
                 Text(
-                    text = "CPU Performance",
+                    text = "Processor Details",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -489,18 +490,54 @@ fun CpuTab(
                 )
             }
             
-            // CPU Performance items
+            // Get detailed CPU information from native bridge
+            val cpuNative = com.ivarna.finalbenchmark2.utils.CpuNativeBridge()
+            val details = cpuNative.getCpuDetails()
+            
+            // Add processor details
             item {
                 com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Performance Class", "To be implemented"),
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC Name", details.socName),
                     isLastItem = false
                 )
             }
             item {
                 com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Instruction Sets", "To be implemented"),
-                    isLastItem = true
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("ABI", details.abi),
+                    isLastItem = false
                 )
+            }
+            item {
+                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("ARM Neon", if(details.hasNeon) "Yes" else "No"),
+                    isLastItem = false
+                )
+            }
+            
+            // Add cache configuration
+            if (details.caches.isNotEmpty()) {
+                // Cache Configuration Section Header
+                item {
+                    Text(
+                        text = "Cache Configuration",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(top = 16.dp, bottom = 8.dp)
+                    )
+                }
+                
+                details.caches.forEach { cache ->
+                    // Format: "L1 Instruction" -> "64KB"
+                    val name = "L${cache.level} ${cache.type.replaceFirstChar { it.uppercase() }}"
+                    item {
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(name, cache.size),
+                            isLastItem = false
+                        )
+                    }
+                }
             }
         }
     }

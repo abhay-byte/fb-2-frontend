@@ -2,6 +2,7 @@ package com.ivarna.finalbenchmark2.data.providers
 
 import android.content.Context
 import com.ivarna.finalbenchmark2.domain.model.ItemValue
+import com.ivarna.finalbenchmark2.utils.CpuNativeBridge
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
 import com.ivarna.finalbenchmark2.utils.GpuInfoUtils
 
@@ -22,6 +23,27 @@ class DeviceInfoProvider {
             
             // CPU section
             add(ItemValue.Text("CPU", ""))
+            
+            // Get detailed CPU information from native bridge
+            val cpuNative = CpuNativeBridge()
+            val details = cpuNative.getCpuDetails()
+            
+            // Add processor details
+            add(ItemValue.Text("SoC Name", details.socName))
+            add(ItemValue.Text("ABI", details.abi))
+            add(ItemValue.Text("ARM Neon", if(details.hasNeon) "Yes" else "No"))
+            
+            // Add cache configuration
+            if (details.caches.isNotEmpty()) {
+                add(ItemValue.Text("Cache Configuration", ""))
+                details.caches.forEach { cache ->
+                    // Format: "L1 Instruction" -> "64KB"
+                    val name = "L${cache.level} ${cache.type.replaceFirstChar { it.uppercase() }}"
+                    add(ItemValue.Text(name, cache.size))
+                }
+            }
+            
+            // Add basic core information
             add(ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()))
             add(ItemValue.Text("Big Cores", deviceInfo.bigCores.toString()))
             add(ItemValue.Text("Small Cores", deviceInfo.smallCores.toString()))

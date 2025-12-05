@@ -7,6 +7,7 @@ add_library(
     vulkan_native
     SHARED
     vulkan_info.cpp
+    cpu_info.cpp  # Added CPU info native implementation
 )
 
 # Find required libraries
