@@ -3,11 +3,15 @@ package com.ivarna.finalbenchmark2.data.providers
 import android.content.Context
 import com.ivarna.finalbenchmark2.domain.model.ItemValue
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
+import com.ivarna.finalbenchmark2.utils.GpuInfoUtils
 
 class DeviceInfoProvider {
     
     suspend fun getData(context: Context): List<ItemValue> {
         val deviceInfo = DeviceInfoCollector.getDeviceInfo(context)
+        val gpuInfoUtils = GpuInfoUtils(context)
+        val gpuInfoState = gpuInfoUtils.getGpuInfo()
+        
         return buildList {
             // Device section
             add(ItemValue.Text("Device", ""))
@@ -32,6 +36,45 @@ class DeviceInfoProvider {
             add(ItemValue.Text("GPU", ""))
             add(ItemValue.Text("Model", deviceInfo.gpuModel))
             add(ItemValue.Text("Vendor", deviceInfo.gpuVendor))
+            
+            // Add detailed GPU information if available
+            if (gpuInfoState is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success) {
+                val gpuInfo = gpuInfoState.gpuInfo
+                add(ItemValue.Text("OpenGL ES", gpuInfo.basicInfo.openGLVersion))
+                
+                // Vulkan information
+                gpuInfo.vulkanInfo?.let { vulkanInfo ->
+                    add(ItemValue.Text("Vulkan Support", if (vulkanInfo.supported) "Yes" else "No"))
+                    if (vulkanInfo.supported) {
+                        vulkanInfo.apiVersion?.let { add(ItemValue.Text("Vulkan API Version", it)) }
+                        vulkanInfo.driverVersion?.let { add(ItemValue.Text("Vulkan Driver Version", it)) }
+                        vulkanInfo.physicalDeviceName?.let { add(ItemValue.Text("Physical Device", it)) }
+                        vulkanInfo.physicalDeviceType?.let { add(ItemValue.Text("Device Type", it)) }
+                        
+                        // Add extension counts
+                        add(ItemValue.Text("Vulkan Instance Extensions", "${vulkanInfo.instanceExtensions.size}"))
+                        add(ItemValue.Text("Vulkan Device Extensions", "${vulkanInfo.deviceExtensions.size}"))
+                        
+                        // Add some key features
+                        vulkanInfo.features?.let { features ->
+                            add(ItemValue.Text("Geometry Shader", if (features.geometryShader) "Yes" else "No"))
+                            add(ItemValue.Text("Tessellation Shader", if (features.tessellationShader) "Yes" else "No"))
+                        }
+                        
+                        // Add memory heap information
+                        vulkanInfo.memoryHeaps?.let { memoryHeaps ->
+                            add(ItemValue.Text("Vulkan Memory Heaps", "${memoryHeaps.size}"))
+                            // Add total memory from first heap as an example
+                            if (memoryHeaps.isNotEmpty()) {
+                                val largestHeap = memoryHeaps.maxByOrNull { it.size }
+                                largestHeap?.let {
+                                    add(ItemValue.Text("Largest Memory Heap", formatBytes(it.size)))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             
             // Memory section
             add(ItemValue.Text("Memory", ""))

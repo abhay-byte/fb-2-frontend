@@ -371,59 +371,42 @@ class GpuInfoUtils(private val context: Context) {
     }
     
     /**
-     * Gets Vulkan information (basic support check for now)
+     * Gets Vulkan information using the native bridge
      */
     private fun getVulkanInfo(): VulkanInfo? {
-        val isSupported = context.packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION)
-        
-        // For detailed Vulkan info, we would need to use NDK and Vulkan API calls
-        // For now, just return basic support information
-        return if (isSupported) {
-            // Get the Vulkan hardware level if available
-            val vulkanLevel = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                context.packageManager.getSystemAvailableFeatures().find {
-                    it.name == PackageManager.FEATURE_VULKAN_HARDWARE_LEVEL
-                }?.version ?: 0
-            } else 0
+        return try {
+            val bridge = VulkanNativeBridge()
+            bridge.getVulkanInfo()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting Vulkan info from native bridge", e)
+            // Fallback to basic implementation
+            val isSupported = context.packageManager.hasSystemFeature(PackageManager.FEATURE_VULKAN_HARDWARE_VERSION)
             
-            // Get Vulkan version string
-            val vulkanVersion = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                // Attempt to get actual version if possible
-                val level = context.packageManager.getSystemAvailableFeatures().find {
-                    it.name == PackageManager.FEATURE_VULKAN_HARDWARE_LEVEL
-                }?.version ?: 0
-                if (level > 0) {
-                    "1.${level / 100}.${(level % 100) / 100}"
-                } else {
-                    "1.0.0"
-                }
+            if (isSupported) {
+                VulkanInfo(
+                    supported = true,
+                    apiVersion = "1.0.0", // Default fallback
+                    driverVersion = "System Default",
+                    physicalDeviceName = "Hardware Device",
+                    physicalDeviceType = "Integrated GPU", // Common for mobile
+                    instanceExtensions = emptyList(),
+                    deviceExtensions = emptyList(),
+                    features = null, // Detailed features require NDK
+                    memoryHeaps = null // Memory info requires NDK
+                )
             } else {
-                "1.0.0"
+                VulkanInfo(
+                    supported = false,
+                    apiVersion = null,
+                    driverVersion = null,
+                    physicalDeviceName = null,
+                    physicalDeviceType = null,
+                    instanceExtensions = emptyList(),
+                    deviceExtensions = emptyList(),
+                    features = null,
+                    memoryHeaps = null
+                )
             }
-            
-            VulkanInfo(
-                supported = true,
-                apiVersion = vulkanVersion,
-                driverVersion = "System Default",
-                physicalDeviceName = "Hardware Device",
-                physicalDeviceType = "Integrated GPU", // Common for mobile
-                instanceExtensions = emptyList(),
-                deviceExtensions = emptyList(),
-                features = null, // Detailed features require NDK
-                memoryHeaps = null // Memory info requires NDK
-            )
-        } else {
-            VulkanInfo(
-                supported = false,
-                apiVersion = null,
-                driverVersion = null,
-                physicalDeviceName = null,
-                physicalDeviceType = null,
-                instanceExtensions = emptyList(),
-                deviceExtensions = emptyList(),
-                features = null,
-                memoryHeaps = null
-            )
         }
     }
 }

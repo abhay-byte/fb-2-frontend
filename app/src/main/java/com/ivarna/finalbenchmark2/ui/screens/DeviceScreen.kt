@@ -600,12 +600,39 @@ fun GpuOverviewCard(basicInfo: com.ivarna.finalbenchmark2.utils.GpuBasicInfo, fr
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "GPU Overview",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "GPU Overview",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    // Display max frequency in the header if available
+                    when (gpuFrequencyState) {
+                        is com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.Available -> {
+                            val maxFreq = gpuFrequencyState.data.maxFrequencyMhz
+                            if (maxFreq != null) {
+                                Text(
+                                    text = "Max: ${maxFreq} MHz",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.NotSupported -> {
+                            if (frequencyInfo != null && frequencyInfo.maxFrequency != null) {
+                                Text(
+                                    text = "Max: ${frequencyInfo.maxFrequency} MHz",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        else -> {
+                            // No additional info in header for other states
+                        }
+                    }
+                }
                 IconButton(onClick = { expanded = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
