@@ -3,13 +3,13 @@ package com.ivarna.finalbenchmark2.ui.screens
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -20,8 +20,66 @@ import androidx.navigation.NavController
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryUiModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryViewModel
+import com.ivarna.finalbenchmark2.ui.viewmodels.HistorySort
 import java.text.SimpleDateFormat
 import java.util.*
+
+@Composable
+fun HistoryFilterBar(
+    selectedCategory: String,
+    onCategorySelect: (String) -> Unit,
+    currentSort: HistorySort,
+    onSortSelect: (HistorySort) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
+        // Sort Dropdown
+        Box {
+            var expanded by remember { mutableStateOf(false) }
+            AssistChip(
+                onClick = { expanded = true },
+                label = { Text("Sort: ${formatSortName(currentSort)}") },
+                leadingIcon = { Icon(Icons.Rounded.Sort, null) }
+            )
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                HistorySort.values().forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(formatSortName(option)) },
+                        onClick = { 
+                            onSortSelect(option)
+                            expanded = false 
+                        }
+                    )
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Category Chips
+        val categories = listOf("All", "CPU", "GPU", "RAM", "Storage", "Full", "Stress")
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(categories) { category ->
+                FilterChip(
+                    selected = selectedCategory == category,
+                    onClick = { onCategorySelect(category) },
+                    label = { Text(category) },
+                    leadingIcon = if (selectedCategory == category) {
+                        { Icon(Icons.Rounded.Check, null, Modifier.size(16.dp)) }
+                    } else null
+                )
+            }
+        }
+    }
+}
+
+fun formatSortName(sort: HistorySort): String {
+    return when (sort) {
+        HistorySort.DATE_NEWEST -> "Date (Newest)"
+        HistorySort.DATE_OLDEST -> "Date (Oldest)"
+        HistorySort.SCORE_HIGH_TO_LOW -> "Score (High to Low)"
+        HistorySort.SCORE_LOW_TO_HIGH -> "Score (Low to High)"
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +88,8 @@ fun HistoryScreen(
     navController: NavController
 ) {
     val historyState by viewModel.uiState.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val sortOption by viewModel.sortOption.collectAsState()
     val formatter = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
     
     FinalBenchmark2Theme {
@@ -56,8 +116,18 @@ fun HistoryScreen(
                     textAlign = TextAlign.Start,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                 )
+                
+                // Filter bar
+                HistoryFilterBar(
+                    selectedCategory = selectedCategory,
+                    onCategorySelect = { viewModel.updateCategory(it) },
+                    currentSort = sortOption,
+                    onSortSelect = { viewModel.updateSortOption(it) }
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
                 
                 if (historyState.isEmpty()) {
                     // Empty state

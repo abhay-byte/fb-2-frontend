@@ -1143,7 +1143,8 @@ fun AdvancedCapabilitiesCard(capabilities: com.ivarna.finalbenchmark2.utils.Open
 
 @Composable
 fun ScreenTab(context: android.content.Context) {
-    val displayMetrics = context.resources.displayMetrics
+    val displayUtils = remember { com.ivarna.finalbenchmark2.utils.DisplayUtils(context) }
+    val displayInfo = remember { displayUtils.getDisplayInfo() }
     
     Column(
         modifier = Modifier
@@ -1163,28 +1164,328 @@ fun ScreenTab(context: android.content.Context) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
-                
-        DeviceInfoCard("Display Metrics") {
-            InfoRow("Width", "${displayMetrics.widthPixels}px")
-            InfoRow("Height", "${displayMetrics.heightPixels}px")
-            InfoRow("Density", "${displayMetrics.density}x (${displayMetrics.densityDpi} dpi)")
-            InfoRow("Size", "${String.format("%.1f", calculateScreenSize(displayMetrics))}\"")
-        }
+        
+        // Card 1: Display Metrics
+        DisplayMetricsCard(displayInfo)
                 
         Spacer(modifier = Modifier.height(16.dp))
-                
-        DeviceInfoCard("Screen Properties") {
-            InfoRow("Refresh Rate", "To be implemented")
-            InfoRow("Resolution", "${displayMetrics.widthPixels} x ${displayMetrics.heightPixels}")
-            InfoRow("Aspect Ratio", calculateAspectRatio(displayMetrics.widthPixels, displayMetrics.heightPixels))
-        }
+        
+        // Card 2: Capabilities
+        DisplayCapabilitiesCard(displayInfo)
                 
         Spacer(modifier = Modifier.height(16.dp))
+        
+        // Card 3: System State
+        DisplaySystemStateCard(displayInfo)
+    }
+}
+
+@Composable
+fun DisplayMetricsCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.AspectRatio,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Display Metrics",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            InfoRow("Resolution", displayInfo.resolution)
+            InfoRow("Logical Density", displayInfo.density)
+            InfoRow("Physical Size", displayInfo.physicalSize)
+            InfoRow("Aspect Ratio", displayInfo.aspectRatio)
+            InfoRow("Exact X DPI", displayInfo.exactDpiX)
+            InfoRow("Exact Y DPI", displayInfo.exactDpiY)
+            
+            // Add real metrics info as collapsible section
+            var expanded by remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Real Metrics",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { expanded = !expanded }) {
+                    Icon(
+                        imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (expanded) "Collapse" else "Expand"
+                    )
+                }
+            }
+            
+            if (expanded) {
+                Text(
+                    text = displayInfo.realMetrics,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DisplayCapabilitiesCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.HdrOn,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Capabilities",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            InfoRow("Current Refresh Rate", displayInfo.refreshRate)
+            InfoRow("Max Refresh Rate", displayInfo.maxRefreshRate)
+            InfoRow("HDR Support", displayInfo.hdrSupport)
+            
+            if (displayInfo.hdrTypes.isNotEmpty()) {
+                var hdrTypesExpanded by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "HDR Types",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    IconButton(onClick = { hdrTypesExpanded = !hdrTypesExpanded }) {
+                        Icon(
+                            imageVector = if (hdrTypesExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                            contentDescription = if (hdrTypesExpanded) "Collapse" else "Expand"
+                        )
+                    }
+                }
                 
-        DeviceInfoCard("Touch Information") {
-            // Placeholder for touch-related info
-            InfoRow("Touch Points", "To be implemented")
-            InfoRow("Touch Technology", "To be implemented")
+                if (hdrTypesExpanded) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                    ) {
+                        displayInfo.hdrTypes.forEach { hdrType ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.check_24),
+                                    contentDescription = null,
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = hdrType,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
+            InfoRow(
+                "Wide Color Gamut",
+                if (displayInfo.wideColorGamut) "Yes" else "No",
+                isSupported = displayInfo.wideColorGamut
+            )
+        }
+    }
+}
+
+@Composable
+fun DisplaySystemStateCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.ScreenRotation,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "System State",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            InfoRow("Orientation", displayInfo.orientation)
+            InfoRow("Rotation", "${displayInfo.rotation * 90}°")
+            
+            displayInfo.brightnessLevel?.let { brightness ->
+                InfoRow("Brightness Level", brightness)
+            }
+            
+            displayInfo.screenTimeout?.let { timeout ->
+                InfoRow("Screen Timeout", timeout)
+            }
+            
+            // Safe area and cutout info
+            var safeAreaExpanded by remember { mutableStateOf(false) }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Safe Area & Cutout",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { safeAreaExpanded = !safeAreaExpanded }) {
+                    Icon(
+                        imageVector = if (safeAreaExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (safeAreaExpanded) "Collapse" else "Expand"
+                    )
+                }
+            }
+            
+            if (safeAreaExpanded) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 4.dp)
+                ) {
+                    Text(
+                        text = "Safe Area: ${displayInfo.safeAreaInsets}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    Text(
+                        text = "Display Cutout: ${displayInfo.displayCutout}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun InfoRow(label: String, value: String, isSupported: Boolean? = null) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
+        )
+        
+        Row(
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            isSupported?.let { supported ->
+                Icon(
+                    painter = if (supported) painterResource(id = com.ivarna.finalbenchmark2.R.drawable.check_24)
+                              else painterResource(id = com.ivarna.finalbenchmark2.R.drawable.close_24),
+                    contentDescription = if (supported) "Supported" else "Not Supported",
+                    tint = if (supported) Color(0xFF4CAF50) else Color(0xFFEF5350),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (value.isEmpty()) MaterialTheme.colorScheme.tertiary
+                       else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
