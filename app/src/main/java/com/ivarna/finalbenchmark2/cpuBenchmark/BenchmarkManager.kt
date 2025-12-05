@@ -4,6 +4,8 @@ import android.util.Log
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import org.json.JSONArray
+import org.json.JSONObject
 
 class BenchmarkManager {
     val _benchmarkEvents = MutableSharedFlow<BenchmarkEvent>()
@@ -13,6 +15,25 @@ class BenchmarkManager {
     val benchmarkComplete = _benchmarkComplete.asSharedFlow()
     
     private var isRunning = false
+    
+    // Scaling factors to match Rust weighted scoring logic
+    // These factors normalize different benchmark operations to similar ranges (~70 points each)
+    private val SCALING_FACTORS = mapOf(
+        "Prime Generation" to 0.000001,
+        "Fibonacci Recursive" to 0.012,
+        "Fibonacci Memoized" to 0.012,
+        "Matrix Multiplication" to 0.0000025,
+        "Hash Computing" to 0.000001,
+        "String Sorting" to 0.000015,
+        "Ray Tracing" to 0.00006,
+        "Compression" to 0.000007,
+        "Monte Carlo" to 0.00007,
+        "JSON Parsing" to 0.00004,
+        "N-Queens" to 0.007
+    )
+    
+    // Default scaling factor for unknown benchmarks
+    private val DEFAULT_SCALING_FACTOR = 0.00001
     
     suspend fun startBenchmark(preset: String = "Auto") {
         if (isRunning) return
@@ -84,27 +105,26 @@ class BenchmarkManager {
         val singleCoreScore = calculateSingleCoreScore(resultsJson)
         val multiCoreScore = calculateMultiCoreScore(resultsJson)
         
-        // Calculate final weighted score (average of single and multi core)
-        val finalScore = (singleCoreScore + multiCoreScore) / 2.0
+        // Calculate final weighted score using proper weights (35% single, 65% multi)
+        val finalScore = (singleCoreScore * 0.35) + (multiCoreScore * 0.65)
         
-        // Calculate normalized score (scaled to 0-100 range) - Fixed scaling issue
+        // The weighted score from Rust logic is already in a good range (under 2000)
+        // So we can use it directly as the normalized score
         val normalizedScore = if (finalScore > 0) {
-            // Scale scores to reasonable range (0-100000 instead of billions)
-            // Use logarithmic scaling to handle wide range of performance differences
-            val scaledScore = kotlin.math.log10(finalScore + 1) * 10000.0
-            minOf(scaledScore, 100000.0)  // Cap at 100,000 for practical purposes
+            // Apply final normalization factor to match Rust behavior
+            finalScore * 1.0
         } else {
             0.0
         }
         
-        // Determine rating based on normalized score - Adjusted thresholds
+        // Determine rating based on normalized score - Using reasonable thresholds for 0-2000 range
         val rating = when {
-            normalizedScore >= 80000 -> "★★★★★"
-            normalizedScore >= 60000 -> "★★★★☆"
-            normalizedScore >= 40000 -> "★★★☆☆"
-            normalizedScore >= 20000 -> "★★☆☆☆"
-            normalizedScore >= 10000 -> "★☆☆☆☆"
-            else -> "☆☆☆☆☆"
+            normalizedScore >= 1800 -> "★★★ (Exceptional Performance)"
+            normalizedScore >= 1500 -> "★★★★☆ (High Performance)"
+            normalizedScore >= 1000 -> "★★★☆☆ (Good Performance)"
+            normalizedScore >= 600 -> "★★☆☆☆ (Moderate Performance)"
+            normalizedScore >= 300 -> "★☆☆☆☆ (Basic Performance)"
+            else -> "☆☆☆ (Low Performance)"
         }
         
         Log.d("BenchmarkManager", "Final scoring - Single: $singleCoreScore, Multi: $multiCoreScore, Final: $finalScore, Normalized: $normalizedScore")
@@ -119,101 +139,72 @@ class BenchmarkManager {
     }
     
     /**
-     * Calculates single-core score from the benchmark results
+     * Calculates single-core score from the benchmark results using weighted scoring
      */
     private fun calculateSingleCoreScore(resultsJson: String): Double {
-        // In a real implementation, we would parse the JSON and calculate the score
-        // For now, we'll simulate based on the results we have
-        // Since the native code returns the actual results, we'll need to parse them
-        // Extract single-core results and calculate an average score
-        return extractAverageScoreFromResults(resultsJson, "single_core_results")
+        return calculateCategoryScore(resultsJson, "single_core_results")
     }
     
     /**
-     * Calculates multi-core score from the benchmark results
+     * Calculates multi-core score from the benchmark results using weighted scoring
      */
     private fun calculateMultiCoreScore(resultsJson: String): Double {
-        // Extract multi-core results and calculate an average score
-        return extractAverageScoreFromResults(resultsJson, "multi_core_results")
+        return calculateCategoryScore(resultsJson, "multi_core_results")
     }
     
     /**
-     * Extracts average score from results based on category
+     * Calculates category score using proper weighted scoring with robust JSON parsing
      */
-    private fun extractAverageScoreFromResults(resultsJson: String, category: String): Double {
-        // This is a simplified approach - in a real implementation, we'd use a proper JSON parser
-        // Look for the specified category and extract ops_per_second values
-        
-        // Find the start of the category array
-        val categoryStart = resultsJson.indexOf("\"$category\"")
-        if (categoryStart == -1) return 0.0
-        
-        // Find the array content
-        var braceCount = 0
-        var startIdx = resultsJson.indexOf('[', categoryStart)
-        if (startIdx == -1) return 0.0
-        
-        var idx = startIdx
-        var arrayContent = ""
-        
-        // Extract the array content
-        for (i in idx until resultsJson.length) {
-            val ch = resultsJson[i]
-            if (ch == '[') {
-                if (braceCount == 0) startIdx = i
-                braceCount++
-            } else if (ch == ']') {
-                braceCount--
-                if (braceCount == 0) {
-                    arrayContent = resultsJson.substring(startIdx + 1, i)
-                    break
-                }
+    private fun calculateCategoryScore(resultsJson: String, categoryKey: String): Double {
+        return try {
+            val root = JSONObject(resultsJson)
+            val resultsArray = root.optJSONArray(categoryKey) ?: return 0.0
+            
+            var totalWeightedScore = 0.0
+            
+            for (i in 0 until resultsArray.length()) {
+                val item = resultsArray.getJSONObject(i)
+                val name = item.getString("name")
+                val ops = item.getDouble("ops_per_second")
+                
+                // Find matching scaling factor for the benchmark type
+                val factor = findScalingFactor(name)
+                val weightedScore = ops * factor
+                totalWeightedScore += weightedScore
+                
+                Log.d("BenchmarkManager", "Benchmark: $name, ops/sec: $ops, factor: $factor, weighted: $weightedScore")
             }
-        }
-        
-        if (arrayContent.isEmpty()) return 0.0
-        
-        // Extract ops_per_second values from each result object
-        val opsValues = mutableListOf<Double>()
-        var objStart = 0
-        var bracketCount = 0
-        var inObject = false
-        
-        for (i in arrayContent.indices) {
-            val ch = arrayContent[i]
-            if (ch == '{') {
-                if (bracketCount == 0) {
-                    objStart = i
-                    inObject = true
-                }
-                bracketCount++
-            } else if (ch == '}') {
-                bracketCount--
-                if (bracketCount == 0 && inObject) {
-                    val objStr = arrayContent.substring(objStart, i + 1)
-                    val opsPerSecond = extractOpsPerSecond(objStr)
-                    if (opsPerSecond > 0) {
-                        opsValues.add(opsPerSecond)
-                    }
-                    inObject = false
-                }
-            }
-        }
-        
-        return if (opsValues.isNotEmpty()) {
-            opsValues.average()
-        } else {
+            
+            Log.d("BenchmarkManager", "Category $categoryKey total weighted score: $totalWeightedScore")
+            totalWeightedScore
+            
+        } catch (e: Exception) {
+            Log.e("BenchmarkManager", "Error parsing JSON for category $categoryKey: ${e.message}")
             0.0
         }
     }
     
     /**
-     * Extracts ops_per_second value from a result object string
+     * Finds the appropriate scaling factor for a benchmark name
      */
-    private fun extractOpsPerSecond(resultObj: String): Double {
-        val opsPattern = "\"ops_per_second\"\\s*:\\s*([0-9]+\\.?[0-9]*)".toRegex()
-        val match = opsPattern.find(resultObj)
-        return match?.groupValues?.get(1)?.toDoubleOrNull() ?: 0.0
+    private fun findScalingFactor(benchmarkName: String): Double {
+        // Remove "Single-Core " or "Multi-Core " prefix for matching
+        val cleanName = benchmarkName
+            .replace("Single-Core ", "")
+            .replace("Multi-Core ", "")
+        
+        // Find exact match first
+        SCALING_FACTORS[cleanName]?.let { return it }
+        
+        // Find partial match for more flexible matching
+        SCALING_FACTORS.entries.find { cleanName.contains(it.key) }?.let { 
+            Log.d("BenchmarkManager", "Partial match found: $cleanName contains ${it.key}")
+            return it.value 
+        }
+        
+        // Fall back to default scaling factor
+        Log.d("BenchmarkManager", "No scaling factor found for: $cleanName, using default: $DEFAULT_SCALING_FACTOR")
+        return DEFAULT_SCALING_FACTOR
     }
     
     private suspend fun runIndividualBenchmarks() {
@@ -471,7 +462,7 @@ class BenchmarkManager {
     }
     
     /**
-     * Parses the JSON result from native function into BenchmarkResult object
+     * Parses the JSON result from native function into BenchmarkResult object using proper JSON parsing
      */
     private fun parseBenchmarkResultJson(json: String): BenchmarkResult {
         Log.d("BenchmarkManager", "Parsing benchmark result JSON: $json")
@@ -486,53 +477,37 @@ class BenchmarkManager {
             )
         }
         
-        // In a real implementation, we would use a proper JSON parser like Moshi or Gson
-        // For now, we'll extract basic values manually
-        // This is a simplified implementation - in reality, use a proper JSON parser
-        val name = extractValue(json, "name") ?: "Unknown"
-        val executionTimeMs = extractValue(json, "execution_time_ms")?.toDoubleOrNull() ?: 0.0
-        val opsPerSecond = extractValue(json, "ops_per_second")?.toDoubleOrNull() ?: 0.0
-        val isValid = extractValue(json, "is_valid")?.toBooleanStrictOrNull() ?: false
-        val metricsJson = extractValue(json, "metrics_json") ?: "{}"
-        
-        Log.d("BenchmarkManager", "Parsed benchmark result - Name: $name, Execution Time: $executionTimeMs ms, Ops/Sec: $opsPerSecond, Valid: $isValid")
-        
-        return BenchmarkResult(
-            name = name,
-            executionTimeMs = executionTimeMs,
-            opsPerSecond = opsPerSecond,
-            isValid = isValid,
-            metricsJson = metricsJson
-        )
+        try {
+            val root = JSONObject(json)
+            
+            val name = root.optString("name", "Unknown")
+            val executionTimeMs = root.optDouble("execution_time_ms", 0.0)
+            val opsPerSecond = root.optDouble("ops_per_second", 0.0)
+            val isValid = root.optBoolean("is_valid", false)
+            val metricsJson = root.optString("metrics_json", "{}")
+            
+            Log.d("BenchmarkManager", "Parsed benchmark result - Name: $name, Execution Time: $executionTimeMs ms, Ops/Sec: $opsPerSecond, Valid: $isValid")
+            
+            return BenchmarkResult(
+                name = name,
+                executionTimeMs = executionTimeMs,
+                opsPerSecond = opsPerSecond,
+                isValid = isValid,
+                metricsJson = metricsJson
+            )
+        } catch (e: Exception) {
+            Log.e("BenchmarkManager", "Error parsing JSON: ${e.message}")
+            return BenchmarkResult(
+                name = "ParseError",
+                executionTimeMs = 0.0,
+                opsPerSecond = 0.0,
+                isValid = false,
+                metricsJson = "{}"
+            )
+        }
     }
     
-    /**
-     * Extracts a value from JSON string by key (simplified implementation)
-     */
-    private fun extractValue(json: String, key: String): String? {
-        // First try to match quoted values
-        var pattern = "\"$key\"\\s*:\\s*\"([^\"]*(?:\\.[^\"]*)*)\"".toRegex()
-        var matchResult = pattern.find(json)
-        if (matchResult != null) {
-            return matchResult.groupValues[1]
-        }
-        
-        // Then try to match unquoted numeric values
-        pattern = "\"$key\"\\s*:\\s*([0-9]+(?:\\.[0-9]+)?)".toRegex()
-        matchResult = pattern.find(json)
-        if (matchResult != null) {
-            return matchResult.groupValues[1]
-        }
-        
-        // Then try to match unquoted boolean values
-        pattern = "\"$key\"\\s*:\\s*(true|false)".toRegex()
-        matchResult = pattern.find(json)
-        if (matchResult != null) {
-            return matchResult.groupValues[1]
-        }
-        
-        return null
-    }
+
     
     /**
      * Simulates a benchmark result for fallback purposes
