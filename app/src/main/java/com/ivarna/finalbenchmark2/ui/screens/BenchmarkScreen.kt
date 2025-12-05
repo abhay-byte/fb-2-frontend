@@ -109,7 +109,9 @@ fun BenchmarkScreen(
             color = MaterialTheme.colorScheme.background
         ) {
             Column(
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 32.dp)  // Add top padding to prevent content from touching status bar
             ) {
                 // Header
                 Text(

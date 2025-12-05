@@ -36,7 +36,9 @@ sealed class BenchmarkState {
     data class Error(val message: String) : BenchmarkState()
 }
 
-class BenchmarkViewModel : ViewModel() {
+class BenchmarkViewModel(
+    private val historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null
+) : ViewModel() {
     private val _benchmarkState = MutableStateFlow<BenchmarkState>(BenchmarkState.Idle)
     val benchmarkState: StateFlow<BenchmarkState> = _benchmarkState
     
@@ -174,9 +176,57 @@ class BenchmarkViewModel : ViewModel() {
                 
                 _benchmarkState.value = BenchmarkState.Completed(benchmarkResults)
                 
+                // Save the benchmark results to the database
+                if (historyRepository != null) {
+                    saveCpuBenchmarkResult(benchmarkResults)
+                }
+                
             } catch (e: Exception) {
                 Log.e("BenchmarkViewModel", "Error during benchmark execution", e)
                 _benchmarkState.value = BenchmarkState.Error(e.message ?: "Unknown error occurred")
+            }
+        }
+    }
+    
+    fun saveCpuBenchmarkResult(results: BenchmarkResults) {
+        if (historyRepository == null) {
+            Log.w("BenchmarkViewModel", "HistoryRepository is null, cannot save results")
+            return
+        }
+        
+        viewModelScope.launch {
+            try {
+                // Create the main benchmark result entity
+                val benchmarkResultEntity = com.ivarna.finalbenchmark2.data.database.entities.BenchmarkResultEntity(
+                    type = "CPU",  // Set the type as CPU
+                    totalScore = results.finalWeightedScore,
+                    timestamp = System.currentTimeMillis(),
+                    deviceModel = android.os.Build.MODEL,
+                    singleCoreScore = results.singleCoreScore,
+                    multiCoreScore = results.multiCoreScore
+                )
+                
+                // Create the CPU test detail entity (currently empty, but could store detailed scores later)
+                val cpuTestDetailEntity = com.ivarna.finalbenchmark2.data.database.entities.CpuTestDetailEntity(
+                    resultId = 0, // Will be set by the repository function
+                    primeNumberScore = 0.0,
+                    fibonacciScore = 0.0,
+                    matrixMultiplicationScore = 0.0,
+                    hashComputingScore = 0.0,
+                    stringSortingScore = 0.0,
+                    rayTracingScore = 0.0,
+                    compressionScore = 0.0,
+                    monteCarloScore = 0.0,
+                    jsonParsingScore = 0.0,
+                    nQueensScore = 0.0
+                )
+                
+                // Save the benchmark result and details to the database
+                historyRepository.saveCpuBenchmark(benchmarkResultEntity, cpuTestDetailEntity)
+                
+                Log.d("BenchmarkViewModel", "Successfully saved CPU benchmark result to database")
+            } catch (e: Exception) {
+                Log.e("BenchmarkViewModel", "Error saving benchmark result to database: ${e.message}", e)
             }
         }
     }

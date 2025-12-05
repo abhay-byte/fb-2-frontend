@@ -100,7 +100,8 @@ fun ResultScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState()) // Make the entire screen scrollable
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .padding(top = 16.dp), // Add top padding to prevent content from touching status bar
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Header

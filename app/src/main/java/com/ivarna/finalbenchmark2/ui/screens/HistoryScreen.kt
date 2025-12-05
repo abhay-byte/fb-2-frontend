@@ -37,7 +37,7 @@ fun HistoryScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(top = 56.dp)  // Add top padding to account for status bar area
+                    .padding(top = 32.dp)  // Add top padding to prevent content from touching status bar
             ) {
                 // Header
                 Text(
