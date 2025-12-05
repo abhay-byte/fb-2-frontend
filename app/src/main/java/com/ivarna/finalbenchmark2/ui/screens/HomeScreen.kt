@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -106,12 +107,15 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top // Changed to Top for better scrolling flow
             ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                
                 // App logo
+                val isLightTheme = MaterialTheme.colorScheme.background.luminance() > 0.5f
                 Box(
                     modifier = Modifier
                         .size(140.dp) // Slightly smaller for better layout
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surface)
+                        .background(if (isLightTheme) MaterialTheme.colorScheme.surface else Color.Transparent)
                         .padding(16.dp)
                         .padding(bottom = 8.dp)
                 ) {
