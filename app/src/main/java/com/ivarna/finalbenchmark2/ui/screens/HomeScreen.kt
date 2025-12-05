@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ivarna.finalbenchmark2.R
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
+import com.ivarna.finalbenchmark2.ui.theme.LocalThemeMode
+import com.ivarna.finalbenchmark2.ui.theme.ThemeMode
 import com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils
 import com.ivarna.finalbenchmark2.utils.PowerUtils
 import com.ivarna.finalbenchmark2.utils.TemperatureUtils
@@ -110,12 +112,23 @@ fun HomeScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 
                 // App logo
+                val currentTheme by LocalThemeMode.current
                 val isLightTheme = MaterialTheme.colorScheme.background.luminance() > 0.5f
+                val logoBackgroundColor = when (currentTheme) {
+                    ThemeMode.SKY_BREEZE, ThemeMode.LAVENDER_DREAM -> {
+                        // Use a darker background for these specific light themes
+                        MaterialTheme.colorScheme.surface
+                    }
+                    else -> {
+                        if (isLightTheme) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent
+                    }
+                }
+                
                 Box(
                     modifier = Modifier
                         .size(140.dp) // Slightly smaller for better layout
                         .clip(CircleShape)
-                        .background(if (isLightTheme) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                        .background(logoBackgroundColor)
                         .padding(16.dp)
                         .padding(bottom = 8.dp)
                 ) {
