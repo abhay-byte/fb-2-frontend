@@ -257,7 +257,16 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
                         InfoRow("GPU Name", gpuInfo.basicInfo.name)
                         InfoRow("GPU Vendor", gpuInfo.basicInfo.vendor)
                         InfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
-                        InfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion ?: "Not Supported")
+                        // Display more detailed Vulkan info if available
+                        if (gpuInfo.vulkanInfo != null && gpuInfo.vulkanInfo.supported) {
+                            val vulkanInfo = gpuInfo.vulkanInfo
+                            val vulkanVersion = vulkanInfo.apiVersion ?: "Supported"
+                            InfoRow("Vulkan", vulkanVersion)
+                        } else if (gpuInfo.basicInfo.vulkanVersion != null) {
+                            InfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion)
+                        } else {
+                            InfoRow("Vulkan", "Not Supported")
+                        }
                     }
                     is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
                         InfoRow("GPU Status", "Error loading GPU info")
