@@ -6,10 +6,10 @@
 use cpu_benchmark::{types::{BenchmarkConfig, DeviceTier, WorkloadParams}, utils};
 use std::time::Instant;
 
-// Normalization factor to scale the final score to the target range (~10,00)
-// After rebalancing individual scores to be in similar ranges (1,000-20,000),
-// this factor needs to be adjusted to maintain ~10,000 on reference device
-const NORMALIZATION_FACTOR: f64 = 0.1; // Adjusted for rebalanced scoring system
+// Normalization factor to scale the final score to the target range (~2000)
+// After rebalancing individual scores to be in similar ranges (~70 points per test),
+// we no longer need a heavy normalization factor
+const NORMALIZATION_FACTOR: f64 = 1.0; // Set to 1.0 for naturally balanced scoring system
 
 fn main() {
     println!("========================================");
@@ -86,7 +86,8 @@ fn run_warmup(params: &WorkloadParams) {
 /// Scoring Philosophy:
 /// To ensure all benchmarks contribute meaningfully to the final score,
 /// each test has its own scaling factor to normalize results to a similar range.
-/// The goal is to have each test produce scores in the 1,000-20,000 range.
+/// The goal is to have each test produce scores of approximately 70 points,
+/// leading to a final combined score naturally under 2000 for mid-range devices.
 ///
 /// Scaling factors are determined based on typical performance ranges for each test:
 /// - Tests that naturally produce high ops/sec get smaller scaling factors
@@ -97,79 +98,80 @@ fn calculate_individual_scores(results: &[cpu_benchmark::types::BenchmarkResult]
         .iter()
         .map(|result| {
             // Per-test scaling factors to normalize all scores to similar ranges
+            // Updated to produce approximately 70 points per test for a typical mid-range device (e.g., Snapdragon 845)
             let score = match result.name.as_str() {
                 // Single-core benchmarks
                 "Single-Core Prime Generation" => {
-                    // Prime generation typically produces very high ops/sec, scale down
-                    result.ops_per_second * 0.000001 // Target: ~10,000
+                    // Prime generation typically produces very high ops/sec, scale down significantly
+                    result.ops_per_second * 0.00000001
                 },
                 "Single-Core Fibonacci Recursive" => {
-                    // Fibonacci recursive is very slow, scale up significantly
-                    result.ops_per_second * 10.0    // Target: ~10,000
+                    // Fibonacci recursive is very slow, scale up but conservatively
+                    result.ops_per_second * 0.00012
                 },
                 "Single-Core Matrix Multiplication" => {
-                    // Matrix multiplication produces high ops/sec, scale down
-                    result.ops_per_second * 0.00001   // Target: ~10,000
+                    // Matrix multiplication produces high ops/sec, scale down significantly
+                    result.ops_per_second * 0.000000025
                 },
                 "Single-Core Hash Computing" => {
-                    // Hash computing throughput in bytes/sec, scale appropriately
-                    result.ops_per_second * 0.00001 // Target: ~10,000
+                    // Hash computing throughput in bytes/sec, scale down significantly
+                    result.ops_per_second * 0.00000001
                 },
                 "Single-Core String Sorting" => {
                     // String sorting produces moderate ops/sec
-                    result.ops_per_second * 0.001     // Target: ~10,000
+                    result.ops_per_second * 0.00000015
                 },
                 "Single-Core Ray Tracing" => {
                     // Ray tracing produces moderate ops/sec
-                    result.ops_per_second * 0.0001      // Target: ~10,000
+                    result.ops_per_second * 0.0000006
                 },
                 "Single-Core Compression" => {
-                    // Compression throughput, scale appropriately
-                    result.ops_per_second * 0.0001 // Target: ~10,000
+                    // Compression throughput, scale down significantly
+                    result.ops_per_second * 0.00000007
                 },
                 "Single-Core Monte Carlo π" => {
                     // Monte Carlo samples per second
-                    result.ops_per_second * 0.001   // Target: ~10,000
+                    result.ops_per_second * 0.0000007
                 },
                 "Single-Core JSON Parsing" => {
                     // JSON parsing elements per second
-                    result.ops_per_second * 0.0001      // Target: ~10,000
+                    result.ops_per_second * 0.0000004
                 },
                 "Single-Core N-Queens" => {
-                    // N-Queens solutions per second, typically low - but need to limit extreme values
-                    result.ops_per_second * 0.01
+                    // N-Queens solutions per second
+                    result.ops_per_second * 0.0007
                 },
                 
-                // Multi-core benchmarks
+                // Multi-Core benchmarks - Apply same factors as above to corresponding Multi-Core tests
                 "Multi-Core Prime Generation" => {
-                    result.ops_per_second * 0.00001   // Target: ~10,000
+                    result.ops_per_second * 0.00000001
                 },
                 "Multi-Core Fibonacci Memoized" => {
-                    result.ops_per_second * 0.1    // Target: ~10,000
+                    result.ops_per_second * 0.00012
                 },
                 "Multi-Core Matrix Multiplication" => {
-                    result.ops_per_second * 0.00001   // Target: ~10,000
+                    result.ops_per_second * 0.000000025
                 },
                 "Multi-Core Hash Computing" => {
-                    result.ops_per_second * 0.0001 // Target: ~10,000
+                    result.ops_per_second * 0.00000001
                 },
                 "Multi-Core String Sorting" => {
-                    result.ops_per_second * 0.001     // Target: ~10,000
+                    result.ops_per_second * 0.00000015
                 },
                 "Multi-Core Ray Tracing" => {
-                    result.ops_per_second * 0.0001      // Target: ~10,000
+                    result.ops_per_second * 0.0000006
                 },
                 "Multi-Core Compression" => {
-                    result.ops_per_second * 0.0001  // Target: ~10,000
+                    result.ops_per_second * 0.00000007
                 },
                 "Multi-Core Monte Carlo π" => {
-                    result.ops_per_second * 0.001   // Target: ~10,000
+                    result.ops_per_second * 0.0000007
                 },
                 "Multi-Core JSON Parsing" => {
-                    result.ops_per_second * 1.0    // Target: ~10,000
+                    result.ops_per_second * 0.0000004
                 },
                 "Multi-Core N-Queens" => {
-                    result.ops_per_second * 0.01      // Target: ~10,000
+                    result.ops_per_second * 0.00007
                 },
                 
                 // Default case for any new benchmarks
@@ -426,10 +428,10 @@ fn display_results(
 }
 
 /// Calculate final CPU score based on all benchmark results
-/// 
-/// This function now works with already-balanced individual scores from calculate_individual_scores.
-/// Since individual scores are normalized to similar ranges, we can now simply sum them up
-/// and apply weights without additional per-test normalization.
+///
+/// This function works with balanced individual scores from calculate_individual_scores.
+/// Individual scores are now designed to produce approximately 70 points per test,
+/// leading to a natural final score under 2000 for mid-range devices without heavy normalization.
 fn calculate_cpu_score(
     single_core_results: &[cpu_benchmark::types::BenchmarkResult],
     multi_core_results: &[cpu_benchmark::types::BenchmarkResult]
@@ -458,7 +460,8 @@ fn calculate_cpu_score(
     // Calculate final weighted score
     let weighted_score = (single_core_score * single_core_weight) + (multi_core_score * multi_core_weight);
     
-    // Apply normalization factor to bring score to target range (~10,000)
+    // Apply normalization factor to bring score to target range (~2000)
+    // With NORMALIZATION_FACTOR now at 1.0, the score naturally falls in the desired range
     weighted_score * NORMALIZATION_FACTOR
 }
 
@@ -473,15 +476,15 @@ fn display_cpu_score(normalized_score: f64) {
     println!("Raw Score (before normalization): {:.2}", raw_score);
     
     // Determine rating based on normalized score
-    let rating = if normalized_score >= 15000.0 {
+    let rating = if normalized_score >= 1800.0 {
         "★★★ (Exceptional Performance)"
-    } else if normalized_score >= 10000.0 {
+    } else if normalized_score >= 1500.0 {
         "★★★★☆ (High Performance)"
-    } else if normalized_score >= 600.0 {
+    } else if normalized_score >= 1000.0 {
         "★★★☆☆ (Good Performance)"
-    } else if normalized_score >= 30.0 {
+    } else if normalized_score >= 600.0 {
         "★★☆☆☆ (Moderate Performance)"
-    } else if normalized_score >= 100.0 {
+    } else if normalized_score >= 300.0 {
         "★☆☆☆ (Basic Performance)"
     } else {
         "☆☆☆ (Low Performance)"
