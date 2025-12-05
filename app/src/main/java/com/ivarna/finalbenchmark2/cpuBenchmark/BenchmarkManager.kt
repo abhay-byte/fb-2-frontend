@@ -40,14 +40,8 @@ class BenchmarkManager {
         isRunning = true
         
         try {
-            // Configuration for the benchmark - use preset or dynamic device tier detection
-            val deviceTier = when (preset) {
-                "Auto" -> detectDeviceTier()
-                "Slow" -> "Slow"
-                "Mid" -> "Mid"
-                "Flagship" -> "Flagship"
-                else -> detectDeviceTier()
-            }
+            // Configuration for the benchmark - force Flagship mode
+            val deviceTier = "Flagship"
             Log.d("BenchmarkManager", "Using preset: $preset, resolved device tier: $deviceTier")
             
             val config = BenchmarkConfig(
@@ -285,14 +279,8 @@ class BenchmarkManager {
      * This function maps the function name to the appropriate native call
      */
     fun runNativeBenchmarkFunction(functionName: String, preset: String = "Auto"): BenchmarkResult {
-        // Determine device tier from preset and get appropriate workload parameters
-        val deviceTier = when (preset) {
-            "Auto" -> detectDeviceTier()
-            "Slow" -> "Slow"
-            "Mid" -> "Mid"
-            "Flagship" -> "Flagship"
-            else -> detectDeviceTier()
-        }
+        // Force device tier to always be Flagship
+        val deviceTier = "Flagship"
         val workloadParams = getWorkloadParamsForDeviceTier(deviceTier)
         
         val paramsJson = createParamsJson(workloadParams)

@@ -55,8 +55,6 @@ fun HomeScreen(
     onStartBenchmark: (String) -> Unit,
     onNavigateToSettings: () -> Unit = {}
 ) {
-    var selectedPreset by remember { mutableStateOf("Auto") }
-    val presets = listOf("Auto", "Slow", "Mid", "Flagship")
 
     // --- State Holders for Data ---
     val context = LocalContext.current
@@ -303,58 +301,11 @@ fun HomeScreen(
                 }
                 // =========================================================
 
-                // Preset Selection Card
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Text(
-                            text = "Benchmark Configuration",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        
-                        var expanded by remember { mutableStateOf(false) }
-                        
-                        ExposedDropdownMenuBox(
-                            expanded = expanded,
-                            onExpandedChange = { expanded = !expanded }
-                        ) {
-                            OutlinedTextField(
-                                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                                value = selectedPreset,
-                                onValueChange = { },
-                                readOnly = true,
-                                label = { Text("Performance Preset") },
-                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
-                            )
-                            
-                            ExposedDropdownMenu(
-                                expanded = expanded,
-                                onDismissRequest = { expanded = false }
-                            ) {
-                                presets.forEach { preset ->
-                                    DropdownMenuItem(
-                                        text = { Text(preset) },
-                                        onClick = {
-                                            selectedPreset = preset
-                                            expanded = false
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+
                 
-                // Start Benchmark Button
+                // Start CPU Benchmark Button
                 Button(
-                    onClick = { onStartBenchmark(selectedPreset) },
+                    onClick = { onStartBenchmark("Flagship") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp)
@@ -364,7 +315,7 @@ fun HomeScreen(
                     Icon(painterResource(id = R.drawable.mobile_24), contentDescription = null) // Generic icon
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "START BENCHMARK",
+                        text = "START CPU BENCHMARK",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 1.sp
