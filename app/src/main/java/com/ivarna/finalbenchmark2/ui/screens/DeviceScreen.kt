@@ -36,6 +36,7 @@ import com.ivarna.finalbenchmark2.utils.formatBytes
 import com.ivarna.finalbenchmark2.ui.components.CpuUtilizationGraph
 import com.ivarna.finalbenchmark2.ui.components.GpuUtilizationGraph
 import com.ivarna.finalbenchmark2.ui.components.GpuFrequencyCard
+import com.ivarna.finalbenchmark2.ui.components.MemoryUsageGraph
 import com.ivarna.finalbenchmark2.ui.components.PowerConsumptionGraph
 import com.ivarna.finalbenchmark2.ui.viewmodels.DeviceViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.GpuInfoViewModel
@@ -125,13 +126,13 @@ fun DeviceScreen(viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compo
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .padding(top = 8.dp)  // Add spacing at top of each tab view
+                        .padding(top = 8.dp) // Add spacing at top of each tab view
                 ) {
                     when (selectedTabIndex) {
                         0 -> InfoTab(deviceInfo, viewModel)
                         1 -> CpuTab(deviceInfo, viewModel)
                         2 -> GpuTab(deviceInfo)
-                        3 -> MemoryTab(deviceInfo)
+                        3 -> MemoryTab(deviceInfo, viewModel)
                         4 -> ScreenTab(context)
                         5 -> OsTab(deviceInfo)
                         6 -> HardwareTab(deviceInfo)
@@ -1394,7 +1395,9 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
 }
 
 @Composable
-fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
+fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+    val memoryHistory by viewModel.memoryHistory.collectAsState()
+    
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1412,6 +1415,14 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
                 .fillMaxWidth()
                 .padding(bottom = 16.dp)
         )
+        
+        // Memory Usage Graph
+        MemoryUsageGraph(
+            dataPoints = memoryHistory,
+            modifier = Modifier.fillMaxWidth()
+        )
+        
+        Spacer(modifier = Modifier.height(16.dp))
         
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -1,9 +1,11 @@
 package com.ivarna.finalbenchmark2.ui.viewmodels
 
+import android.app.ActivityManager
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivarna.finalbenchmark2.ui.components.CpuDataPoint
+import com.ivarna.finalbenchmark2.ui.components.MemoryDataPoint
 import com.ivarna.finalbenchmark2.ui.components.PowerDataPoint
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
 import com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils
@@ -28,6 +30,13 @@ class DeviceViewModel : ViewModel() {
     
     private val _currentPowerConsumption = MutableStateFlow(0f)
     val currentPowerConsumption: StateFlow<Float> = _currentPowerConsumption.asStateFlow()
+    
+    // NEW: Memory monitoring
+    private val _memoryHistory = MutableStateFlow<List<MemoryDataPoint>>(emptyList())
+    val memoryHistory: StateFlow<List<MemoryDataPoint>> = _memoryHistory.asStateFlow()
+    
+    private val _currentMemoryUtilization = MutableStateFlow(0f)
+    val currentMemoryUtilization: StateFlow<Float> = _currentMemoryUtilization.asStateFlow()
     
     private val _deviceInfo = MutableStateFlow<com.ivarna.finalbenchmark2.utils.DeviceInfo>(com.ivarna.finalbenchmark2.utils.DeviceInfo(
         deviceModel = "",
@@ -66,6 +75,7 @@ class DeviceViewModel : ViewModel() {
             isMonitoringStarted = true
             startCpuMonitoring()
             startPowerMonitoring() // NEW: Start power monitoring
+            startMemoryMonitoring(context) // NEW: Start memory monitoring
         }
     }
     
@@ -134,6 +144,53 @@ class DeviceViewModel : ViewModel() {
                 delay(1000) // Update every 1000ms (1 second) as requested
             }
         }
+    }
+    
+    // NEW: Start memory monitoring
+    private fun startMemoryMonitoring(context: Context) {
+        viewModelScope.launch {
+            while (true) {
+                try {
+                    // Get current memory utilization
+                    val memoryUtil = getMemoryUsage(context)
+                    _currentMemoryUtilization.value = memoryUtil.toFloat()
+                    
+                    // Add to history
+                    val now = System.currentTimeMillis()
+                    val newHistory = _memoryHistory.value.toMutableList()
+                    newHistory.add(MemoryDataPoint(now, memoryUtil.toFloat()))
+                    
+                    // Remove data points older than 30 seconds
+                    val cutoffTime = now - 30_000L
+                    newHistory.removeAll { it.timestamp < cutoffTime }
+                    
+                    // Limit total points to prevent memory issues
+                    if (newHistory.size > 60) {
+                        newHistory.removeAt(0)
+                    }
+                    
+                    _memoryHistory.value = newHistory
+                } catch (e: Exception) {
+                    // Handle any errors in memory monitoring gracefully
+                    e.printStackTrace()
+                }
+                
+                delay(1000) // Update every 1000ms (1 second)
+            }
+        }
+    }
+    
+    private fun getMemoryUsage(context: Context): Int {
+        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val memoryInfo = ActivityManager.MemoryInfo()
+        activityManager.getMemoryInfo(memoryInfo)
+
+        val total = memoryInfo.totalMem
+        val available = memoryInfo.availMem
+        val used = total - available
+        val percent = ((used.toDouble() / total.toDouble()) * 100).toInt()
+
+        return percent.coerceIn(0, 100)
     }
     
     fun updateDeviceInfo(context: Context) {
