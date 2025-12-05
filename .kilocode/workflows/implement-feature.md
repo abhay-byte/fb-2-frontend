@@ -53,7 +53,7 @@ This document outlines the detailed workflow for implementing features in the pr
 ### 8. Commit Phase
 - Create appropriate commit message describing changes
 - Commit changes to the repository
-- Push changes if needed
+- Push changes 
 
 ## Quality Standards
 

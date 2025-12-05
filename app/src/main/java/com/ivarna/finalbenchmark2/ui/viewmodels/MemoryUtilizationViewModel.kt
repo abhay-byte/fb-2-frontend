@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivarna.finalbenchmark2.ui.components.MemoryDataPoint
 import com.ivarna.finalbenchmark2.ui.components.MemoryStats
+import com.ivarna.finalbenchmark2.ui.components.SystemInfoSummary
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,12 +21,73 @@ class MemoryUtilizationViewModel : ViewModel() {
     private val _currentMemoryStats = MutableStateFlow<MemoryStats?>(null)
     val currentMemoryStats: StateFlow<MemoryStats?> = _currentMemoryStats.asStateFlow()
     
+    private val _systemInfoSummary = MutableStateFlow(SystemInfoSummary())
+    val systemInfoSummary: StateFlow<SystemInfoSummary> = _systemInfoSummary.asStateFlow()
+    
     private var isMonitoringStarted = false
     
     fun initialize(context: Context) {
         if (!isMonitoringStarted) {
             isMonitoringStarted = true
             startMemoryMonitoring(context)
+        }
+    }
+    
+    fun fetchSystemInfo(context: Context) {
+        viewModelScope.launch {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+            val pm = context.packageManager
+            
+            // 1. Get Running Processes
+            val runningProcesses = am.runningAppProcesses ?: emptyList()
+            val pids = runningProcesses.map { it.pid }.toIntArray()
+            
+            // Get memory info for each process
+            val memoryInfos = if (pids.isNotEmpty()) {
+                am.getProcessMemoryInfo(pids)
+            } else {
+                emptyArray()
+            }
+            
+            val processList = runningProcesses.mapIndexed { index, process ->
+                val memInfo = if (index < memoryInfos.size) memoryInfos[index] else null
+                val ramMb = if (memInfo != null) (memInfo.totalPss / 1024) else 0 // Total PSS is in KB, convert to MB
+                
+                com.ivarna.finalbenchmark2.ui.components.ProcessItem(
+                    name = process.processName,
+                    pid = process.pid,
+                    ramUsage = ramMb,
+                    state = convertImportance(process.importance),
+                    packageName = process.processName
+                )
+            }
+
+            // 2. Get Totals (Requires QUERY_ALL_PACKAGES)
+            var totalPackages = 0
+            var totalServices = 0
+            try {
+                val allPackages = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    pm.getInstalledPackages(android.content.pm.PackageManager.PackageInfoFlags.of(android.content.pm.PackageManager.GET_SERVICES.toLong()))
+                } else {
+                    @Suppress("DEPRECATION")
+                    pm.getInstalledPackages(android.content.pm.PackageManager.GET_SERVICES)
+                }
+                
+                totalPackages = allPackages.size
+                totalServices = allPackages.sumOf { it.services?.size ?: 0 }
+            } catch (e: Exception) {
+                // Handle permission issues gracefully
+                e.printStackTrace()
+            }
+            
+            val summary = SystemInfoSummary(
+                runningProcesses = runningProcesses.size,
+                totalPackages = totalPackages,
+                totalServices = totalServices,
+                processes = processList.sortedByDescending { it.ramUsage }
+            )
+            
+            _systemInfoSummary.value = summary
         }
     }
     
@@ -73,5 +135,18 @@ class MemoryUtilizationViewModel : ViewModel() {
         val percent = ((used.toDouble() / total.toDouble()) * 100).toInt()
 
         return MemoryStats(used, total, percent.coerceIn(0, 100))
+    }
+    
+    private fun convertImportance(importance: Int): String {
+        return when (importance) {
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND,
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_VISIBLE,
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_PERCEPTIBLE -> "Foreground"
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_SERVICE,
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_TOP_SLEEPING -> "Service"
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_BACKGROUND,
+            android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED -> "Background"
+            else -> "Unknown"
+        }
     }
 }

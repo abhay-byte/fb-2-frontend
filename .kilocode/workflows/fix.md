@@ -33,8 +33,11 @@ Type `/fix` in the chat to invoke this workflow.
 - Check for potential side effects or edge cases
 - Recommend additional tests if needed BUILD AND RUN APK
 
-### Step 6: Summary
-- Summarize what was fixed
-- Explain what changed and why
-- Provide any follow-up recommendations or preventive measures
+### Step 6: Commit all changes and push to github
+
+```bash
+git add .
+git commit -m "Fix: [brief description of the fix]"
+git push origin main
+```
 

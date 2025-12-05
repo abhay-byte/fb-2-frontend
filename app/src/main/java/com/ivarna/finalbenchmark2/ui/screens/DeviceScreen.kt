@@ -33,11 +33,16 @@ import com.ivarna.finalbenchmark2.utils.CpuNativeBridge
 import com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
 import com.ivarna.finalbenchmark2.utils.formatBytes
+import kotlin.math.roundToInt
 import com.ivarna.finalbenchmark2.ui.components.CpuUtilizationGraph
 import com.ivarna.finalbenchmark2.ui.components.GpuUtilizationGraph
 import com.ivarna.finalbenchmark2.ui.components.GpuFrequencyCard
 import com.ivarna.finalbenchmark2.ui.components.MemoryUsageGraph
 import com.ivarna.finalbenchmark2.ui.components.PowerConsumptionGraph
+import com.ivarna.finalbenchmark2.ui.components.ProcessItem
+import com.ivarna.finalbenchmark2.ui.components.ProcessTable
+import com.ivarna.finalbenchmark2.ui.components.SummaryCard
+import com.ivarna.finalbenchmark2.ui.components.SystemInfoSummary
 import com.ivarna.finalbenchmark2.ui.viewmodels.DeviceViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.GpuInfoViewModel
 
@@ -57,6 +62,14 @@ fun calculateAspectRatio(width: Int, height: Int): String {
 
 fun gcd(a: Int, b: Int): Int {
     return if (b == 0) a else gcd(b, a % b)
+}
+
+/**
+ * Format bytes to megabytes
+ */
+fun formatBytesInMB(bytes: Long): String {
+    val mb = bytes.toDouble() / (1024.0 * 1024.0)
+    return "${mb.roundToInt()} MB"
 }
 
 
@@ -1336,13 +1349,13 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
             // Memory items
             item {
                 com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytesInMB(deviceInfo.totalRam)),
                     isLastItem = false
                 )
             }
             item {
                 com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytes(deviceInfo.availableRam)),
+                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytesInMB(deviceInfo.availableRam)),
                     isLastItem = false
                 )
             }
@@ -1397,89 +1410,201 @@ fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
 @Composable
 fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
     val memoryHistory by viewModel.memoryHistory.collectAsState()
+    val systemInfoSummary by viewModel.systemInfoSummary.collectAsState()
+    val context = LocalContext.current
     
-    Column(
+    // Fetch system process information when the tab is loaded
+    LaunchedEffect(Unit) {
+        viewModel.fetchSystemInfo(context)
+    }
+    
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Memory Information",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
+        // Title
+        item {
+            Text(
+                text = "Memory Information",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                textAlign = TextAlign.Start,
+                modifier = Modifier
+                    .fillMaxWidth()
+            )
+        }
         
         // Memory Usage Graph
-        MemoryUsageGraph(
-            dataPoints = memoryHistory,
-            modifier = Modifier.fillMaxWidth()
-        )
+        item {
+            MemoryUsageGraph(
+                dataPoints = memoryHistory,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         
-        Spacer(modifier = Modifier.height(16.dp))
+        // System Summary Card
+        item {
+            SummaryCard(
+                summary = systemInfoSummary,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            // RAM Information Section Header
-            item {
-                Text(
-                    text = "RAM Information",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            
-            // RAM items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytes(deviceInfo.availableRam)),
-                    isLastItem = false
-                )
-            }
-            
-            // Storage Information Section Header
-            item {
-                Text(
-                    text = "Storage Information",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
+        // RAM Information Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
                     modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "RAM Information",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    // RAM items
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytesInMB(deviceInfo.totalRam)),
+                        isLastItem = false
+                    )
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytesInMB(deviceInfo.availableRam)),
+                        isLastItem = true
+                    )
+                }
+            }
+        }
+        
+        // Storage Information Card
+        item {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        text = "Storage Information",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    
+                    // Storage items
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
+                        isLastItem = false
+                    )
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Free Storage", formatBytes(deviceInfo.freeStorage)),
+                        isLastItem = true
+                    )
+                }
+            }
+        }
+        
+        // Process Table Header
+        item {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "App",
+                    modifier = Modifier.weight(2f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "PID",
+                    modifier = Modifier.weight(0.8f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "State",
+                    modifier = Modifier.weight(1f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "RAM (MB)",
+                    modifier = Modifier.weight(0.8f),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.End,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+        
+        // Process Items
+        items(systemInfoSummary.processes) { process ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = process.name,
+                    modifier = Modifier.weight(2f),
+                    fontSize = 14.sp,
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = process.pid.toString(),
+                    modifier = Modifier.weight(0.8f),
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = process.state,
+                    modifier = Modifier.weight(1f),
+                    fontSize = 14.sp,
+                    color = when (process.state) {
+                        "Foreground" -> Color.Green
+                        "Service" -> Color.Blue
+                        "Background" -> Color.Gray
+                        else -> Color.Red
+                    }
+                )
+                Text(
+                    text = "${process.ramUsage} MB",
+                    modifier = Modifier.weight(0.8f),
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.End,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
             
-            // Storage items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Free Storage", formatBytes(deviceInfo.freeStorage)),
-                    isLastItem = true
-                )
-            }
+            HorizontalDivider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+            )
         }
     }
 }
