@@ -39,7 +39,6 @@ fun SensorsTabContent(sensorViewModel: SensorViewModel = viewModel()) {
         }
     }
     
-    BodySensorsPermissionRequest {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -110,11 +109,24 @@ fun SensorsTabContent(sensorViewModel: SensorViewModel = viewModel()) {
                 }
             }
         }
-    }
 }
 
 @Composable
 fun SensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiState) {
+    // Check if this is a heart rate sensor that requires permission
+    if (sensorState.type == android.hardware.Sensor.TYPE_HEART_RATE) {
+        // Show permission request if needed
+        BodySensorsPermissionRequest {
+            HeartRateSensorCard(sensorState)
+        }
+    } else {
+        // Standard sensors don't need permission - show directly
+        StandardSensorCard(sensorState)
+    }
+}
+
+@Composable
+fun StandardSensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -222,6 +234,161 @@ fun SensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiSta
                         text = "Waiting for sensor data...",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape = MaterialTheme.shapes.small
+                            )
+                            .padding(8.dp)
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "This sensor is not available on this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun HeartRateSensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiState) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = sensorState.name,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                
+                // Status Badge - show permission status for heart rate sensor
+                if (sensorState.isSupported) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(id = com.ivarna.finalbenchmark2.R.drawable.check_24),
+                            contentDescription = "Supported",
+                            modifier = Modifier
+                                .size(18.dp)
+                        )
+                        Text(
+                            text = "Supported",
+                            fontSize = 12.sp,
+                            color = Color(0xFF4CAF50),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                } else {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        androidx.compose.foundation.Image(
+                            painter = androidx.compose.ui.res.painterResource(id = com.ivarna.finalbenchmark2.R.drawable.close_24),
+                            contentDescription = "Not Supported",
+                            modifier = Modifier
+                                .size(18.dp)
+                        )
+                        Text(
+                            text = "Not Available",
+                            fontSize = 12.sp,
+                            color = Color(0xFFEF5350),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (sensorState.isSupported) {
+                // Vendor and Power info
+                Text(
+                    text = "Vendor: ${sensorState.vendor}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Text(
+                    text = "Power: ${sensorState.power} mA",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                // Check permission for heart rate data
+                val context = LocalContext.current
+                val hasPermission = android.content.pm.PackageManager.PERMISSION_GRANTED ==
+                    androidx.core.content.ContextCompat.checkSelfPermission(
+                        context,
+                        android.Manifest.permission.BODY_SENSORS
+                    )
+                
+                if (hasPermission) {
+                    // Show live heart rate data if permission granted
+                    if (sensorState.values.isNotEmpty()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Live Data:",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = SensorUtils.formatSensorValues(sensorState.type, sensorState.values),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(8.dp)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Waiting for sensor data...",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(
+                                    color = MaterialTheme.colorScheme.surface,
+                                    shape = MaterialTheme.shapes.small
+                                )
+                                .padding(8.dp)
+                        )
+                    }
+                } else {
+                    // Show permission required message if no permission
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Permission Required for Data",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
