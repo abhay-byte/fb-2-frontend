@@ -2,6 +2,7 @@ package com.ivarna.finalbenchmark2.ui.viewmodels
 
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -51,7 +52,25 @@ class HardwareViewModel(application: Application) : AndroidViewModel(application
             try {
                 // Load all hardware specs in parallel using async
                 val batterySpecs = _hardwareUtils.getBatterySpecs()
-                val networkSpecs = _hardwareUtils.getNetworkSpecs()
+                
+                // Handle network specs separately to prevent entire load from failing
+                val networkSpecs = try {
+                    _hardwareUtils.getNetworkSpecs()
+                } catch (e: Exception) {
+                    Log.e("HardwareViewModel", "Error getting network specs: ${e.message}")
+                    // Return a default NetworkSpec with error information
+                    NetworkSpec(
+                        networkType = "Unknown (Error: ${e.message})",
+                        signalStrength = "Unknown",
+                        wifiSpeed = "Unknown",
+                        wifiFrequency = "Unknown",
+                        wifiStandard = "Unknown",
+                        bluetoothFeatures = emptyList(),
+                        nfcSupported = false,
+                        irBlasterSupported = false
+                    )
+                }
+                
                 val cameraSpecs = _hardwareUtils.getCameraSpecs()
                 val memoryStorageSpecs = _hardwareUtils.getMemoryStorageSpecs()
                 val audioMediaSpecs = _hardwareUtils.getAudioMediaSpecs()

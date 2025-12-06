@@ -136,9 +136,33 @@ class HardwareUtils(private val context: Context) {
         )
     }
 
-    fun getNetworkSpecs(): NetworkSpec {
-        // Network type
-        val networkType = when (telephonyManager.dataNetworkType) {
+    private fun getNetworkTypeSafely(): String {
+        return try {
+            // Check for permission explicitly
+            if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) != PackageManager.PERMISSION_GRANTED) {
+                return "Permission Missing" // Or just return "Unknown"
+            }
+
+            // Safe call
+            val networkType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                 telephonyManager.dataNetworkType
+            } else {
+                 telephonyManager.networkType
+            }
+            
+            return mapNetworkTypeToString(networkType) // Helper function to convert int to "4G", "5G" etc.
+
+        } catch (e: SecurityException) {
+            Log.e("HardwareUtils", "Permission denied for network type: ${e.message}")
+            return "Unknown (Permission Denied)"
+        } catch (e: Exception) {
+            Log.e("HardwareUtils", "Error getting network type: ${e.message}")
+            return "Unknown"
+        }
+    }
+    
+    private fun mapNetworkTypeToString(networkType: Int): String {
+        return when (networkType) {
             TelephonyManager.NETWORK_TYPE_GPRS,
             TelephonyManager.NETWORK_TYPE_EDGE,
             TelephonyManager.NETWORK_TYPE_CDMA,
@@ -158,7 +182,12 @@ class HardwareUtils(private val context: Context) {
             TelephonyManager.NETWORK_TYPE_NR -> "5G"
             else -> "Unknown"
         }
-
+    }
+    
+    fun getNetworkSpecs(): NetworkSpec {
+        // Safe network type retrieval with proper exception handling
+        val networkType = getNetworkTypeSafely()
+        
         // Signal strength
         val signalStrength = try {
             // For older versions, use deprecated method

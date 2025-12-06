@@ -92,13 +92,6 @@ fun HardwareTabContent(viewModel: HardwareViewModel) {
         ) {
             CircularProgressIndicator()
         }
-    } else if (error != null) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = androidx.compose.ui.Alignment.Center
-        ) {
-            Text(text = "Error: $error")
-        }
     } else {
         LazyColumn(
             modifier = Modifier
