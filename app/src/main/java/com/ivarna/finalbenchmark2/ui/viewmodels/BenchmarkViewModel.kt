@@ -198,9 +198,9 @@ class BenchmarkViewModel(
                         currentTestName = name,
                         allTestStates = _uiState.value.allTestStates.mapIndexed { i, state ->
                             when {
-                                i < index -> state // Keep completed
-                                i == index -> state.copy(status = TestStatus.RUNNING)
-                                else -> state // Keep pending
+                                i < index && state.status == TestStatus.COMPLETED -> state // Keep completed tests as completed
+                                i == index -> state.copy(status = TestStatus.RUNNING) // Set current test to running
+                                else -> state // Keep pending tests as pending
                             }
                         }
                     )
@@ -249,10 +249,10 @@ class BenchmarkViewModel(
                         progress = (index + 1).toFloat() / totalBenchmarks.toFloat(),
                         isSingleCoreFinished = isSingleCoreFinished,
                         allTestStates = _uiState.value.allTestStates.mapIndexed { i, state ->
-                            if (i == index) {
-                                state.copy(status = TestStatus.COMPLETED, result = result)
-                            } else {
-                                state
+                            when {
+                                i < index && state.status == TestStatus.COMPLETED -> state // Keep already completed tests as completed
+                                i == index -> state.copy(status = TestStatus.COMPLETED, result = result) // Set current test to completed
+                                else -> state // Keep pending tests as pending
                             }
                         }
                     )
