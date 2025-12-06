@@ -26,7 +26,6 @@ import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.viewmodels.BenchmarkState
 import com.ivarna.finalbenchmark2.ui.viewmodels.BenchmarkViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.TestState
-import com.ivarna.finalbenchmark2.data.repository.HistoryRepository
 import com.ivarna.finalbenchmark2.ui.viewmodels.TestStatus
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,9 +33,22 @@ import com.ivarna.finalbenchmark2.ui.viewmodels.TestStatus
 fun BenchmarkScreen(
     preset: String = "Auto",
     onBenchmarkComplete: (String) -> Unit,
-    historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null,
-    viewModel: BenchmarkViewModel = viewModel(factory = BenchmarkViewModel.Factory)
+    historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null
 ) {
+    val application = androidx.compose.ui.platform.LocalContext.current.applicationContext as android.app.Application
+    
+    val viewModel: BenchmarkViewModel = if (historyRepository != null) {
+        viewModel(
+            key = "BenchmarkViewModelWithHistory",
+            factory = object : androidx.lifecycle.ViewModelProvider.Factory {
+                override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+                    return BenchmarkViewModel(historyRepository = historyRepository, application = application) as T
+                }
+            }
+        )
+    } else {
+        viewModel(factory = BenchmarkViewModel.Factory)
+    }
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
 
@@ -48,13 +60,49 @@ fun BenchmarkScreen(
         }
     }
 
+    // Helper function to determine rating based on normalized score
+    fun determineRating(normalizedScore: Double): String {
+        return when {
+            normalizedScore >= 90000 -> "Excellent"
+            normalizedScore >= 70000 -> "Very Good"
+            normalizedScore >= 50000 -> "Good"
+            normalizedScore >= 30000 -> "Average"
+            normalizedScore >= 10000 -> "Below Average"
+            else -> "Poor"
+        }
+    }
+    
     // Handle completion (Navigation logic)
-    LaunchedEffect(viewModel.benchmarkState.collectAsState().value) {
-        val state = viewModel.benchmarkState.value
-        if (state is BenchmarkState.Completed) {
-            // ... (Your existing JSON serialization logic) ...
-            // Simplified for brevity in this snippet
-            onBenchmarkComplete("{\"completed\": true}")
+    LaunchedEffect(Unit) {
+        viewModel.benchmarkState.collect { state ->
+            when (state) {
+                is BenchmarkState.Completed -> {
+                    val results = state.results
+                    
+                    // Create a map that matches EXACTLY what your Result Screen expects
+                    val summaryData = mapOf(
+                        "single_core_score" to results.singleCoreScore,
+                        "multi_core_score" to results.multiCoreScore,
+                        "final_score" to results.finalWeightedScore,
+                        "normalized_score" to results.normalizedScore,
+                        "rating" to determineRating(results.normalizedScore),
+                        "detailed_results" to results.detailedResults // Gson will serialize this list automatically!
+                    )
+                    
+                    // Safe serialization using Gson
+                    val gson = com.google.gson.Gson()
+                    val summaryJson = gson.toJson(summaryData)
+                    
+                    onBenchmarkComplete(summaryJson)
+                }
+                is BenchmarkState.Error -> {
+                    // Handle error state if needed
+                    onBenchmarkComplete("{\"error\": \"${state.message}\"}")
+                }
+                else -> {
+                    // Do nothing for other states
+                }
+            }
         }
     }
     
@@ -64,184 +112,166 @@ fun BenchmarkScreen(
     }
 
     FinalBenchmark2Theme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            // Main content with Scaffold
-            Scaffold(
-                containerColor = MaterialTheme.colorScheme.background
-                // Removed bottomBar to add spacing manually
-            ) { paddingValues ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(horizontal = 16.dp), // Side padding for main content
-                    horizontalAlignment = Alignment.CenterHorizontally
+        Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
+            // 3. Attach bottom card with no spacing using bottomBar
+            bottomBar = {
+                SystemMonitorDock(stats = uiState.systemStats)
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp), // Side padding for main content
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // 1. Top Spacing
+                Spacer(modifier = Modifier.height(48.dp))
+
+                // --- Header Section ---
+                Text(
+                    text = "Running Benchmarks",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // 2. Circular Indicator with Bold Text in Center
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.size(160.dp)
                 ) {
-                    // 1. Top Spacing
-                    Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-                    Spacer(modifier = Modifier.height(32.dp)) // Additional top spacing for breathing room
-    
-                    // --- Header Section ---
-                    Text(
-                        text = "Running Benchmarks",
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                    // Track (Background circle)
+                    CircularProgressIndicator(
+                        progress = { 1f },
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        strokeWidth = 12.dp,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
                     )
-    
-                    Spacer(modifier = Modifier.height(32.dp))
-    
-                    // 2. Circular Indicator with Bold Text in Center
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.size(160.dp)
-                    ) {
-                        // Track (Background circle)
-                        CircularProgressIndicator(
-                            progress = { 1f },
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                            strokeWidth = 12.dp,
-                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                        )
-                        
-                        // Progress (Foreground circle)
-                        CircularProgressIndicator(
-                            progress = { uiState.progress },
-                            modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.primary,
-                            strokeWidth = 12.dp,
-                            strokeCap = StrokeCap.Round,
-                        )
-    
-                        // Center Text with bold percentage
+                    
+                    // Progress (Foreground circle)
+                    CircularProgressIndicator(
+                        progress = { uiState.progress },
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.primary,
+                        strokeWidth = 12.dp,
+                        strokeCap = StrokeCap.Round,
+                    )
+
+                    // Center Text
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = "${(uiState.progress * 100).toInt()}%",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                            style = MaterialTheme.typography.displaySmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "Completed",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.secondary,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    // Active Test Name Label
-                    Text(
-                        text = uiState.currentTestName.ifEmpty { "Initializing..." },
-                        style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-    
-                    Spacer(modifier = Modifier.height(32.dp))
-    
-                    // 3. Card Container for Benchmark List (Card Table)
-                    Card(
-                        modifier = Modifier
-                            .weight(1f) // Fill remaining vertical space
-                            .fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                        ),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                    ) {
-                        Column(
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Active Test Name Label
+                Text(
+                    text = uiState.currentTestName.ifEmpty { "Initializing..." },
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(32.dp))
+
+                // 4. Proper Card Table for Individual Tests
+                Card(
+                    modifier = Modifier
+                        .weight(1f) // Fill remaining vertical space
+                        .fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                    ),
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column {
+                        // -- Table Header --
+                        Row(
                             modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp) // Internal padding for the card content
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                .padding(vertical = 12.dp, horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // -- Table Header --
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                    .padding(vertical = 12.dp, horizontal = 16.dp)
-                                    .clip(RoundedCornerShape(8.dp)),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Status",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.width(50.dp)
-                                )
-                                Text(
-                                    text = "Benchmark Name",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                Text(
-                                    text = "Time",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    textAlign = TextAlign.End,
-                                    modifier = Modifier.width(60.dp)
-                                )
-                            }
-                            
-                            HorizontalDivider(
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
-                                modifier = Modifier.padding(vertical = 8.dp)
+                            Text(
+                                text = "Status",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.width(50.dp)
                             )
-    
-                            // -- Table Rows --
-                            LazyColumn(
-                                state = listState
-                            ) {
-                                items(uiState.allTestStates, key = { it.name }) { testState ->
-                                    TestTableRow(testState)
-                                    if (testState != uiState.allTestStates.last()) { // Don't add divider after last item
-                                        HorizontalDivider(
-                                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                                            modifier = Modifier.padding(horizontal = 16.dp)
-                                        )
-                                    }
-                                }
+                            Text(
+                                text = "Benchmark Name",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                text = "Time",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.secondary,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.width(60.dp)
+                            )
+                        }
+                        
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                        // -- Table Rows --
+                        LazyColumn(
+                            state = listState,
+                            contentPadding = PaddingValues(bottom = 16.dp)
+                        ) {
+                            items(uiState.allTestStates, key = { it.name }) { testState ->
+                                TestTableRow(testState)
+                                HorizontalDivider(
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                                    modifier = Modifier.padding(horizontal = 16.dp)
+                                )
                             }
                         }
                     }
-                    
-                    // Add spacing above bottom card
-                    Spacer(modifier = Modifier.height(24.dp))
                 }
             }
-            
-            // SystemMonitorDock positioned at the bottom
-            SystemMonitorDock(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .align(Alignment.BottomCenter),
-                stats = uiState.systemStats
-            )
         }
     }
 }
 
-// 4. System Monitor Dock (Attached to Bottom)
+// 3. System Monitor Dock (Attached to Bottom)
 @Composable
-fun SystemMonitorDock(
-    modifier: Modifier = Modifier,
-    stats: SystemStats
-) {
+fun SystemMonitorDock(stats: SystemStats) {
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 0.dp), // Remove horizontal padding to make it span full width
+        modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 8.dp,
         // Round top corners only, square bottom to sit flush
-        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp)
+        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Row(
             modifier = Modifier
-                .padding(top = 24.dp, bottom = 16.dp) // Add proper bottom padding
+                .padding(top = 24.dp, bottom = 48.dp) // Extra bottom padding for navigation bar spacing
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically

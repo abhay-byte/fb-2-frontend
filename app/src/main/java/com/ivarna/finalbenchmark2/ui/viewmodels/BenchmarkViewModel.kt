@@ -142,6 +142,9 @@ class BenchmarkViewModel(
     }
     
     fun startBenchmark(preset: String = "Auto") {
+        // FIX: Reset state immediately to prevent stale navigation
+        _benchmarkState.value = BenchmarkState.Idle
+        
         // Prevent restarting if already running or finished
         if (isBenchmarkRunning) return
         isBenchmarkRunning = true
