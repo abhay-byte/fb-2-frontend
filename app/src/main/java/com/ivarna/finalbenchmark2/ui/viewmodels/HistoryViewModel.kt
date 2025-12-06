@@ -1,7 +1,10 @@
 package com.ivarna.finalbenchmark2.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.ivarna.finalbenchmark2.data.database.AppDatabase
 import com.ivarna.finalbenchmark2.data.database.entities.BenchmarkWithCpuData
 import com.ivarna.finalbenchmark2.data.repository.HistoryRepository
 import com.google.gson.Gson
@@ -23,6 +26,12 @@ data class HistoryUiModel(
     val detailedResults: List<BenchmarkResult> = emptyList()
 )
 
+sealed interface HistoryScreenState {
+    object Loading : HistoryScreenState
+    data class Success(val results: List<HistoryUiModel>) : HistoryScreenState
+    object Empty : HistoryScreenState
+}
+
 enum class HistorySort { DATE_NEWEST, DATE_OLDEST, SCORE_HIGH_TO_LOW, SCORE_LOW_TO_HIGH }
 
 class HistoryViewModel(
@@ -35,12 +44,12 @@ class HistoryViewModel(
     val selectedCategory: StateFlow<String> = _selectedCategory.asStateFlow()
     val sortOption: StateFlow<HistorySort> = _sortOption.asStateFlow()
     
-    val uiState: StateFlow<List<HistoryUiModel>> = combine(
+    val screenState: StateFlow<HistoryScreenState> = combine(
         repository.getAllResults(),
         _selectedCategory,
         _sortOption
     ) { rawList, category, sort ->
-        var list = rawList.map { benchmark ->
+        val list = rawList.map { benchmark ->
             // Parse detailed results from JSON string if available
             val detailedResults = try {
                 if (benchmark.benchmarkResult.detailedResultsJson.isNotEmpty()) {
@@ -68,24 +77,45 @@ class HistoryViewModel(
         }
         
         // 1. Filter
+        var filteredList = list
         if (category != "All") {
-            list = list.filter { it.testName.contains(category, ignoreCase = true) }
+            filteredList = filteredList.filter { it.testName.contains(category, ignoreCase = true) }
         }
         
         // 2. Sort
-        list = when(sort) {
-            HistorySort.DATE_NEWEST -> list.sortedByDescending { it.timestamp }
-            HistorySort.DATE_OLDEST -> list.sortedBy { it.timestamp }
-            HistorySort.SCORE_HIGH_TO_LOW -> list.sortedByDescending { it.finalScore }
-            HistorySort.SCORE_LOW_TO_HIGH -> list.sortedBy { it.finalScore }
+        val sortedList = when(sort) {
+            HistorySort.DATE_NEWEST -> filteredList.sortedByDescending { it.timestamp }
+            HistorySort.DATE_OLDEST -> filteredList.sortedBy { it.timestamp }
+            HistorySort.SCORE_HIGH_TO_LOW -> filteredList.sortedByDescending { it.finalScore }
+            HistorySort.SCORE_LOW_TO_HIGH -> filteredList.sortedBy { it.finalScore }
         }
         
-        list
+        // Return appropriate state based on the results
+        if (sortedList.isEmpty()) {
+            HistoryScreenState.Empty
+        } else {
+            HistoryScreenState.Success(sortedList)
+        }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = emptyList()
+        initialValue = HistoryScreenState.Loading
     )
+
+    companion object {
+        class Factory(private val context: Context) : ViewModelProvider.Factory {
+            override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                if (modelClass.isAssignableFrom(HistoryViewModel::class.java)) {
+                    val database = AppDatabase.getDatabase(context)
+                    val dao = database.benchmarkDao()
+                    val repository = HistoryRepository(dao)
+                    @Suppress("UNCHECKED_CAST")
+                    return HistoryViewModel(repository) as T
+                }
+                throw IllegalArgumentException("Unknown ViewModel class")
+            }
+        }
+    }
     
     fun updateCategory(category: String) {
         _selectedCategory.value = category

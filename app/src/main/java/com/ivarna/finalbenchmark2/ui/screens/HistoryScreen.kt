@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryUiModel
+import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryScreenState
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistorySort
 import java.text.SimpleDateFormat
@@ -87,7 +88,7 @@ fun HistoryScreen(
     viewModel: HistoryViewModel,
     navController: NavController
 ) {
-    val historyState by viewModel.uiState.collectAsState()
+    val screenState by viewModel.screenState.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
     val formatter = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
@@ -129,55 +130,67 @@ fun HistoryScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                if (historyState.isEmpty()) {
-                    // Empty state
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
+                when (val state = screenState) {
+                    is HistoryScreenState.Loading -> {
+                        // Show loading indicator
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.List,
-                                contentDescription = "No history",
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = "No benchmark history found",
-                                fontSize = 16.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 16.dp)
-                            )
-                            Text(
-                                text = "Run your first benchmark to see results here",
-                                fontSize = 14.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            CircularProgressIndicator()
                         }
                     }
-                } else {
-                    // Benchmark history list
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(historyState) { result ->
-                            BenchmarkHistoryItem(
-                                result = result,
-                                timestampFormatter = formatter,
-                                onItemClick = {
-                                    // Pass the initial data as URL-encoded JSON to avoid issues with special characters
-                                    val initialDataJson = """{"id":${result.id},"timestamp":${result.timestamp},"finalScore":${result.finalScore},"singleCoreScore":${result.singleCoreScore},"multiCoreScore":${result.multiCoreScore},"testName":"${result.testName.replace("\"", "\\\"")}","normalizedScore":${result.normalizedScore}}"""
-                                    val encodedData = java.net.URLEncoder.encode(initialDataJson, "UTF-8")
-                                    navController.navigate("history-detail/${result.id}?initialData=$encodedData")
-                                }
-                            )
+                    is HistoryScreenState.Empty -> {
+                        // Empty state
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.List,
+                                    contentDescription = "No history",
+                                    modifier = Modifier.size(64.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "No benchmark history found",
+                                    fontSize = 16.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 16.dp)
+                                )
+                                Text(
+                                    text = "Run your first benchmark to see results here",
+                                    fontSize = 14.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                    is HistoryScreenState.Success -> {
+                        // Benchmark history list
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(state.results) { result ->
+                                BenchmarkHistoryItem(
+                                    result = result,
+                                    timestampFormatter = formatter,
+                                    onItemClick = {
+                                        // Pass the initial data as URL-encoded JSON to avoid issues with special characters
+                                        val initialDataJson = """{"id":${result.id},"timestamp":${result.timestamp},"finalScore":${result.finalScore},"singleCoreScore":${result.singleCoreScore},"multiCoreScore":${result.multiCoreScore},"testName":"${result.testName.replace("\"", "\\\"")}","normalizedScore":${result.normalizedScore}}"""
+                                        val encodedData = java.net.URLEncoder.encode(initialDataJson, "UTF-8")
+                                        navController.navigate("history-detail/${result.id}?initialData=$encodedData")
+                                    }
+                                )
+                            }
                         }
                     }
                 }

@@ -618,7 +618,8 @@ fun GpuTab(
         // GPU Utilization Graph
         GpuUtilizationGraph(
             dataPoints = gpuHistory,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            requiresRoot = true
         )
         
         Spacer(modifier = Modifier.height(16.dp))
