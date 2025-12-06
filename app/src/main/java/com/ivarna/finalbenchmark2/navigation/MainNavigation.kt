@@ -121,26 +121,24 @@ fun MainNavigation(
                     val historyRepository = com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
                         com.ivarna.finalbenchmark2.data.database.AppDatabase.getDatabase(context).benchmarkDao()
                     )
-                    val benchmarkViewModel = com.ivarna.finalbenchmark2.ui.viewmodels.BenchmarkViewModel(historyRepository, context.applicationContext as android.app.Application)
                     BenchmarkScreen(
                         preset = preset,
                         onBenchmarkComplete = { summaryJson ->
                             navController.navigate("result/$summaryJson")
                         },
-                        viewModel = benchmarkViewModel
+                        historyRepository = historyRepository
                     )
                 }
                 composable("benchmark") { // Fallback route without preset
                     val historyRepository = com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
                         com.ivarna.finalbenchmark2.data.database.AppDatabase.getDatabase(context).benchmarkDao()
                     )
-                    val benchmarkViewModel = com.ivarna.finalbenchmark2.ui.viewmodels.BenchmarkViewModel(historyRepository, context.applicationContext as android.app.Application)
                     BenchmarkScreen(
                         preset = "Auto",
                         onBenchmarkComplete = { summaryJson ->
                             navController.navigate("result/$summaryJson")
                         },
-                        viewModel = benchmarkViewModel
+                        historyRepository = historyRepository
                     )
                 }
                 composable("result/{summaryJson}") { backStackEntry ->

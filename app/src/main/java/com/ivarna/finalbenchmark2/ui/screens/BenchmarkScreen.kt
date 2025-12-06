@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkEvent
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkManager
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
@@ -35,8 +36,12 @@ import com.ivarna.finalbenchmark2.ui.models.SystemStats
 fun BenchmarkScreen(
     preset: String = "Auto",
     onBenchmarkComplete: (String) -> Unit,
-    viewModel: BenchmarkViewModel = viewModel()
+    historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null
 ) {
+    val viewModel: BenchmarkViewModel = viewModel(
+        key = "BenchmarkViewModel",
+        factory = BenchmarkViewModel.Factory
+    )
     val benchmarkState by viewModel.benchmarkState.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
     val benchmarkManager = remember { BenchmarkManager() }

@@ -1,6 +1,9 @@
 package com.ivarna.finalbenchmark2.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewModelScope
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkEvent
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkManager
@@ -21,6 +24,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update // Required for thread-safe updates
+import kotlinx.coroutines.Job
 
 // Import SystemStats from SystemModels
 import com.ivarna.finalbenchmark2.ui.models.SystemStats
@@ -96,6 +100,9 @@ class BenchmarkViewModel(
     private val powerUtils = PowerUtils(application)
     private val tempUtils = TemperatureUtils(application)
     
+    // Job for system monitoring to prevent multiple instances
+    private var monitorJob: Job? = null
+    
     // Guard to prevent double-execution on screen rotation
     private var isBenchmarkRunning = false
 
@@ -105,17 +112,27 @@ class BenchmarkViewModel(
     }
 
     private fun startSystemMonitoring() {
-        viewModelScope.launch(Dispatchers.IO) {
+        // Safety: Cancel any previous job to be 100% sure
+        monitorJob?.cancel()
+        
+        monitorJob = viewModelScope.launch(Dispatchers.IO) {
             while (true) { // Changed from 'isActive' to 'true' for continuous monitoring
+                // LOG 1: Monitor wakes up
+                val currentSizeBefore = _uiState.value.completedTests.size
+                Log.d("BENCH_DEBUG", "[Monitor] Waking up. Current List Size: $currentSizeBefore")
+
                 val stats = SystemStats(
                     cpuLoad = cpuUtils.getCpuUtilizationPercentage(),
                     power = powerUtils.getPowerConsumptionInfo().power,
                     temp = tempUtils.getCpuTemperature()
                 )
                 
-                // FIX: Use .update for thread safety
-                // This ensures we modify the *current* state, not an old copy
+                // CRITICAL MOMENT: Updating State
                 _uiState.update { currentState ->
+                    // LOG 2: Inside the atomic update block for Monitor
+                    if (currentState.completedTests.size != currentSizeBefore) {
+                        Log.d("BENCH_DEBUG", "[Monitor] !!! RACE CONDITION DETECTED !!! I saw size $currentSizeBefore, but inside update it is ${currentState.completedTests.size}")
+                    }
                     currentState.copy(systemStats = stats)
                 }
                 
@@ -200,7 +217,7 @@ class BenchmarkViewModel(
                     val (name, functionName) = benchmarkPair
                     
                     // Update state to RUNNING
-                    Log.d("BenchmarkViewModel", "Setting test $index ($name) to RUNNING status")
+                    Log.d("BENCH_DEBUG", "[Bench] Starting Test: $name")
                     _uiState.update { currentState ->
                         currentState.copy(
                             currentTestName = name,
@@ -249,11 +266,14 @@ class BenchmarkViewModel(
                     
                     results.add(result)
                     
-                    // Update completed tests in UI state - accumulate properly
-                    // Update UI state with completed test
-                    Log.d("BenchmarkViewModel", "Setting test $index ($name) to COMPLETED status with result: ${result.executionTimeMs}ms")
+                    // CRITICAL MOMENT: Adding Result
                     _uiState.update { currentState ->
-                        val updatedCompletedTests = currentState.completedTests + result
+                        val oldSize = currentState.completedTests.size
+                        val newResults = currentState.completedTests + result
+                        val newSize = newResults.size
+                        
+                        Log.d("BENCH_DEBUG", "[Bench] Finished $name. List Size: $oldSize -> $newSize")
+                        
                         val isSingleCoreFinished = if (index >= singleCoreTotal - 1) {
                             true
                         } else {
@@ -266,7 +286,7 @@ class BenchmarkViewModel(
                         }
                         
                         currentState.copy(
-                            completedTests = updatedCompletedTests,
+                            completedTests = newResults,
                             progress = (index + 1).toFloat() / totalBenchmarks.toFloat(),
                             isSingleCoreFinished = isSingleCoreFinished,
                             allTestStates = currentState.allTestStates.mapIndexed { i, state ->
@@ -481,11 +501,11 @@ class BenchmarkViewModel(
             "Matrix Multiplication" to 0.025,
             "Hash Computing" to 0.01,
             "String Sorting" to 0.015,
-            "Ray Tracing" to 0.0006,
+            "Ray Tracing" to 0.006,
             "Compression" to 0.07,
             "Monte Carlo" to 0.07,
             "JSON Parsing" to 0.00004,
-            "N-Queens" to 0.007
+            "N-Queens" to 0.07
         )
         
         val filteredResults = results.filter { it.name.contains(benchmarkName) }
@@ -501,5 +521,17 @@ class BenchmarkViewModel(
         }
         
         return totalWeightedScore
+    }
+    
+    companion object {
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                // This retrieves the "Application" from the Android System
+                val application = (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as Application)
+                
+                // Creates the ViewModel ensuring only ONE exists
+                BenchmarkViewModel(application = application)
+            }
+        }
     }
 }
