@@ -325,7 +325,23 @@ fun HomeScreen(
                     false
                 }
                 
-                PerformanceOptimizationsCard(sustainedPerformanceStatus = sustainedPerformanceStatus)
+                val wakeLockStatus = if (activity != null) {
+                    activity.isWakeLockActive()
+                } else {
+                    false
+                }
+                
+                val screenAlwaysOnStatus = if (activity != null) {
+                    activity.isScreenAlwaysOnActive()
+                } else {
+                    false
+                }
+                
+                PerformanceOptimizationsCard(
+                    sustainedPerformanceStatus = sustainedPerformanceStatus,
+                    wakeLockStatus = wakeLockStatus,
+                    screenAlwaysOnStatus = screenAlwaysOnStatus
+                )
                 
                 // Start CPU Benchmark Button
                 Button(
@@ -381,7 +397,9 @@ fun CompactStatItem(icon: ImageVector, value: String, tint: Color) {
 
 @Composable
 fun PerformanceOptimizationsCard(
-    sustainedPerformanceStatus: Boolean
+    sustainedPerformanceStatus: Boolean,
+    wakeLockStatus: Boolean,
+    screenAlwaysOnStatus: Boolean
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -417,27 +435,15 @@ fun PerformanceOptimizationsCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    // Indicator for sustained performance mode based on the boolean parameter
-                    val sustainedStatus = if (sustainedPerformanceStatus) {
-                        PerformanceOptimizationStatus.ENABLED
-                    } else {
-                        PerformanceOptimizationStatus.DISABLED
-                    }
-                    val sustainedStatusColor = when (sustainedStatus) {
-                        PerformanceOptimizationStatus.ENABLED -> MaterialTheme.colorScheme.primary
-                        PerformanceOptimizationStatus.DISABLED -> MaterialTheme.colorScheme.error
-                        PerformanceOptimizationStatus.NOT_SUPPORTED -> MaterialTheme.colorScheme.outline
-                    }
-                    val sustainedStatusText = when (sustainedStatus) {
-                        PerformanceOptimizationStatus.ENABLED -> "ON"
-                        PerformanceOptimizationStatus.DISABLED -> "OFF"
-                        PerformanceOptimizationStatus.NOT_SUPPORTED -> "N/A"
-                    }
-
+                    // Count how many optimizations are active
+                    val activeCount = listOf(sustainedPerformanceStatus, wakeLockStatus, screenAlwaysOnStatus).count { it }
+                    val totalOptimizations = 3
+                    
                     Text(
-                        text = sustainedStatusText,
-                        color = sustainedStatusColor,
-                        fontWeight = FontWeight.SemiBold
+                        text = "$activeCount/$totalOptimizations",
+                        color = if (activeCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
@@ -475,9 +481,28 @@ fun PerformanceOptimizationsCard(
                             PerformanceOptimizationStatus.DISABLED
                         }
                     )
-
-                    // Add more optimization checks here in the future
-                    // For example: High priority threads, wake locks, etc.
+                    
+                    // Wake Lock Management Detail
+                    OptimizationDetailRow(
+                        title = "Wake Lock Management",
+                        description = "Keeps CPU running at full speed",
+                        status = if (wakeLockStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // Screen Always On Detail
+                    OptimizationDetailRow(
+                        title = "Screen Always On",
+                        description = "Prevents performance degradation from screen-off CPU throttling",
+                        status = if (screenAlwaysOnStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
                 }
             }
         }

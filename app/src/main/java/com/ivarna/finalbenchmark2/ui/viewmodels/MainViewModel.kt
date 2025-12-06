@@ -25,7 +25,9 @@ enum class PerformanceOptimizationStatus {
 }
 
 data class PerformanceOptimizations(
-    val sustainedPerformanceMode: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED
+    val sustainedPerformanceMode: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
+    val wakeLockStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
+    val screenAlwaysOnStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED
 )
 
 class MainViewModel : ViewModel() {
@@ -70,5 +72,25 @@ class MainViewModel : ViewModel() {
         _performanceOptimizations.value = _performanceOptimizations.value.copy(
             sustainedPerformanceMode = status
         )
+    }
+    
+    fun updateWakeLockStatus(status: PerformanceOptimizationStatus) {
+        _performanceOptimizations.value = _performanceOptimizations.value.copy(
+            wakeLockStatus = status
+        )
+    }
+    
+    fun updateScreenAlwaysOnStatus(status: PerformanceOptimizationStatus) {
+        _performanceOptimizations.value = _performanceOptimizations.value.copy(
+            screenAlwaysOnStatus = status
+        )
+    }
+    
+    fun acquireWakeLock() {
+        // This will be handled by the MainActivity
+    }
+    
+    fun releaseWakeLock() {
+        // This will be handled by the MainActivity
     }
 }

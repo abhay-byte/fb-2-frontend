@@ -33,7 +33,9 @@ import com.ivarna.finalbenchmark2.ui.viewmodels.TestStatus
 fun BenchmarkScreen(
     preset: String = "Auto",
     onBenchmarkComplete: (String) -> Unit,
-    historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null
+    historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null,
+    onBenchmarkStart: (() -> Unit)? = null,
+    onBenchmarkEnd: (() -> Unit)? = null
 ) {
     val application = androidx.compose.ui.platform.LocalContext.current.applicationContext as android.app.Application
     
@@ -93,10 +95,12 @@ fun BenchmarkScreen(
                     val gson = com.google.gson.Gson()
                     val summaryJson = gson.toJson(summaryData)
                     
+                    onBenchmarkEnd?.invoke()
                     onBenchmarkComplete(summaryJson)
                 }
                 is BenchmarkState.Error -> {
                     // Handle error state if needed
+                    onBenchmarkEnd?.invoke()
                     onBenchmarkComplete("{\"error\": \"${state.message}\"}")
                 }
                 else -> {
@@ -108,6 +112,7 @@ fun BenchmarkScreen(
     
     // Start on load
     LaunchedEffect(Unit) {
+        onBenchmarkStart?.invoke()
         viewModel.startBenchmark(preset)
     }
 
@@ -361,7 +366,10 @@ fun TestTableRow(testState: TestState) {
 
         // Time Column
         Text(
-            text = if (testState.result != null) "${testState.result.executionTimeMs.toInt()}ms" else "-",
+            text = run {
+                val result = testState.result
+                if (result != null) "${result.executionTimeMs.toInt()}ms" else "-"
+            },
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
             color = MaterialTheme.colorScheme.secondary,

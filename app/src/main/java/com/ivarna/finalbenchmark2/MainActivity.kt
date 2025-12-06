@@ -1,9 +1,12 @@
 package com.ivarna.finalbenchmark2
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.util.Log
 import android.view.Window
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -50,10 +53,23 @@ class MainActivity : ComponentActivity() {
     private var mainViewModel: MainViewModel? = null
     private var sustainedModeIntendedState = false
     
+    // Wake lock instance
+    private lateinit var wakeLock: PowerManager.WakeLock
+    private var isWakeLockHeld = false
+    
+    // Screen always on status
+    private var isScreenAlwaysOn = false
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Enable edge to edge for full screen experience
         enableEdgeToEdge()
+        
+        // Initialize wake lock (but don't acquire yet)
+        initializeWakeLock()
+        
+        // Enable screen always on
+        enableScreenAlwaysOn()
         
         // Enable Sustained Performance Mode to prevent thermal throttling
         enableSustainedPerformanceMode()
@@ -92,6 +108,13 @@ class MainActivity : ComponentActivity() {
             
             // Update performance optimization status based on sustained performance mode
             val performanceOptimizations by mainViewModel.performanceOptimizations.collectAsStateWithLifecycle()
+            
+            // Update wake lock and screen always on status in the MainViewModel
+            LaunchedEffect(Unit) {
+                mainViewModel.updateWakeLockStatus(PerformanceOptimizationStatus.ENABLED) // Ready to be used
+                mainViewModel.updateScreenAlwaysOnStatus(PerformanceOptimizationStatus.ENABLED) // Always on
+                Log.i("FinalBenchmark2", "Initial wake lock status updated to ENABLED (ready state)")
+            }
             
             
             
@@ -152,21 +175,6 @@ class MainActivity : ComponentActivity() {
         return sustainedModeIntendedState
     }
     
-    override fun onDestroy() {
-        super.onDestroy()
-        // Sustained mode is automatically disabled when activity is destroyed
-        // But you can manually disable it if needed:
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            try {
-                this@MainActivity.window.setSustainedPerformanceMode(false)
-                sustainedModeIntendedState = false
-            } catch (e: Exception) {
-                Log.e("FinalBenchmark2", "Error disabling Sustained Performance Mode", e)
-                sustainedModeIntendedState = false
-            }
-        }
-    }
-    
     private fun applyThemeMode(themeMode: ThemeMode) {
         when (themeMode) {
             ThemeMode.LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
@@ -181,5 +189,158 @@ class MainActivity : ComponentActivity() {
         applyThemeMode(themeMode)
         // Recreate the activity to apply the theme immediately
         recreate()
+    }
+    
+    /**
+     * Initialize the wake lock but don't acquire it yet
+     * We'll acquire it when benchmark starts
+     */
+    private fun initializeWakeLock() {
+        try {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+            
+            // Create a PARTIAL_WAKE_LOCK
+            // This keeps CPU running but allows screen to turn off if needed
+            // (We're using FLAG_KEEP_SCREEN_ON separately to keep screen on)
+            wakeLock = powerManager.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "FinalBenchmark2::CPUBenchmarkWakeLock"
+            )
+            
+            // Set wake lock to not reference counted
+            // This means acquire/release calls must be balanced
+            wakeLock.setReferenceCounted(false)
+            
+            Log.i("FinalBenchmark2", "Wake Lock initialized successfully. isHeld: ${wakeLock.isHeld}")
+            
+        } catch (e: Exception) {
+            Log.e("FinalBenchmark2", "Failed to initialize Wake Lock", e)
+        }
+    }
+    
+    /**
+     * Acquire wake lock to keep CPU at maximum frequency
+     * Call this when benchmark starts
+     */
+    fun acquireWakeLock() {
+        try {
+            Log.i("FinalBenchmark2", "Attempting to acquire wake lock. isWakeLockHeld: $isWakeLockHeld, isInitialized: ${::wakeLock.isInitialized}, isHeld: ${if (::wakeLock.isInitialized) wakeLock.isHeld else "N/A"}")
+            
+            if (!isWakeLockHeld && ::wakeLock.isInitialized) {
+                // Acquire wake lock without timeout (held until manually released)
+                wakeLock.acquire()
+                isWakeLockHeld = true
+                
+                // Update MainViewModel status
+                mainViewModel?.updateWakeLockStatus(PerformanceOptimizationStatus.ENABLED)
+                
+                Log.i("FinalBenchmark2", "Wake Lock ACQUIRED - CPU will stay at maximum frequency. isHeld: ${wakeLock.isHeld}")
+            } else {
+                Log.i("FinalBenchmark2", "Wake lock was not acquired. Conditions: isWakeLockHeld=$isWakeLockHeld, isInitialized=${::wakeLock.isInitialized}")
+            }
+        } catch (e: Exception) {
+            Log.e("FinalBenchmark2", "Failed to acquire Wake Lock", e)
+            isWakeLockHeld = false
+        }
+    }
+    
+    /**
+     * Release wake lock when benchmark completes
+     * IMPORTANT: Always release in finally block to prevent battery drain
+     */
+    fun releaseWakeLock() {
+        try {
+            Log.i("FinalBenchmark2", "Attempting to release wake lock. isWakeLockHeld: $isWakeLockHeld, isInitialized: ${::wakeLock.isInitialized}, isHeld: ${if (::wakeLock.isInitialized) wakeLock.isHeld else "N/A"}")
+            
+            if (isWakeLockHeld && ::wakeLock.isInitialized && wakeLock.isHeld) {
+                wakeLock.release()
+                isWakeLockHeld = false
+                
+                // Update MainViewModel status
+                mainViewModel?.updateWakeLockStatus(PerformanceOptimizationStatus.DISABLED)
+                
+                Log.i("FinalBenchmark2", "Wake Lock RELEASED")
+            } else {
+                Log.i("FinalBenchmark2", "Wake lock was not released. Conditions: isWakeLockHeld=$isWakeLockHeld, isInitialized=${::wakeLock.isInitialized}, isHeld=${if (::wakeLock.isInitialized) wakeLock.isHeld else "N/A"}")
+            }
+        } catch (e: Exception) {
+            Log.e("FinalBenchmark2", "Failed to release Wake Lock", e)
+        }
+    }
+    
+    /**
+     * Enable screen always on using window flags
+     * This keeps the screen on while this activity is visible
+     */
+    private fun enableScreenAlwaysOn() {
+        try {
+            // Add FLAG_KEEP_SCREEN_ON to window
+            window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            isScreenAlwaysOn = true
+            
+            Log.i("FinalBenchmark2", "Screen Always On: ENABLED")
+            
+            // Optional: Also add FLAG_TURN_SCREEN_ON to wake screen if it's off
+            window.addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON)
+            
+        } catch (e: Exception) {
+            Log.e("FinalBenchmark2", "Failed to enable Screen Always On", e)
+            isScreenAlwaysOn = false
+        }
+    }
+    
+    /**
+     * Disable screen always on when no longer needed
+     */
+    private fun disableScreenAlwaysOn() {
+        try {
+            window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            isScreenAlwaysOn = false
+            
+            Log.i("FinalBenchmark2", "Screen Always On: DISABLED")
+            
+        } catch (e: Exception) {
+            Log.e("FinalBenchmark2", "Failed to disable Screen Always On", e)
+        }
+    }
+    
+    /**
+     * Get the current wake lock status
+     */
+    fun isWakeLockActive(): Boolean {
+        val status = isWakeLockHeld
+        Log.i("FinalBenchmark2", "isWakeLockActive() called, returning: $status, actual isHeld: ${if (::wakeLock.isInitialized) wakeLock.isHeld else "N/A"}")
+        return status
+    }
+    
+    /**
+     * Get the current screen always on status
+     */
+    fun isScreenAlwaysOnActive(): Boolean {
+        return isScreenAlwaysOn
+    }
+    
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.i("FinalBenchmark2", "onDestroy() called - releasing wake lock if held")
+        
+        // Sustained mode is automatically disabled when activity is destroyed
+        // But you can manually disable it if needed:
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            try {
+                this@MainActivity.window.setSustainedPerformanceMode(false)
+                sustainedModeIntendedState = false
+            } catch (e: Exception) {
+                Log.e("FinalBenchmark2", "Error disabling Sustained Performance Mode", e)
+                sustainedModeIntendedState = false
+            }
+        }
+        
+        // CRITICAL: Always release wake lock when activity is destroyed
+        // This prevents battery drain if app crashes or is killed
+        releaseWakeLock()
+        
+        // Screen Always On flag is automatically cleared when activity is destroyed
+        Log.i("FinalBenchmark2", "Activity destroyed - all optimizations cleaned up")
     }
 }

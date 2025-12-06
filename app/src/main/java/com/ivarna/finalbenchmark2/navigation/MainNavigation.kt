@@ -126,10 +126,17 @@ fun MainNavigation(
                     val historyRepository = com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
                         com.ivarna.finalbenchmark2.data.database.AppDatabase.getDatabase(context).benchmarkDao()
                     )
+                    val activity = context as? com.ivarna.finalbenchmark2.MainActivity
                     BenchmarkScreen(
                         preset = preset,
                         onBenchmarkComplete = { summaryJson ->
                             navController.navigate("result/$summaryJson")
+                        },
+                        onBenchmarkStart = {
+                            activity?.acquireWakeLock()
+                        },
+                        onBenchmarkEnd = {
+                            activity?.releaseWakeLock()
                         },
                         historyRepository = historyRepository
                     )
@@ -138,10 +145,17 @@ fun MainNavigation(
                     val historyRepository = com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
                         com.ivarna.finalbenchmark2.data.database.AppDatabase.getDatabase(context).benchmarkDao()
                     )
+                    val activity = context as? com.ivarna.finalbenchmark2.MainActivity
                     BenchmarkScreen(
                         preset = "Auto",
                         onBenchmarkComplete = { summaryJson ->
                             navController.navigate("result/$summaryJson")
+                        },
+                        onBenchmarkStart = {
+                            activity?.acquireWakeLock()
+                        },
+                        onBenchmarkEnd = {
+                            activity?.releaseWakeLock()
                         },
                         historyRepository = historyRepository
                     )
