@@ -37,7 +37,6 @@ data class BenchmarkSummary(
     val multiCoreScore: Double,
     val finalScore: Double,
     val normalizedScore: Double,
-    val rating: String,
     val detailedResults: List<BenchmarkResult> = emptyList() // Added for detailed view
 )
 
@@ -76,7 +75,6 @@ fun ResultScreen(
             multiCoreScore = jsonObject.optDouble("multi_core_score", 0.0),
             finalScore = jsonObject.optDouble("final_score", 0.0),
             normalizedScore = jsonObject.optDouble("normalized_score", 0.0),
-            rating = jsonObject.optString("rating", "★"),
             detailedResults = detailedResults
         )
         Log.d("ResultScreen", "Parsed summary: $summary")
@@ -89,7 +87,6 @@ fun ResultScreen(
             multiCoreScore = 0.0,
             finalScore = 0.0,
             normalizedScore = 0.0,
-            rating = "★",
             detailedResults = emptyList()
         )
     }
@@ -168,20 +165,6 @@ fun ResultScreen(
                             value = String.format("%.2f", summary.normalizedScore)
                         )
                         
-                        // Rating
-                        Text(
-                            text = "Rating",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                        )
-                        Text(
-                            text = summary.rating,
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
                     }
                 }
                 

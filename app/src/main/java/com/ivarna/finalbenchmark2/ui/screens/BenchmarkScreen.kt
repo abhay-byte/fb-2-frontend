@@ -242,7 +242,7 @@ fun BenchmarkScreen(
                         // -- Table Rows --
                         LazyColumn(
                             state = listState,
-                            contentPadding = PaddingValues(bottom = 16.dp)
+                            contentPadding = PaddingValues(bottom = 40.dp) // Increased bottom padding for spacing
                         ) {
                             items(uiState.allTestStates, key = { it.name }) { testState ->
                                 TestTableRow(testState)

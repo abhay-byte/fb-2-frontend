@@ -136,7 +136,7 @@ class BenchmarkViewModel(
                     currentState.copy(systemStats = stats)
                 }
                 
-                delay(10)
+                delay(1000)
             }
         }
     }
