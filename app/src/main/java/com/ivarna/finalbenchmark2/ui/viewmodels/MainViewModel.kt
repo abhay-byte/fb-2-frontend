@@ -21,13 +21,14 @@ enum class RootStatus {
 enum class PerformanceOptimizationStatus {
     NOT_SUPPORTED,     // Device doesn't support the optimization
     DISABLED,          // Optimization is available but disabled
-    ENABLED            // Optimization is active
+    ENABLED,           // Optimization is active
+    READY              // Optimization is initialized but not yet acquired (for wake lock)
 }
 
 data class PerformanceOptimizations(
     val sustainedPerformanceMode: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
-    val wakeLockStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
-    val screenAlwaysOnStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED
+    val wakeLockStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.ENABLED, // Ready state
+    val screenAlwaysOnStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.ENABLED
 )
 
 class MainViewModel : ViewModel() {

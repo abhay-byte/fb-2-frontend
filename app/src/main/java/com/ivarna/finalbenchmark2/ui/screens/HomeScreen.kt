@@ -331,6 +331,19 @@ fun HomeScreen(
                     false
                 }
                 
+                // Determine wake lock status text for display
+                val wakeLockStatusText = if (activity != null) {
+                    if (activity.isWakeLockActive()) {
+                        "Active" // When benchmark is running
+                    } else if (activity.isWakeLockReady()) {
+                        "Ready" // When initialized but not yet acquired
+                    } else {
+                        "Disabled" // When not available
+                    }
+                } else {
+                    "Unknown"
+                }
+                
                 val screenAlwaysOnStatus = if (activity != null) {
                     activity.isScreenAlwaysOnActive()
                 } else {
@@ -340,7 +353,8 @@ fun HomeScreen(
                 PerformanceOptimizationsCard(
                     sustainedPerformanceStatus = sustainedPerformanceStatus,
                     wakeLockStatus = wakeLockStatus,
-                    screenAlwaysOnStatus = screenAlwaysOnStatus
+                    screenAlwaysOnStatus = screenAlwaysOnStatus,
+                    wakeLockStatusText = wakeLockStatusText
                 )
                 
                 // Start CPU Benchmark Button
@@ -399,7 +413,8 @@ fun CompactStatItem(icon: ImageVector, value: String, tint: Color) {
 fun PerformanceOptimizationsCard(
     sustainedPerformanceStatus: Boolean,
     wakeLockStatus: Boolean,
-    screenAlwaysOnStatus: Boolean
+    screenAlwaysOnStatus: Boolean,
+    wakeLockStatusText: String = if (wakeLockStatus) "Active" else "Ready"  // Changed to "Ready" when not active
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -488,9 +503,12 @@ fun PerformanceOptimizationsCard(
                         description = "Keeps CPU running at full speed",
                         status = if (wakeLockStatus) {
                             PerformanceOptimizationStatus.ENABLED
+                        } else if (wakeLockStatusText == "Ready") {
+                            PerformanceOptimizationStatus.READY  // Show READY when initialized but not acquired
                         } else {
                             PerformanceOptimizationStatus.DISABLED
-                        }
+                        },
+                        statusText = wakeLockStatusText  // Pass the custom status text
                     )
                     
                     // Screen Always On Detail
@@ -513,24 +531,28 @@ fun PerformanceOptimizationsCard(
 fun OptimizationDetailRow(
     title: String,
     description: String,
-    status: PerformanceOptimizationStatus
+    status: PerformanceOptimizationStatus,  // This should be defined in MainViewModel
+    statusText: String? = null  // New optional parameter for custom status text
 ) {
     val statusColor = when (status) {
         PerformanceOptimizationStatus.ENABLED -> MaterialTheme.colorScheme.primary
         PerformanceOptimizationStatus.DISABLED -> MaterialTheme.colorScheme.error
         PerformanceOptimizationStatus.NOT_SUPPORTED -> MaterialTheme.colorScheme.outline
+        PerformanceOptimizationStatus.READY -> MaterialTheme.colorScheme.secondary  // Added READY status
     }
     
-    val statusText = when (status) {
+    val displayStatusText = statusText ?: when (status) {
         PerformanceOptimizationStatus.ENABLED -> "Enabled"
         PerformanceOptimizationStatus.DISABLED -> "Disabled"
         PerformanceOptimizationStatus.NOT_SUPPORTED -> "Not Supported"
+        PerformanceOptimizationStatus.READY -> "Ready"  // Added READY status
     }
     
     val statusIcon = when (status) {
         PerformanceOptimizationStatus.ENABLED -> Icons.Rounded.Check
         PerformanceOptimizationStatus.DISABLED -> Icons.Rounded.Close
         PerformanceOptimizationStatus.NOT_SUPPORTED -> Icons.Rounded.DisabledByDefault
+        PerformanceOptimizationStatus.READY -> Icons.Rounded.CheckCircle  // Using check circle for ready state
     }
 
     Column(
@@ -560,7 +582,7 @@ fun OptimizationDetailRow(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = statusText,
+                    text = displayStatusText,
                     color = statusColor,
                     fontWeight = FontWeight.Medium
                 )

@@ -314,6 +314,16 @@ class MainActivity : ComponentActivity() {
     }
     
     /**
+     * Check if wake lock is ready (initialized but not acquired)
+     */
+    fun isWakeLockReady(): Boolean {
+        val isReady = ::wakeLock.isInitialized && !isWakeLockHeld
+        Log.i("FinalBenchmark2", "isWakeLockReady() called, returning: $isReady")
+        return isReady
+    }
+    
+    
+    /**
      * Get the current screen always on status
      */
     fun isScreenAlwaysOnActive(): Boolean {
