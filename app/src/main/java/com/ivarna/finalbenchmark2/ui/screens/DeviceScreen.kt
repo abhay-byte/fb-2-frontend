@@ -46,6 +46,7 @@ import com.ivarna.finalbenchmark2.ui.components.SummaryCard
 import com.ivarna.finalbenchmark2.ui.components.SystemInfoSummary
 import com.ivarna.finalbenchmark2.ui.viewmodels.DeviceViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.GpuInfoViewModel
+import com.ivarna.finalbenchmark2.ui.viewmodels.HardwareViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.OsViewModel
 
 
@@ -133,7 +134,10 @@ fun DeviceScreen(viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compo
                         3 -> MemoryTab(deviceInfo, viewModel)
                         4 -> ScreenTab(context)
                         5 -> OsTab(deviceInfo)
-                        6 -> HardwareTab(deviceInfo)
+                        6 -> {
+                            val hardwareViewModel: HardwareViewModel = viewModel()
+                            HardwareTabContent(hardwareViewModel)
+                        }
                         7 -> SensorsTab(context)
                     }
                 }
@@ -1481,180 +1485,6 @@ fun InfoRow(label: String, value: String, isSupported: Boolean? = null) {
 fun OsTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, osViewModel: OsViewModel = viewModel()) {
     OsTabContent(osViewModel)
 }
-@Composable
-fun HardwareTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo) {
-    val context = LocalContext.current
-    var gpuInfoState by remember {
-        mutableStateOf<com.ivarna.finalbenchmark2.utils.GpuInfoState>(com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading)
-    }
-    
-    LaunchedEffect(Unit) {
-        val gpuInfoUtils = com.ivarna.finalbenchmark2.utils.GpuInfoUtils(context)
-        gpuInfoState = gpuInfoUtils.getGpuInfo()
-    }
-    
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Text(
-            text = "Hardware Information",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
-        
-        LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(1f)
-        ) {
-            // Main Hardware Section Header
-            item {
-                Text(
-                    text = "Main Hardware",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            
-            // Main hardware items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Model", deviceInfo.deviceModel),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Manufacturer", deviceInfo.manufacturer),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Board", deviceInfo.board),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC", deviceInfo.socName),
-                    isLastItem = false
-                )
-            }
-            
-            // GPU Information Section Header
-            item {
-                Text(
-                    text = "GPU Information",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
-            }
-            
-            // GPU Info Content based on state
-            item {
-                when (gpuInfoState) {
-                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
-                        InfoRow("Status", "Loading GPU information...")
-                    }
-                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
-                        val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
-                        GpuInfoInHardwareTab(gpuInfo)
-                    }
-                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
-                        InfoRow("Status", "Error loading GPU info")
-                        InfoRow("Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
-                    }
-                }
-            }
-            
-            // Memory Section Header
-            item {
-                Text(
-                    text = "Memory",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
-            }
-            
-            // Memory items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytesInMB(deviceInfo.totalRam)),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytesInMB(deviceInfo.availableRam)),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Storage Total", formatBytes(deviceInfo.totalStorage)),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Storage Free", formatBytes(deviceInfo.freeStorage)),
-                    isLastItem = false
-                )
-            }
-            
-            // Power & Thermal Section Header
-            item {
-                Text(
-                    text = "Power & Thermal",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
-            }
-            
-            // Power & Thermal items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available"),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available"),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Thermal Status", deviceInfo.thermalStatus ?: "Not available"),
-                    isLastItem = true
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
@@ -1863,40 +1693,6 @@ fun SensorsTab(context: android.content.Context) {
     SensorsTabContent()
 }
 
-@Composable
-fun GpuInfoInHardwareTab(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo) {
-    // Basic GPU Info
-    InfoRow("GPU Name", gpuInfo.basicInfo.name)
-    InfoRow("Vendor", gpuInfo.basicInfo.vendor)
-    InfoRow("Driver Version", gpuInfo.basicInfo.driverVersion)
-    InfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
-    InfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion ?: "Not Supported")
-    
-    // GPU Frequency Info (if available)
-    if (gpuInfo.frequencyInfo != null) {
-        val currentFreq = gpuInfo.frequencyInfo.currentFrequency
-        val maxFreq = gpuInfo.frequencyInfo.maxFrequency
-        if (currentFreq != null) InfoRow("Current Frequency", "${currentFreq} MHz")
-        if (maxFreq != null) InfoRow("Max Frequency", "${maxFreq} MHz")
-    }
-    
-    // OpenGL Info (if available)
-    gpuInfo.openGLInfo?.let { openGLInfo ->
-        InfoRow("OpenGL Version", openGLInfo.version)
-        InfoRow("GLSL Version", openGLInfo.glslVersion)
-        InfoRow("OpenGL Extensions", "${openGLInfo.extensions.size} extensions")
-    }
-    
-    // Vulkan Info (if available)
-    gpuInfo.vulkanInfo?.let { vulkanInfo ->
-        if (vulkanInfo.supported) {
-            vulkanInfo.apiVersion?.let { InfoRow("Vulkan API Version", it) }
-            vulkanInfo.driverVersion?.let { InfoRow("Vulkan Driver Version", it) }
-            vulkanInfo.physicalDeviceName?.let { InfoRow("Vulkan Physical Device", it) }
-            InfoRow("Vulkan Extensions", "${vulkanInfo.instanceExtensions.size + vulkanInfo.deviceExtensions.size} total extensions")
-        }
-    }
-}
 
 @Composable
 fun VulkanFeaturesGrid(features: com.ivarna.finalbenchmark2.utils.VulkanFeatures) {
