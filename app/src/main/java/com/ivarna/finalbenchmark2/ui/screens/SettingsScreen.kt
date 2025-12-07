@@ -36,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
 import androidx.activity.ComponentActivity
 import com.ivarna.finalbenchmark2.MainActivity
+import com.ivarna.finalbenchmark2.R
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.theme.ThemeMode
 import com.ivarna.finalbenchmark2.ui.viewmodels.RootStatus
@@ -345,6 +346,16 @@ fun SettingsScreen(
                     }
                 }
                 
+                // Horizontal line separator
+                Spacer(modifier = Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                
                 // About Section
                 AboutSection()
             }
@@ -373,7 +384,7 @@ fun AboutSection() {
             .padding(vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Card 1: Developer Profile
+        // Card 1: App Info (FinalBenchmark 2 with logo_2.png and circular dark background)
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -381,123 +392,61 @@ fun AboutSection() {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                // Circular dark background with logo
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.onSurface),
+                    contentAlignment = Alignment.Center
                 ) {
-                    // Profile Picture
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Person,
-                            contentDescription = "Profile Picture",
-                            tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(40.dp)
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.width(20.dp))
-                    
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "Abhay Raj",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = "@abhay-byte",
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                        Text(
-                            text = "Full Stack Developer | Mobile, Web, Game Dev & AI Enthusiast",
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 8.dp),
-                            lineHeight = 18.sp
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.logo_2),
+                        contentDescription = "FinalBenchmark 2 Logo",
+                        modifier = Modifier.size(60.dp),
+                        contentScale = ContentScale.Crop
+                    )
                 }
-            }
-        }
-        
-        // Card 2: Social Links
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
                 Text(
-                    text = "Connect With Me",
-                    fontSize = 18.sp,
+                    text = "Final Benchmark 2",
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Version 1.0.0",
+                    fontSize = 16.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "Made with ❤️ in Kotlin",
+                    fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center
                 )
-                
-                val socialLinks = listOf(
-                    SocialLink("GitHub", "https://github.com/abhay-byte", Icons.Rounded.Code, "View my repositories and projects"),
-                    SocialLink("LinkedIn", "https://www.linkedin.com/in/abhay-byte/", Icons.Rounded.BusinessCenter, "Let's connect professionally"),
-                    SocialLink("Portfolio", "https://abhayraj-porfolio.web.app/", Icons.Rounded.Web, "Check out my work"),
-                    SocialLink("Play Store", "https://play.google.com/store/apps/dev?id=8004929841101888920", Icons.Rounded.Android, "Download my apps"),
-                    SocialLink("Instagram", "https://www.instagram.com/abhayrajx/", Icons.Rounded.PhotoCamera, "Follow my journey"),
-                    SocialLink("X (Twitter)", "https://x.com/arch_deve", Icons.Rounded.Share, "Stay updated with me")
-                )
-                
-                socialLinks.forEach { link ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .clickable { openUrl(context, link.url) },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = link.icon,
-                            contentDescription = link.name,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(24.dp)
-                        )
-                        
-                        Spacer(modifier = Modifier.width(16.dp))
-                        
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = link.name,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = link.description,
-                                fontSize = 12.sp,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
             }
         }
         
-        // Card 3: Project Repository
+        // Card 2: Play Store Review Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-            onClick = { openUrl(context, "https://github.com/abhay-byte/finalbenchmark-platform") }
+            onClick = { openUrl(context, "https://play.google.com/store/apps/dev?id=8004929841101888920") }
         ) {
             Row(
                 modifier = Modifier
@@ -506,8 +455,8 @@ fun AboutSection() {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.Star,
-                    contentDescription = "GitHub Star",
+                    painter = painterResource(id = R.drawable.playstore_icon),
+                    contentDescription = "Play Store",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(32.dp)
                 )
@@ -516,23 +465,38 @@ fun AboutSection() {
                 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Star on GitHub",
+                        text = "Review on Play Store",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    // Five stars
+                    Row {
+                        repeat(5) { index ->
+                            Icon(
+                                imageVector = Icons.Rounded.Star,
+                                contentDescription = "Star ${index + 1}",
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            if (index < 4) {
+                                Spacer(modifier = Modifier.width(2.dp))
+                            }
+                        }
+                    }
                     Text(
-                        text = "Final Benchmark Platform - If you like this project, please give it a star!",
+                        text = "Share your feedback and help others discover Final Benchmark 2",
                         fontSize = 14.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp),
+                        modifier = Modifier.padding(top = 8.dp),
                         lineHeight = 18.sp
                     )
                 }
             }
         }
         
-        // Card 4: Credits & Acknowledgements
+        // Card 3: Special Thanks
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -591,7 +555,7 @@ fun AboutSection() {
             }
         }
         
-        // Card 5: App Info
+        // Card 4: My Abhay Raj Card (with me.png)
         Card(
             modifier = Modifier.fillMaxWidth(),
             elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -599,44 +563,154 @@ fun AboutSection() {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(20.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Rounded.Android,
-                    contentDescription = "Android App",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(48.dp)
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Profile Picture using me.png
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.me),
+                            contentDescription = "Abhay Raj Profile Picture",
+                            modifier = Modifier.size(80.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(20.dp))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Abhay Raj",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "@abhay-byte",
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        Text(
+                            text = "Full Stack Developer | Mobile, Web, Game Dev & AI Enthusiast",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Card 5: Connect With Me (with proper social media icons)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
                 Text(
-                    text = "Final Benchmark Platform",
+                    text = "Connect With Me",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Text(
-                    text = "Version 1.0.0",
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                Text(
-                    text = "Made with ❤️ in Kotlin",
-                    fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Medium,
-                    textAlign = TextAlign.Center
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
+                
+                val socialLinks = listOf(
+                    SocialLink("GitHub", "https://github.com/abhay-byte", R.drawable.github_icon, "View my repositories and projects"),
+                    SocialLink("LinkedIn", "https://www.linkedin.com/in/abhay-byte/", R.drawable.linkedin_icon, "Let's connect professionally"),
+                    SocialLink("Portfolio", "https://abhayraj-porfolio.web.app/", R.drawable.web_icon, "Check out my work"),
+                    SocialLink("Play Store", "https://play.google.com/store/apps/dev?id=8004929841101888920", R.drawable.playstore_icon, "Download my apps"),
+                    SocialLink("Instagram", "https://www.instagram.com/abhayrajx/", R.drawable.instagram_icon, "Follow my journey"),
+                    SocialLink("X (Twitter)", "https://x.com/arch_deve", R.drawable.x_icon, "Stay updated with me")
+                )
+                
+                socialLinks.forEach { link ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable { openUrl(context, link.url) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = link.iconRes),
+                            contentDescription = link.name,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = link.name,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = link.description,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Card 6: GitHub Star (with GitHub logo)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            onClick = { openUrl(context, "https://github.com/abhay-byte/finalbenchmark-platform") }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.github_star_icon),
+                    contentDescription = "GitHub Star",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Star on GitHub",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Final Benchmark Platform - If you like this project, please give it a star!",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                        lineHeight = 18.sp
+                    )
+                }
             }
         }
     }
@@ -645,7 +719,7 @@ fun AboutSection() {
 data class SocialLink(
     val name: String,
     val url: String,
-    val icon: ImageVector,
+    val iconRes: Int,
     val description: String
 )
 
