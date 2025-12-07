@@ -12,6 +12,7 @@ import android.util.Log
 import android.view.Window
 import android.view.WindowManager
 import java.io.File
+import kotlinx.coroutines.runBlocking
 import com.ivarna.finalbenchmark2.utils.RootUtils
 import com.ivarna.finalbenchmark2.utils.RootCommandExecutor
 import androidx.activity.ComponentActivity
@@ -170,8 +171,16 @@ class MainActivity : ComponentActivity() {
                 mainViewModel.updatePerformanceHintApiStatus(PerformanceOptimizationStatus.ENABLED)
                 mainViewModel.updateCpuAffinityControlStatus(PerformanceOptimizationStatus.ENABLED)
                 mainViewModel.updateForegroundServiceStatus(PerformanceOptimizationStatus.READY)
-                mainViewModel.updateCpuGovernorHintsStatus(PerformanceOptimizationStatus.ENABLED)
-                Log.i("FinalBenchmark2", "Initial CPU optimization statuses updated")
+                
+                // Check if governor is already in performance mode and update status accordingly
+                val currentGovernor = getCurrentGovernor()
+                val governorStatus = if (currentGovernor == "performance") {
+                    PerformanceOptimizationStatus.ENABLED
+                } else {
+                    PerformanceOptimizationStatus.ENABLED // Ready to be applied when needed
+                }
+                mainViewModel.updateCpuGovernorHintsStatus(governorStatus)
+                Log.i("FinalBenchmark2", "Initial CPU optimization statuses updated - Governor: $currentGovernor (Status: $governorStatus)")
             }
             
             
@@ -813,22 +822,27 @@ class MainActivity : ComponentActivity() {
     private fun initializeGovernorHints() {
         try {
             // Read current governor from first CPU
-            val governorFile = File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+            val currentGovernor = getCurrentGovernor()
+            originalGovernor = currentGovernor
             
-            if (governorFile.exists() && governorFile.canRead()) {
-                originalGovernor = governorFile.readText().trim()
-                Log.i(TAG, "Current CPU Governor: $originalGovernor")
-                
-                // Check if we can write (requires root)
-                val canWrite = governorFile.canWrite()
-                Log.i(TAG, "Governor write access: ${if (canWrite) "YES (rooted)" else "NO (not rooted)"}")
-                
-                isGovernorHintApplied = false
-                
+            Log.i(TAG, "Current CPU Governor: $currentGovernor")
+            
+            // Check if we can write (requires root)
+            val governorFile = File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+            val canWrite = if (governorFile.exists() && governorFile.canRead()) {
+                governorFile.canWrite()
             } else {
-                Log.w(TAG, "Cannot access CPU governor files")
-                originalGovernor = null
-                isGovernorHintApplied = false
+                false
+            }
+            Log.i(TAG, "Governor write access: ${if (canWrite) "YES (rooted)" else "NO (not rooted)"}")
+            
+            // If governor is already in performance mode, mark as applied
+            isGovernorHintApplied = (currentGovernor == "performance")
+            
+            if (isGovernorHintApplied) {
+                Log.i(TAG, "✓ Governor already in performance mode - optimization enabled")
+            } else {
+                Log.i(TAG, "Governor not in performance mode - will attempt to set when benchmark starts")
             }
             
         } catch (e: Exception) {
@@ -854,6 +868,7 @@ class MainActivity : ComponentActivity() {
             isGovernorHintApplied = methodSuccess
         } else {
             Log.w(TAG, "Root access not available, using fallback methods")
+            
             // Method 1: Direct write (requires root)
             val method1Success = trySetGovernorDirect()
             
@@ -871,7 +886,17 @@ class MainActivity : ComponentActivity() {
             }
         }
         
-        // Log result
+        // Verify the governor was actually set to performance mode
+        if (isGovernorHintApplied) {
+            val currentGovernor = getCurrentGovernor()
+            if (currentGovernor == "performance") {
+                Log.i(TAG, "✓ Governor hints APPLIED successfully - confirmed performance mode")
+            } else {
+                Log.w(TAG, "Governor hints reported as applied but verification shows: $currentGovernor")
+                isGovernorHintApplied = false
+            }
+        }
+        
         if (isGovernorHintApplied) {
             Log.i(TAG, "✓ Governor hints APPLIED successfully")
         } else {
@@ -1096,13 +1121,31 @@ class MainActivity : ComponentActivity() {
                 command.append("echo performance > /sys/devices/system/cpu/cpu$cpu/cpufreq/scaling_governor; ")
             }
             
-            // Execute with root - using the correct class name
-            // Since executeCommand is a suspend function, we can't call it directly here
-            // We'll just return true to indicate that we attempted to apply the governor hint
-            Log.i(TAG, "Root command would be executed here, indicating governor hint applied")
-            true
+            // Use RootCommandExecutor to execute with proper root access
+            val rootExecutor = RootCommandExecutor()
+            
+            // Execute the command synchronously (this is a main thread call, but it's quick)
+            val result = runBlocking {
+                rootExecutor.executeCommand(command.toString())
+            }
+            
+            if (result != null) {
+                Log.i(TAG, "Root governor command executed successfully")
+                // Verify the governor was actually changed
+                val currentGovernor = getCurrentGovernor()
+                if (currentGovernor == "performance") {
+                    Log.i(TAG, "✓ Governor successfully set to performance mode")
+                    true
+                } else {
+                    Log.w(TAG, "Governor command executed but verification failed. Current: $currentGovernor")
+                    false
+                }
+            } else {
+                Log.w(TAG, "Root governor command failed to execute")
+                false
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Error executing root command", e)
+            Log.e(TAG, "Error executing root governor command", e)
             false
         }
     }
@@ -1111,6 +1154,13 @@ class MainActivity : ComponentActivity() {
      * Get current governor status for UI
      */
     private fun getGovernorStatus(): String {
+        return getCurrentGovernor()
+    }
+    
+    /**
+     * Get current governor from CPU 0
+     */
+    private fun getCurrentGovernor(): String {
         return try {
             val governorFile = File("/sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
             if (governorFile.exists() && governorFile.canRead()) {
@@ -1119,6 +1169,7 @@ class MainActivity : ComponentActivity() {
                 "Unknown"
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Error reading current governor", e)
             "Error"
         }
     }
