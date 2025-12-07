@@ -31,7 +31,9 @@ data class PerformanceOptimizations(
     val screenAlwaysOnStatus: PerformanceOptimizationStatus = PerformanceOptimizationStatus.ENABLED,
     val highPriorityThreading: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
     val performanceHintApi: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
-    val cpuAffinityControl: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED
+    val cpuAffinityControl: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
+    val foregroundService: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED,
+    val cpuGovernorHints: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED
 )
 
 class MainViewModel : ViewModel() {
@@ -105,6 +107,18 @@ class MainViewModel : ViewModel() {
     fun updateCpuAffinityControlStatus(status: PerformanceOptimizationStatus) {
         _performanceOptimizations.value = _performanceOptimizations.value.copy(
             cpuAffinityControl = status
+        )
+    }
+    
+    fun updateForegroundServiceStatus(status: PerformanceOptimizationStatus) {
+        _performanceOptimizations.value = _performanceOptimizations.value.copy(
+            foregroundService = status
+        )
+    }
+    
+    fun updateCpuGovernorHintsStatus(status: PerformanceOptimizationStatus) {
+        _performanceOptimizations.value = _performanceOptimizations.value.copy(
+            cpuGovernorHints = status
         )
     }
     

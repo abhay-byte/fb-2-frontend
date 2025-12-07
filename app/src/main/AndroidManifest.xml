@@ -18,6 +18,13 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     
+    <!-- NEW: Foreground service permissions -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    
+    <!-- NEW: Post notifications (required for foreground service on Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    
 
     <application
         android:name=".FinalBenchmark2Application"
@@ -36,10 +43,23 @@
             android:theme="@style/Theme.FinalBenchmark2">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
+                
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- NEW: Foreground Service Declaration -->
+        <service
+            android:name=".BenchmarkForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            
+            <!-- Required for Android 14+ -->
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Performance benchmarking and CPU testing" />
+        </service>
     </application>
 
 </manifest>

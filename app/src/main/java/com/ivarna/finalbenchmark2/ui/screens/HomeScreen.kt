@@ -382,6 +382,25 @@ fun HomeScreen(
                     0
                 }
                 
+                // NEW: Get foreground service and governor hint statuses
+                val foregroundServiceStatus = if (activity != null) {
+                    activity.isForegroundServiceActive()
+                } else {
+                    false
+                }
+                
+                val governorHintStatus = if (activity != null) {
+                    activity.isGovernorHintApplied()
+                } else {
+                    false
+                }
+                
+                val originalGovernor = if (activity != null) {
+                    activity.getOriginalGovernor()
+                } else {
+                    "Unknown"
+                }
+                
                 PerformanceOptimizationsCard(
                     sustainedPerformanceStatus = sustainedPerformanceStatus,
                     wakeLockStatus = wakeLockStatus,
@@ -391,12 +410,20 @@ fun HomeScreen(
                     performanceHintStatus = performanceHintStatus,
                     cpuAffinityStatus = cpuAffinityStatus,
                     bigCoreCount = bigCoreCount,
-                    littleCoreCount = littleCoreCount
+                    littleCoreCount = littleCoreCount,
+                    foregroundServiceStatus = foregroundServiceStatus,
+                    governorHintStatus = governorHintStatus,
+                    originalGovernor = originalGovernor
                 )
                 
                 // Start CPU Benchmark Button
                 Button(
-                    onClick = { onStartBenchmark("Flagship") },
+                    onClick = {
+                        // Call optimizations before starting benchmark
+                        val activity = context as? com.ivarna.finalbenchmark2.MainActivity
+                        activity?.startAllOptimizations()
+                        onStartBenchmark("Flagship")
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp)
@@ -456,7 +483,10 @@ fun PerformanceOptimizationsCard(
     performanceHintStatus: Boolean,
     cpuAffinityStatus: Boolean,
     bigCoreCount: Int,
-    littleCoreCount: Int
+    littleCoreCount: Int,
+    foregroundServiceStatus: Boolean = false,
+    governorHintStatus: Boolean = false,
+    originalGovernor: String? = "Unknown"
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -494,14 +524,16 @@ fun PerformanceOptimizationsCard(
                 ) {
                     // Count how many optimizations are active
                     val activeCount = listOf(
-                        sustainedPerformanceStatus, 
-                        wakeLockStatus, 
+                        sustainedPerformanceStatus,
+                        wakeLockStatus,
                         screenAlwaysOnStatus,
                         highPriorityThreadingStatus,
                         performanceHintStatus,
-                        cpuAffinityStatus
+                        cpuAffinityStatus,
+                        foregroundServiceStatus,
+                        governorHintStatus
                     ).count { it }
-                    val totalOptimizations = 6
+                    val totalOptimizations = 8
                     
                     Text(
                         text = "$activeCount/$totalOptimizations",
@@ -598,6 +630,28 @@ fun PerformanceOptimizationsCard(
                         title = "CPU Affinity Control",
                         description = "$bigCoreCount big cores, $littleCoreCount little cores detected",
                         status = if (cpuAffinityStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // NEW: Foreground Service Detail
+                    OptimizationDetailRow(
+                        title = "Foreground Service",
+                        description = "Maintains maximum priority during benchmark",
+                        status = if (foregroundServiceStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // NEW: CPU Governor Hints Detail
+                    OptimizationDetailRow(
+                        title = "CPU Governor Hints",
+                        description = "Current: ${originalGovernor ?: "Unknown"} (requires root to change)",
+                        status = if (governorHintStatus) {
                             PerformanceOptimizationStatus.ENABLED
                         } else {
                             PerformanceOptimizationStatus.DISABLED

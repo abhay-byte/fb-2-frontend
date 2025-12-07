@@ -120,7 +120,7 @@ fun MainNavigation(
                         rootStatus = rootStatus
                     )
                 }
-                // Keep the existing benchmark flow
+                // Keep the existing benchmark flow - consolidate into one route
                 composable("benchmark/{preset}") { backStackEntry ->
                     val preset = backStackEntry.arguments?.getString("preset") ?: "Auto"
                     val historyRepository = com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
@@ -133,29 +133,10 @@ fun MainNavigation(
                             navController.navigate("result/$summaryJson")
                         },
                         onBenchmarkStart = {
-                            activity?.acquireWakeLock()
+                            activity?.startAllOptimizations()
                         },
                         onBenchmarkEnd = {
-                            activity?.releaseWakeLock()
-                        },
-                        historyRepository = historyRepository
-                    )
-                }
-                composable("benchmark") { // Fallback route without preset
-                    val historyRepository = com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
-                        com.ivarna.finalbenchmark2.data.database.AppDatabase.getDatabase(context).benchmarkDao()
-                    )
-                    val activity = context as? com.ivarna.finalbenchmark2.MainActivity
-                    BenchmarkScreen(
-                        preset = "Auto",
-                        onBenchmarkComplete = { summaryJson ->
-                            navController.navigate("result/$summaryJson")
-                        },
-                        onBenchmarkStart = {
-                            activity?.acquireWakeLock()
-                        },
-                        onBenchmarkEnd = {
-                            activity?.releaseWakeLock()
+                            activity?.stopAllOptimizations()
                         },
                         historyRepository = historyRepository
                     )
