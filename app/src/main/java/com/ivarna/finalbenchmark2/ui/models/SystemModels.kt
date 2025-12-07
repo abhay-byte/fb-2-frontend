@@ -4,5 +4,6 @@ package com.ivarna.finalbenchmark2.ui.models
 data class SystemStats(
     val cpuLoad: Float = 0f,
     val power: Float = 0f,
-    val temp: Float = 0f
+    val temp: Float = 0f,
+    val memoryLoad: Float = 0f
 )

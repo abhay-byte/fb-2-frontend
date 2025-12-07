@@ -1,6 +1,7 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,11 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ivarna.finalbenchmark2.ui.models.SystemStats
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
@@ -53,6 +60,13 @@ fun BenchmarkScreen(
     }
     val uiState by viewModel.uiState.collectAsState()
     val listState = rememberLazyListState()
+
+    // Drag state for the floating system monitor card
+    var cardOffset by remember { mutableStateOf(IntOffset.Zero) }
+    var isDragging by remember { mutableStateOf(false) }
+    var cardSize by remember { mutableStateOf(IntSize.Zero) }
+    val density = LocalDensity.current
+    val layoutDirection = LocalLayoutDirection.current
 
     // Scroll to the active test automatically
     LaunchedEffect(uiState.allTestStates) {
@@ -117,166 +131,210 @@ fun BenchmarkScreen(
     }
 
     FinalBenchmark2Theme {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            // 3. Attach bottom card with no spacing using bottomBar
-            bottomBar = {
-                SystemMonitorDock(stats = uiState.systemStats)
-            }
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp), // Side padding for main content
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // 1. Top Spacing
-                Spacer(modifier = Modifier.height(48.dp))
-
-                // --- Header Section ---
-                Text(
-                    text = "Running Benchmarks",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // 2. Circular Indicator with Bold Text in Center
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.size(160.dp)
-                ) {
-                    // Track (Background circle)
-                    CircularProgressIndicator(
-                        progress = { 1f },
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        strokeWidth = 12.dp,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                    
-                    // Progress (Foreground circle)
-                    CircularProgressIndicator(
-                        progress = { uiState.progress },
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 12.dp,
-                        strokeCap = StrokeCap.Round,
-                    )
-
-                    // Center Text
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = "${(uiState.progress * 100).toInt()}%",
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                        Text(
-                            text = "Completed",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Active Test Name Label
-                Text(
-                    text = uiState.currentTestName.ifEmpty { "Initializing..." },
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(32.dp))
-
-                // 4. Proper Card Table for Individual Tests
-                Card(
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Scaffold(
+                containerColor = MaterialTheme.colorScheme.background
+            ) { paddingValues ->
+                Column(
                     modifier = Modifier
-                        .weight(1f) // Fill remaining vertical space
-                        .fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(horizontal = 16.dp), // Side padding for main content
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column {
-                        // -- Table Header --
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                                .padding(vertical = 12.dp, horizontal = 16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                    // 1. Top Spacing
+                    Spacer(modifier = Modifier.height(48.dp))
+
+                    // --- Header Section ---
+                    Text(
+                        text = "Running Benchmarks",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // 2. Circular Indicator with Bold Text in Center
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.size(160.dp)
+                    ) {
+                        // Track (Background circle)
+                        CircularProgressIndicator(
+                            progress = { 1f },
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            strokeWidth = 12.dp,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                        )
+                        
+                        // Progress (Foreground circle)
+                        CircularProgressIndicator(
+                            progress = { uiState.progress },
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.primary,
+                            strokeWidth = 12.dp,
+                            strokeCap = StrokeCap.Round,
+                        )
+
+                        // Center Text
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "Status",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.width(50.dp)
+                                text = "${(uiState.progress * 100).toInt()}%",
+                                style = MaterialTheme.typography.displaySmall,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onBackground
                             )
                             Text(
-                                text = "Benchmark Name",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
+                                text = "Completed",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.secondary,
-                                modifier = Modifier.weight(1f)
-                            )
-                            Text(
-                                text = "Time",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.secondary,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.width(60.dp)
+                                fontWeight = FontWeight.Medium
                             )
                         }
-                        
-                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Active Test Name Label
+                    Text(
+                        text = uiState.currentTestName.ifEmpty { "Initializing..." },
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
 
-                        // -- Table Rows --
-                        LazyColumn(
-                            state = listState,
-                            contentPadding = PaddingValues(bottom = 40.dp) // Increased bottom padding for spacing
-                        ) {
-                            items(uiState.allTestStates, key = { it.name }) { testState ->
-                                TestTableRow(testState)
-                                HorizontalDivider(
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
-                                    modifier = Modifier.padding(horizontal = 16.dp)
+                    Spacer(modifier = Modifier.height(32.dp))
+
+                    // 4. Proper Card Table for Individual Tests
+                    Card(
+                        modifier = Modifier
+                            .weight(1f) // Fill remaining vertical space
+                            .fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
+                        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 0.dp, bottomEnd = 0.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Column {
+                            // -- Table Header --
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Status",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.width(50.dp)
                                 )
+                                Text(
+                                    text = "Benchmark Name",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                Text(
+                                    text = "Time",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.width(60.dp)
+                                )
+                            }
+                            
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+                            // -- Table Rows --
+                            LazyColumn(
+                                state = listState,
+                                contentPadding = PaddingValues(bottom = 40.dp) // Increased bottom padding for spacing
+                            ) {
+                                items(uiState.allTestStates, key = { it.name }) { testState ->
+                                    TestTableRow(testState)
+                                    HorizontalDivider(
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+                                        modifier = Modifier.padding(horizontal = 16.dp)
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+
+            // Floating System Monitor Card with drag functionality
+            SystemMonitorDock(
+                stats = uiState.systemStats,
+                modifier = Modifier
+                    .offset { cardOffset }
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { isDragging = true },
+                            onDragEnd = { isDragging = false },
+                            onDragCancel = { isDragging = false }
+                        ) { change, dragAmount ->
+                            change.consume()
+                            val (x, y) = dragAmount
+                            
+                            // Update position with bounds checking
+                            val newX = (cardOffset.x + x.toInt()).coerceIn(16, 1000) // Simple bounds
+                            val newY = (cardOffset.y + y.toInt()).coerceIn(16, 2000) // Simple bounds
+                            
+                            cardOffset = IntOffset(newX, newY)
+                        }
+                    }
+                    .onGloballyPositioned { coordinates ->
+                        cardSize = coordinates.size
+                        // Initialize position at bottom-center if not set
+                        if (cardOffset == IntOffset.Zero) {
+                            val screenWidth = coordinates.parentLayoutCoordinates?.size?.width ?: 400
+                            val screenHeight = coordinates.parentLayoutCoordinates?.size?.height ?: 800
+                            val initialX = ((screenWidth - cardSize.width) / 2).coerceAtLeast(16)
+                            val initialY = (screenHeight - cardSize.height - 40).coerceAtLeast(16) // 40px from bottom
+                            cardOffset = IntOffset(initialX, initialY)
+                        }
+                    },
+                isDragging = isDragging
+            )
         }
     }
 }
 
-// 3. System Monitor Dock (Attached to Bottom)
+// 3. System Monitor Dock (Floating & Draggable)
 @Composable
-fun SystemMonitorDock(stats: SystemStats) {
+fun SystemMonitorDock(
+    stats: SystemStats, 
+    modifier: Modifier = Modifier,
+    isDragging: Boolean = false
+) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 8.dp,
-        // Round top corners only, square bottom to sit flush
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+        modifier = modifier
+            .fillMaxWidth(),
+        color = if (isDragging) {
+            MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHigh
+        },
+        tonalElevation = if (isDragging) 12.dp else 8.dp,
+        shape = RoundedCornerShape(24.dp),
+        shadowElevation = if (isDragging) 12.dp else 8.dp
     ) {
         Row(
             modifier = Modifier
-                .padding(top = 24.dp, bottom = 48.dp) // Extra bottom padding for navigation bar spacing
+                .padding(vertical = 16.dp, horizontal = 20.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
@@ -291,6 +349,10 @@ fun SystemMonitorDock(stats: SystemStats) {
             VerticalDivider(modifier = Modifier.height(32.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
             
             DockMetric(icon = Icons.Rounded.Thermostat, value = "${stats.temp.toInt()}°C", label = "Temp")
+            
+            VerticalDivider(modifier = Modifier.height(32.dp), color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f))
+            
+            DockMetric(icon = Icons.Rounded.Memory, value = "${stats.memoryLoad.toInt()}%", label = "RAM")
         }
     }
 }

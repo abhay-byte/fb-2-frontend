@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update // Required for thread-safe updates
 import kotlinx.coroutines.Job
+import android.app.ActivityManager
 
 // Import SystemStats from SystemModels
 import com.ivarna.finalbenchmark2.ui.models.SystemStats
@@ -86,7 +87,7 @@ sealed class BenchmarkState {
 
 class BenchmarkViewModel(
     private val historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null,
-    application: Application
+    private val application: Application
 ) : ViewModel() {
     private val _benchmarkState = MutableStateFlow<BenchmarkState>(BenchmarkState.Idle)
     val benchmarkState: StateFlow<BenchmarkState> = _benchmarkState
@@ -115,16 +116,35 @@ class BenchmarkViewModel(
         // Safety: Cancel any previous job to be 100% sure
         monitorJob?.cancel()
         
+        val activityManager = application.getSystemService(ActivityManager::class.java)
+        
         monitorJob = viewModelScope.launch(Dispatchers.IO) {
             while (true) { // Changed from 'isActive' to 'true' for continuous monitoring
                 // LOG 1: Monitor wakes up
                 val currentSizeBefore = _uiState.value.completedTests.size
                 Log.d("BENCH_DEBUG", "[Monitor] Waking up. Current List Size: $currentSizeBefore")
 
+                // Calculate memory usage percentage
+                val memoryLoad = try {
+                    val memoryInfo = ActivityManager.MemoryInfo()
+                    activityManager.getMemoryInfo(memoryInfo)
+                    val totalMem = memoryInfo.totalMem
+                    val availMem = memoryInfo.availMem
+                    if (totalMem > 0) {
+                        ((totalMem - availMem).toFloat() / totalMem.toFloat()) * 100f
+                    } else {
+                        0f
+                    }
+                } catch (e: Exception) {
+                    Log.e("BenchmarkViewModel", "Error getting memory info: ${e.message}")
+                    0f
+                }
+
                 val stats = SystemStats(
                     cpuLoad = cpuUtils.getCpuUtilizationPercentage(),
                     power = powerUtils.getPowerConsumptionInfo().power,
-                    temp = tempUtils.getCpuTemperature()
+                    temp = tempUtils.getCpuTemperature(),
+                    memoryLoad = memoryLoad
                 )
                 
                 // CRITICAL MOMENT: Updating State
