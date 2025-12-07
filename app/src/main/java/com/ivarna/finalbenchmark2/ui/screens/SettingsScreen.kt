@@ -1,20 +1,39 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.foundation.clickable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.Image
 import androidx.activity.ComponentActivity
 import com.ivarna.finalbenchmark2.MainActivity
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
@@ -98,6 +117,8 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
         ) {
+            val scrollState = rememberScrollState()
+            
             Column(
                 modifier = Modifier
                     .fillMaxSize()
@@ -105,6 +126,7 @@ fun SettingsScreen(
                              start = 16.dp,
                              end = 16.dp,
                              bottom = 16.dp)
+                    .verticalScroll(scrollState)
             ) {
                 // Header
                 Text(
@@ -323,17 +345,296 @@ fun SettingsScreen(
                     }
                 }
                 
-                // Additional settings can be added here in the future
-                Spacer(modifier = Modifier.weight(1f))
-                
-                // Version info
+                // About Section
+                AboutSection()
+            }
+        }
+    }
+}
+
+
+// Helper function to open URLs
+private fun openUrl(context: Context, url: String) {
+    try {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        context.startActivity(intent)
+    } catch (e: Exception) {
+        Log.e("SettingsScreen", "Error opening URL: $url", e)
+    }
+}
+
+@Composable
+fun AboutSection() {
+    val context = LocalContext.current
+    
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Card 1: Developer Profile
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Profile Picture
+                    Box(
+                        modifier = Modifier
+                            .size(80.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Person,
+                            contentDescription = "Profile Picture",
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(40.dp)
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.width(20.dp))
+                    
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Abhay Raj",
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = "@abhay-byte",
+                            fontSize = 16.sp,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+                        Text(
+                            text = "Full Stack Developer | Mobile, Web, Game Dev & AI Enthusiast",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp),
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
+            }
+        }
+        
+        // Card 2: Social Links
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
                 Text(
-                    text = "FinalBenchmark2 v1.0",
-                    fontSize = 12.sp,
+                    text = "Connect With Me",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val socialLinks = listOf(
+                    SocialLink("GitHub", "https://github.com/abhay-byte", Icons.Rounded.Code, "View my repositories and projects"),
+                    SocialLink("LinkedIn", "https://www.linkedin.com/in/abhay-byte/", Icons.Rounded.BusinessCenter, "Let's connect professionally"),
+                    SocialLink("Portfolio", "https://abhayraj-porfolio.web.app/", Icons.Rounded.Web, "Check out my work"),
+                    SocialLink("Play Store", "https://play.google.com/store/apps/dev?id=8004929841101888920", Icons.Rounded.Android, "Download my apps"),
+                    SocialLink("Instagram", "https://www.instagram.com/abhayrajx/", Icons.Rounded.PhotoCamera, "Follow my journey"),
+                    SocialLink("X (Twitter)", "https://x.com/arch_deve", Icons.Rounded.Share, "Stay updated with me")
+                )
+                
+                socialLinks.forEach { link ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable { openUrl(context, link.url) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = link.icon,
+                            contentDescription = link.name,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(16.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = link.name,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = link.description,
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Card 3: Project Repository
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            onClick = { openUrl(context, "https://github.com/abhay-byte/finalbenchmark-platform") }
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Star,
+                    contentDescription = "GitHub Star",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
+                )
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Star on GitHub",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Final Benchmark Platform - If you like this project, please give it a star!",
+                        fontSize = 14.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 4.dp),
+                        lineHeight = 18.sp
+                    )
+                }
+            }
+        }
+        
+        // Card 4: Credits & Acknowledgements
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                Text(
+                    text = "Special Thanks",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                val credits = listOf(
+                    Credit("CPU Info", "kamgurgul", "https://github.com/kamgurgul/cpu-info"),
+                    Credit("SmartPack Kernel Manager", "SmartPack", "https://github.com/SmartPack/SmartPack-Kernel-Manager"),
+                    Credit("Wattz", "dubrowgn", "https://github.com/dubrowgn/wattz")
+                )
+                
+                credits.forEach { credit ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable { openUrl(context, credit.url) },
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Favorite,
+                            contentDescription = "Credit",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        
+                        Spacer(modifier = Modifier.width(12.dp))
+                        
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = credit.name,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = "by ${credit.author}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Card 5: App Info
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.Android,
+                    contentDescription = "Android App",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(48.dp)
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "Final Benchmark Platform",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "Version 1.0.0",
+                    fontSize = 16.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
+                    textAlign = TextAlign.Center
+                )
+                
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                Text(
+                    text = "Made with ❤️ in Kotlin",
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium,
                     textAlign = TextAlign.Center
                 )
             }
@@ -341,6 +642,18 @@ fun SettingsScreen(
     }
 }
 
+data class SocialLink(
+    val name: String,
+    val url: String,
+    val icon: ImageVector,
+    val description: String
+)
+
+data class Credit(
+    val name: String,
+    val author: String,
+    val url: String
+)
 
 // Helper function to get theme index
 private fun getThemeIndex(themeMode: ThemeMode): Int {
