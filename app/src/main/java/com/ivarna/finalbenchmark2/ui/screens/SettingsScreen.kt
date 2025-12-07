@@ -34,6 +34,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.Color
 import androidx.activity.ComponentActivity
 import com.ivarna.finalbenchmark2.MainActivity
 import com.ivarna.finalbenchmark2.R
@@ -400,7 +401,7 @@ fun AboutSection() {
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onSurface),
+                        .background(Color(0xFF1A1A1A)),
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
@@ -558,7 +559,8 @@ fun AboutSection() {
         // Card 4: My Abhay Raj Card (with me.png)
         Card(
             modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+            onClick = { openUrl(context, "https://github.com/abhay-byte") }
         ) {
             Column(
                 modifier = Modifier
