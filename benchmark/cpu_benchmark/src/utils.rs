@@ -43,7 +43,7 @@ pub fn get_workload_params(tier: &DeviceTier) -> WorkloadParams {
             compression_data_size_mb: 80,   // INCREASED from 60
             monte_carlo_samples: 150_000_000, // INCREASED from 120M (embarrassingly parallel)
             json_data_size_mb: 15,          // INCREASED from 10
-            nqueens_size: 16,               // INCREASED from 15 (exponentially harder)
+            nqueens_size: 14,               // FIXED: Reduced from 16 (N=16 causes crashes due to exponential complexity)
         },
     }
 }

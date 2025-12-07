@@ -885,7 +885,7 @@ class BenchmarkManager {
                 compressionDataSizeMb = 80,     // Increased from 50
                 monteCarloSamples = 150_000_000, // Increased from 80M (embarrassingly parallel)
                 jsonDataSizeMb = 15,            // Increased from 10
-                nqueensSize = 16                // Increased from 15 (exponentially harder)
+                nqueensSize = 14                // FIXED: Reduced from 16 (N=16 causes crashes due to exponential complexity)
             )
             else -> WorkloadParams() // Default values from data class
         }
