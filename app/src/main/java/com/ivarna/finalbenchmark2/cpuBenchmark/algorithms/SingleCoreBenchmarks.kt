@@ -164,56 +164,47 @@ object SingleCoreBenchmarks {
     
     /**
      * Test 4: Hash Computing (SHA-256)
-     * CRISIS FIX: Use fixed 1MB buffer with 200,000 iterations instead of large data size
+     * OPTIMIZED: Use 4KB buffer (cache-friendly) with 300K iterations for ~2-3 seconds execution
      * Complexity: O(n)
-     * Tests: Cryptographic operations, memory bandwidth
+     * Tests: Cryptographic operations, pure hashing speed
      */
     suspend fun hashComputing(params: WorkloadParams): BenchmarkResult = withContext(Dispatchers.Default) {
-        Log.d(TAG, "Starting Hash Computing (FIXED: 1MB buffer, 200K iterations)")
+        Log.d(TAG, "Starting Hash Computing (OPTIMIZED: 4KB buffer, 300K iterations)")
         CpuAffinityManager.setMaxPerformance()
         
-        // CRISIS FIX: Use fixed small buffer with high iteration count
-        val bufferSize = 1 * 1024 * 1024 // 1 MB buffer
-        val iterations = 200_000 // High iteration count for sustained load
+        // OPTIMIZED PARAMETERS: Small buffer fits in CPU cache, testing pure hashing speed
+        val bufferSize = 4 * 1024 // 4KB (cache-friendly)
+        val iterations = 300_000 // Tuned for ~2-3 seconds execution
         
-        val (hash, timeMs) = BenchmarkHelpers.measureBenchmarkSuspend {
-            // Generate fixed random data
-            val data = ByteArray(bufferSize) { Random.nextInt(256).toByte() }
+        val (totalBytes, timeMs) = BenchmarkHelpers.measureBenchmarkSuspend {
+            val data = ByteArray(bufferSize) { 0xAA.toByte() }
+            val digest = MessageDigest.getInstance("SHA-256")
             
-            var totalHashes = 0
-            
-            repeat(iterations) { iteration ->
-                // Compute SHA-256 hash
-                val digest = MessageDigest.getInstance("SHA-256")
+            for (i in 0 until iterations) {
                 digest.update(data)
-                val hashBytes = digest.digest()
-                totalHashes++
-                
-                // Yield every 100 iterations to prevent UI freeze
-                if (iteration % 100 == 0) {
-                    kotlinx.coroutines.yield()
-                }
+                digest.digest()
+                if (i % 1000 == 0) yield() // Prevent UI freeze
             }
-            
-            Pair(totalHashes, iterations)
+            (bufferSize.toLong() * iterations)
         }
         
-        val (totalHashes, totalIterations) = hash
-        val throughput = totalHashes.toDouble() / (timeMs / 1000.0)
+        // Calculate throughput in MB/s
+        val throughputMBps = (totalBytes.toDouble() / (1024 * 1024)) / (timeMs / 1000.0)
+        val opsPerSecond = iterations.toDouble() / (timeMs / 1000.0)
         
         CpuAffinityManager.resetPerformance()
         
         return@withContext BenchmarkResult(
             name = "Single-Core Hash Computing",
             executionTimeMs = timeMs.toDouble(),
-            opsPerSecond = throughput,
-            isValid = totalHashes > 0,
+            opsPerSecond = opsPerSecond,
+            isValid = totalBytes > 0,
             metricsJson = JSONObject().apply {
-                put("buffer_size_mb", bufferSize / (1024 * 1024))
-                put("iterations", totalIterations)
-                put("total_hashes", totalHashes)
-                put("throughput_hashes_per_sec", throughput)
-                put("crisis_fix", "Fixed iteration count prevents memory issues")
+                put("buffer_size_kb", bufferSize / 1024)
+                put("iterations", iterations)
+                put("total_bytes_hashed", totalBytes)
+                put("throughput_mbps", throughputMBps)
+                put("hashes_per_sec", opsPerSecond)
             }.toString()
         )
     }

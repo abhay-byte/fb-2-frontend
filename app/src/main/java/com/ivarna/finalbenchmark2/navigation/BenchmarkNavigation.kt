@@ -19,7 +19,7 @@ fun BenchmarkNavigation(modifier: Modifier = Modifier) {
     ) {
         composable("welcome") {
             WelcomeScreen(
-                onStartBenchmark = {
+                onNextClicked = {
                     navController.navigate("benchmark")
                 }
             )

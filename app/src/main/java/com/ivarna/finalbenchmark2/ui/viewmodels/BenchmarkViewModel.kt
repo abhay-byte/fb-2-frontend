@@ -441,16 +441,25 @@ class BenchmarkViewModel(
     private fun calculateFinalResults(): BenchmarkResults {
         // FIXED: Use the completedTests list that now contains actual BenchmarkResult objects
         val completedResults = _uiState.value.completedTests
+        
+        Log.d("BenchmarkViewModel", "calculateFinalResults: completedResults size = ${completedResults.size}")
+        completedResults.forEach { result ->
+            Log.d("BenchmarkViewModel", "  - ${result.name}: opsPerSecond=${result.opsPerSecond}")
+        }
             
         // Calculate scores using the existing scoring logic
-        val singleCoreResults = completedResults.filter { it.name.contains("Single-Core") }
-        val multiCoreResults = completedResults.filter { it.name.contains("Multi-Core") }
+        val singleCoreResults = completedResults.filter { it.name.contains("Single-Core", ignoreCase = true) }
+        val multiCoreResults = completedResults.filter { it.name.contains("Multi-Core", ignoreCase = true) }
+        
+        Log.d("BenchmarkViewModel", "Single-Core results: ${singleCoreResults.size}, Multi-Core results: ${multiCoreResults.size}")
         
         val singleCoreScore = calculateWeightedScore(singleCoreResults, "SINGLE")
         val multiCoreScore = calculateWeightedScore(multiCoreResults, "MULTI")
         val finalWeightedScore = (singleCoreScore * 0.35) + (multiCoreScore * 0.65)
         val normalizedScore = finalWeightedScore / 2500.0 // Apply normalization factor as mentioned in the requirements
         val coreRatio = if (singleCoreScore > 0) multiCoreScore / singleCoreScore else 0.0
+        
+        Log.d("BenchmarkViewModel", "FINAL SCORES: single=$singleCoreScore, multi=$multiCoreScore, weighted=$finalWeightedScore, normalized=$normalizedScore")
         
         return BenchmarkResults(
             individualScores = completedResults,
@@ -525,33 +534,50 @@ class BenchmarkViewModel(
         }
     }
     
-    private fun calculateWeightedScore(results: List<com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>, benchmarkName: String): Double {
-        // Use the same scaling factors as BenchmarkManager
+    private fun calculateWeightedScore(results: List<com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>, benchmarkType: String): Double {
+        // Scaling factors for each test type (keyed by partial test name)
         val scalingFactors = mapOf(
-            "Prime Generation" to 0.00001,
+            "Prime" to 0.00001,
             "Fibonacci" to 0.012,
-            "Matrix Multiplication" to 0.025,
-            "Hash Computing" to 0.01,
-            "String Sorting" to 0.015,
-            "Ray Tracing" to 0.006,
+            "Matrix" to 0.025,
+            "Hash" to 0.01,
+            "String" to 0.015,
+            "Ray" to 0.006,
             "Compression" to 0.07,
             "Monte Carlo" to 0.07,
-            "JSON Parsing" to 0.00004,
-            "N-Queens" to 0.07
+            "JSON" to 0.00004,
+            "Queens" to 0.07
         )
         
-        val filteredResults = results.filter { it.name.contains(benchmarkName) }
+        // FIX Bug A: Use case-insensitive filtering with correct prefix
+        val typePrefix = if (benchmarkType == "SINGLE") "Single-Core" else "Multi-Core"
+        val filteredResults = results.filter { it.name.contains(typePrefix, ignoreCase = true) }
+        
         if (filteredResults.isEmpty()) {
+            Log.w("BenchmarkViewModel", "No results found for type: $benchmarkType (prefix: $typePrefix)")
             return 0.0
         }
         
         // Calculate weighted score
         var totalWeightedScore = 0.0
         for (result in filteredResults) {
-            val scalingFactor = scalingFactors[benchmarkName] ?: 0.0001
-            totalWeightedScore += result.opsPerSecond * scalingFactor
+            // FIX Bug B: Find scaling factor by matching test name, not benchmarkType
+            val scalingFactor = scalingFactors.entries
+                .find { (key, _) -> result.name.contains(key, ignoreCase = true) }
+                ?.value ?: 0.0001
+            
+            // Sanitize opsPerSecond to prevent Infinity/NaN propagation
+            val sanitizedOps = when {
+                result.opsPerSecond.isInfinite() -> 0.0
+                result.opsPerSecond.isNaN() -> 0.0
+                else -> result.opsPerSecond
+            }
+            
+            totalWeightedScore += sanitizedOps * scalingFactor
+            Log.d("BenchmarkViewModel", "Score calc: ${result.name} -> ops=$sanitizedOps, factor=$scalingFactor, contribution=${sanitizedOps * scalingFactor}")
         }
         
+        Log.d("BenchmarkViewModel", "Total $benchmarkType score: $totalWeightedScore")
         return totalWeightedScore
     }
     

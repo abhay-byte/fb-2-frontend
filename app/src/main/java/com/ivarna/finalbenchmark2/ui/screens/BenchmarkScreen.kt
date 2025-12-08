@@ -95,14 +95,29 @@ fun BenchmarkScreen(
                 is BenchmarkState.Completed -> {
                     val results = state.results
                     
+                    // Sanitize values to prevent Infinity/NaN JSON serialization errors
+                    fun sanitize(value: Double): Double = when {
+                        value.isInfinite() -> 0.0
+                        value.isNaN() -> 0.0
+                        else -> value
+                    }
+                    
                     // Create a map that matches EXACTLY what your Result Screen expects
                     val summaryData = mapOf(
-                        "single_core_score" to results.singleCoreScore,
-                        "multi_core_score" to results.multiCoreScore,
-                        "final_score" to results.finalWeightedScore,
-                        "normalized_score" to results.normalizedScore,
+                        "single_core_score" to sanitize(results.singleCoreScore),
+                        "multi_core_score" to sanitize(results.multiCoreScore),
+                        "final_score" to sanitize(results.finalWeightedScore),
+                        "normalized_score" to sanitize(results.normalizedScore),
                         "rating" to determineRating(results.normalizedScore),
-                        "detailed_results" to results.detailedResults // Gson will serialize this list automatically!
+                        "detailed_results" to results.detailedResults.map { result ->
+                            mapOf(
+                                "name" to result.name,
+                                "executionTimeMs" to sanitize(result.executionTimeMs),
+                                "opsPerSecond" to sanitize(result.opsPerSecond),
+                                "isValid" to result.isValid,
+                                "metricsJson" to result.metricsJson
+                            )
+                        }
                     )
                     
                     // Safe serialization using Gson

@@ -32,6 +32,7 @@ import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryViewModel
 import com.ivarna.finalbenchmark2.ui.screens.HistoryDetailScreen
 import com.ivarna.finalbenchmark2.navigation.FrostedGlassNavigationBar
 import com.ivarna.finalbenchmark2.ui.viewmodels.RootStatus
+import com.ivarna.finalbenchmark2.utils.OnboardingPreferences
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
@@ -46,6 +47,13 @@ fun MainNavigation(
     val navBackStackEntry = navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry.value?.destination?.route
     val context = LocalContext.current
+    
+    // Check if onboarding is completed
+    val onboardingPreferences: OnboardingPreferences = remember { OnboardingPreferences(context) }
+    val isOnboardingCompleted: Boolean = onboardingPreferences.isOnboardingCompleted()
+    
+    // Set start destination based on onboarding status
+    val startDestination = if (isOnboardingCompleted) "home" else "welcome"
     
     // Define the bottom navigation items with custom icons
     val bottomNavigationItems = listOf(
@@ -93,9 +101,18 @@ fun MainNavigation(
         ) {
             NavHost(
                 navController = navController,
-                startDestination = "home",
+                startDestination = startDestination,
                 modifier = Modifier.padding(innerPadding)
             ) {
+                composable("welcome") {
+                    WelcomeScreen(
+                        onNextClicked = {
+                            navController.navigate("benchmark/flagship") {
+                                popUpTo("welcome") { inclusive = true }
+                            }
+                        }
+                    )
+                }
                 composable("home") {
                     HomeScreen(
                         onStartBenchmark = { preset ->

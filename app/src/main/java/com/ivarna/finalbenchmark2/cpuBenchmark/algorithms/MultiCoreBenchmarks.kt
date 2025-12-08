@@ -162,37 +162,31 @@ object MultiCoreBenchmarks {
     
     /**
      * Test 4: Parallel Hash Computing
-     * CRISIS FIX: Use fixed 1MB buffer with 200,000 iterations
+     * OPTIMIZED: Use 4KB buffer (cache-friendly) with 300K iterations for ~2-3 seconds execution
      */
     suspend fun hashComputing(params: WorkloadParams): BenchmarkResult = coroutineScope {
-        Log.d(TAG, "Starting Multi-Core Hash Computing (FIXED: 1MB buffer, 200K iterations)")
+        Log.d(TAG, "Starting Multi-Core Hash Computing (OPTIMIZED: 4KB buffer, 300K iterations)")
         CpuAffinityManager.setMaxPerformance()
         
-        // CRISIS FIX: Use fixed small buffer with high iteration count
-        val bufferSize = 1 * 1024 * 1024 // 1 MB buffer
-        val iterations = 200_000 // High iteration count for sustained load
+        // OPTIMIZED PARAMETERS: Small buffer fits in CPU cache, testing pure hashing speed
+        val bufferSize = 4 * 1024 // 4KB (cache-friendly)
+        val iterations = 300_000 // Tuned for ~2-3 seconds execution
         
         val (result, timeMs) = BenchmarkHelpers.measureBenchmarkSuspend {
-            // Generate fixed random data
-            val data = ByteArray(bufferSize) { Random.nextInt(256).toByte() }
+            val data = ByteArray(bufferSize) { 0xAA.toByte() }
             
             // Process iterations in parallel across threads
             val iterationsPerThread = iterations / numThreads
             val hashResults = (0 until numThreads).map { threadId ->
                 async(Dispatchers.Default) {
+                    val digest = MessageDigest.getInstance("SHA-256")
                     var threadHashCount = 0
                     
-                    repeat(iterationsPerThread) { iteration ->
-                        // Compute SHA-256 hash
-                        val digest = MessageDigest.getInstance("SHA-256")
+                    for (i in 0 until iterationsPerThread) {
                         digest.update(data)
-                        val hashBytes = digest.digest()
+                        digest.digest()
                         threadHashCount++
-                        
-                        // Yield every 100 iterations to prevent UI freeze
-                        if (iteration % 100 == 0) {
-                            kotlinx.coroutines.yield()
-                        }
+                        if (i % 1000 == 0) yield() // Prevent UI freeze
                     }
                     
                     threadHashCount
@@ -204,22 +198,24 @@ object MultiCoreBenchmarks {
         }
         
         val totalHashes = result
-        val throughput = totalHashes.toDouble() / (timeMs / 1000.0)
+        val totalBytes = bufferSize.toLong() * totalHashes
+        val throughputMBps = (totalBytes.toDouble() / (1024 * 1024)) / (timeMs / 1000.0)
+        val opsPerSecond = totalHashes.toDouble() / (timeMs / 1000.0)
         
         CpuAffinityManager.resetPerformance()
         
         BenchmarkResult(
             name = "Multi-Core Hash Computing",
             executionTimeMs = timeMs.toDouble(),
-            opsPerSecond = throughput,
+            opsPerSecond = opsPerSecond,
             isValid = totalHashes > 0,
             metricsJson = JSONObject().apply {
-                put("buffer_size_mb", bufferSize / (1024 * 1024))
+                put("buffer_size_kb", bufferSize / 1024)
                 put("total_iterations", iterations)
                 put("total_hashes", totalHashes)
-                put("throughput_hashes_per_sec", throughput)
+                put("throughput_mbps", throughputMBps)
+                put("hashes_per_sec", opsPerSecond)
                 put("threads", numThreads)
-                put("crisis_fix", "Fixed iteration count prevents memory issues")
             }.toString()
         )
     }
