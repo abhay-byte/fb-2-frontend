@@ -23,36 +23,39 @@ class KotlinBenchmarkManager {
     companion object {
         private const val TAG = "KotlinBenchmarkManager"
         
-        // FIXED: Recalculated scaling factors to ensure multi-core scores > single-core scores
-        // Target: Each benchmark contributes ~35 points single-core, ~65 points multi-core
-        // Multi-core factors are SMALLER because multi-core produces higher ops/s (more parallelism)
+        // CONSOLIDATED: Single source of truth for scaling factors
+        // Target: ~10,000 total points for flagship devices
+        // Calibrated using scientific notation for proper scaling
         private val SINGLE_CORE_FACTORS = mapOf(
-            "Prime Generation" to 3.5e-3,       // 10,000 * 0.0035 = 35 points (realistic prime count)
-            "Fibonacci Recursive" to 35.0,      // 1 * 35 = 35 points (1 fib/sec is realistic for fib(30))
-            "Matrix Multiplication" to 2.8e-7,  // 125,000 * 2.8e-7 = 35 points
-            "Hash Computing" to 2.6e-4,         // 135,000 * 2.6e-4 = 35 points
-            "String Sorting" to 4.8e-6,         // 7,200,000 * 4.8e-6 = 35 points
-            "Ray Tracing" to 3.6e-5,            // 970,000 * 3.6e-5 = 35 points
-            "Compression" to 4.2e-7,            // 84,000,000 * 4.2e-7 = 35 points
-            "Monte Carlo" to 7.0e-5,            // 500,000 * 7.0e-5 = 35 points
-            "JSON Parsing" to 5.1e-5,           // 690,000 * 5.1e-5 = 35 points
-            "N-Queens" to 2.5e-3                // 14,000 * 2.5e-3 = 35 points
+            "Prime Generation" to 2.0e-5,       // Prime: 2.0e-5
+            "Fibonacci Recursive" to 1.2e-5,    // Fib: 1.2e-5
+            "Matrix Multiplication" to 4.0e-6,  // Matrix: 4.0e-6
+            "Hash Computing" to 6.0e-3,         // Hash: 6.0e-3
+            "String Sorting" to 5.0e-3,         // String: 5.0e-3
+            "Ray Tracing" to 1.5e-3,            // Ray: 1.5e-3
+            "Compression" to 5.0e-4,            // Compression: 5.0e-4
+            "Monte Carlo" to 2.0e-4,            // Monte Carlo: 2.0e-4
+            "JSON Parsing" to 1.8e-3,           // JSON: 1.8e-3
+            "N-Queens" to 8.0e-2                // N-Queens: 8.0e-2
         )
+        
+        // Multi-core factors are slightly lower to account for parallelism overhead
         private val MULTI_CORE_FACTORS = mapOf(
-            "Prime Generation" to 8.1e-4,       // 80,000 * 8.1e-4 = 65 points (8x parallelism)
-            "Fibonacci Recursive" to 8.1,       // 8 * 8.1 = 65 points (8 fib/sec with 8 cores)
-            "Matrix Multiplication" to 6.5e-8,  // 1,000,000 * 6.5e-8 = 65 points
-            "Hash Computing" to 1.6e-4,         // 400,000 * 1.6e-4 = 65 points
-            "String Sorting" to 1.2e-5,         // 5,400,000 * 1.2e-5 = 65 points
-            "Ray Tracing" to 5.4e-5,            // 1,200,000 * 5.4e-5 = 65 points
-            "Compression" to 8.6e-7,            // 76,000,000 * 8.6e-7 = 65 points
-            "Monte Carlo" to 1.6e-4,            // 4,000,000 * 1.6e-4 = 65 points
-            "JSON Parsing" to 1.5e-4,           // 430,000 * 1.5e-4 = 65 points
-            "N-Queens" to 1.5e-4                // 430,000 * 1.5e-4 = 65 points
+            "Prime Generation" to 6.0e-6,       // Prime: 6.0e-6
+            "Fibonacci Recursive" to 1.0e-5,    // Fib: 1.0e-5
+            "Matrix Multiplication" to 3.5e-6,  // Matrix: 3.5e-6
+            "Hash Computing" to 3.0e-3,         // Hash: 3.0e-3
+            "String Sorting" to 3.0e-3,         // String: 3.0e-3
+            "Ray Tracing" to 1.0e-3,            // Ray: 1.0e-3
+            "Compression" to 6.0e-4,            // Compression: 6.0e-4
+            "Monte Carlo" to 3.5e-4,            // Monte Carlo: 3.5e-4
+            "JSON Parsing" to 3.5e-3,           // JSON: 3.5e-3
+            "N-Queens" to 3.0e-3                // N-Queens: 3.0e-3
         )
     }
     
     suspend fun runAllBenchmarks(deviceTier: String = "Flagship") {
+        Log.d(TAG, "SINGLE_SOURCE_OF_TRUTH: Starting benchmark execution with device tier: $deviceTier")
         val params = getWorkloadParams(deviceTier)
         
         // Log CPU topology
@@ -246,8 +249,10 @@ class KotlinBenchmarkManager {
         
         // Calculate and emit final results
         val summaryJson = calculateSummary(singleResults, multiResults)
-        Log.d(TAG, "Generated summary JSON: $summaryJson")
+        Log.d(TAG, "SINGLE_SOURCE_OF_TRUTH: Generated summary JSON: $summaryJson")
+        Log.d(TAG, "SINGLE_SOURCE_OF_TRUTH: Emitting completion signal with calculated scores")
         _benchmarkComplete.emit(summaryJson)
+        Log.d(TAG, "SINGLE_SOURCE_OF_TRUTH: Completion signal emitted successfully")
     }
     
     private suspend fun safeBenchmarkRun(testName: String, block: suspend () -> BenchmarkResult): BenchmarkResult {
