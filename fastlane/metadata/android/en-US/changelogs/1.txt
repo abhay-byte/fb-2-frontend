@@ -1,0 +1,11 @@
+• Initial release of Finalbenchmark 2
+• Multi-core CPU benchmarking with stress testing
+• Single-core performance benchmarks
+• Real-time temperature and frequency monitoring
+• Material Design 3 interface with dark/light themes
+• Historical benchmark tracking and comparison
+• Export results to CSV and JSON formats
+• Native C++ implementation for maximum performance
+• Support for ARM64, ARM, and x86 architectures
+• Completely offline operation with no tracking
+• Free and open source
