@@ -52,16 +52,8 @@ fun RootCheckScreen(
     LaunchedEffect(Unit) {
         if (!hasRootChecked.value) {
             scope.launch {
-                // First check if we have a cached result
-                val cachedResult = RootAccessManager.getCachedRootAccess()
-                val hasRoot = if (cachedResult != null) {
-                    cachedResult
-                } else {
-                    // No cached result, perform the check and cache it
-                    withContext(Dispatchers.IO) {
-                        RootAccessManager.hasRootAccess()
-                    }
-                }
+                // Use RootAccessManager.isRootGranted() - this will use cached result if available
+                val hasRoot = RootAccessManager.isRootGranted()
                 rootUiState = if (hasRoot) {
                     RootUiState.Granted
                 } else {
@@ -227,13 +219,10 @@ fun RootCheckScreen(
                     OutlinedButton(
                         onClick = {
                             rootUiState = RootUiState.Checking
-                            // Reset the cached result to force a new check
-                            RootAccessManager.reset()
+                            // Use forceRefresh() to clear cache and perform new check
                             scope.launch {
-                                delay(500)
-                                val hasRoot = withContext(Dispatchers.IO) {
-                                    RootAccessManager.hasRootAccess()
-                                }
+                                delay(500) // Small delay for better UX
+                                val hasRoot = RootAccessManager.forceRefresh()
                                 rootUiState = if (hasRoot) {
                                     RootUiState.Granted
                                 } else {

@@ -45,29 +45,41 @@ import com.ivarna.finalbenchmark2.utils.ThemePreferences
 import com.ivarna.finalbenchmark2.utils.PowerConsumptionPreferences
 import com.ivarna.finalbenchmark2.utils.RootAccessPreferences
 import com.ivarna.finalbenchmark2.utils.OnboardingPreferences
+import com.ivarna.finalbenchmark2.utils.RootAccessManager
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    rootStatus: RootStatus = RootStatus.NO_ROOT, // Root status from MainViewModel
+    rootStatus: RootStatus = RootStatus.NO_ROOT, // Root status from MainViewModel (legacy parameter)
     onBackClick: () -> Unit = {},
     onNavigateToOnboarding: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val themePreferences = remember { ThemePreferences(context) }
     val rootAccessPreferences = remember { RootAccessPreferences(context) }
+    val scope = rememberCoroutineScope()
     
     val themes = listOf("Light", "Dark", "Gruvbox", "Nord", "Dracula", "Solarized", "Monokai", "Sky Breeze", "Lavender Dream", "Mint Fresh", "AMOLED Black", "System Default")
     val currentThemeMode = themePreferences.getThemeMode()
     var selectedThemeIndex by remember { mutableStateOf(getThemeIndex(currentThemeMode)) }
     
-    // Root access state - now comes from MainViewModel
+    // Root access state - now using RootAccessManager for caching
     var useRootAccess by remember { mutableStateOf(rootAccessPreferences.getUseRootAccess()) }
-    val isRootCheckLoading by remember { mutableStateOf(false) } // No longer loading since MainViewModel handles it
     
-    // Get root status from the passed parameter instead of checking again
-    val isDeviceRooted = rootStatus != RootStatus.NO_ROOT
-    val canExecuteRoot = rootStatus == RootStatus.ROOT_WORKING
+    // FIX: Use RootAccessManager to prevent UI freezing during theme changes
+    // This ensures the heavy root check happens only once per app session
+    var isDeviceRooted by remember { mutableStateOf(false) }
+    var isRootCheckLoading by remember { mutableStateOf(true) }
+    
+    // LaunchedEffect runs when the screen is first created and during Activity recreation
+    // Because RootAccessManager is a Singleton, it returns cached results instantly
+    LaunchedEffect(Unit) {
+        isDeviceRooted = RootAccessManager.isRootGranted()
+        isRootCheckLoading = false
+    }
+    
+    val canExecuteRoot = isDeviceRooted // Simplified logic
     
     // Update theme when selection changes
     val onThemeChange: (Int) -> Unit = remember {

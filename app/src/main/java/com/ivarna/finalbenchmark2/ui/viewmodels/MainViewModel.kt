@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ivarna.finalbenchmark2.utils.RootAccessManager
-import com.ivarna.finalbenchmark2.utils.RootUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,34 +50,14 @@ class MainViewModel : ViewModel() {
 
     private fun checkRootAccess() {
         viewModelScope.launch(Dispatchers.IO) {
-            // First check if we have a cached result
-            val cachedResult = RootAccessManager.getCachedRootAccess()
-            if (cachedResult != null) {
-                Log.d("MainViewModel", "Using cached root access result: $cachedResult")
-                _rootState.value = if (cachedResult) RootStatus.ROOT_WORKING else RootStatus.NO_ROOT
-                return@launch
-            }
+            // Use RootAccessManager for proper caching - this prevents repeated heavy checks
+            val hasRootAccess = RootAccessManager.isRootGranted()
             
-            // No cached result, perform the check
-            Log.d("MainViewModel", "Starting root access check...")
-            val isRoot = RootUtils.isDeviceRooted()
-            Log.d("MainViewModel", "Device rooted check result: $isRoot")
-            var canExecuteRoot = false
-            if (isRoot) {
-                Log.d("MainViewModel", "Checking if root commands work...")
-                canExecuteRoot = RootAccessManager.hasRootAccess()
-                Log.d("MainViewModel", "Root command execution check result: $canExecuteRoot")
-            } else {
-                Log.d("MainViewModel", "Skipping root command check since device is not rooted")
-            }
+            // For simplicity, we'll treat all root access as ROOT_WORKING 
+            // since RootAccessManager already verifies that commands can execute
+            val result = if (hasRootAccess) RootStatus.ROOT_WORKING else RootStatus.NO_ROOT
             
-            val result = when {
-                isRoot && canExecuteRoot -> RootStatus.ROOT_WORKING
-                isRoot && !canExecuteRoot -> RootStatus.ROOT_AVAILABLE
-                else -> RootStatus.NO_ROOT
-            }
-            
-            Log.d("MainViewModel", "Final root access result: $result")
+            Log.d("MainViewModel", "Root access result via RootAccessManager: $result")
             _rootState.value = result
         }
     }
