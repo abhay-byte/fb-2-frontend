@@ -30,7 +30,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update // Required for thread-safe updates
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.yield
 import android.app.ActivityManager
+import kotlin.system.measureNanoTime
 
 // Import SystemStats from SystemModels
 import com.ivarna.finalbenchmark2.ui.models.SystemStats
@@ -38,10 +40,11 @@ import com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils
 import com.ivarna.finalbenchmark2.utils.PowerUtils
 import com.ivarna.finalbenchmark2.utils.TemperatureUtils
 
-// Test state tracking
+// Test state tracking - UPDATED with timeText field
 data class TestState(
     val name: String,
     val status: TestStatus,
+    val timeText: String = "", // ADDED: Will contain timing like "342ms"
     val result: com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult? = null
 )
 
@@ -61,7 +64,7 @@ data class BenchmarkUiState(
     val isRunning: Boolean = false,
     val benchmarkResults: BenchmarkResults? = null,
     val error: String? = null,
-    val allTestStates: List<TestState> = emptyList()
+    val testStates: List<TestState> = emptyList() // CHANGED: from allTestStates to testStates for clarity
 )
 
 // Old data class kept for compatibility
@@ -166,7 +169,8 @@ class BenchmarkViewModel(
         }
     }
     
-    fun startBenchmark(preset: String = "Auto") {
+    // NEW IMPLEMENTATION: Simplified, reactive benchmark runner
+    fun runBenchmarks() {
         // FIX: Reset state immediately to prevent stale navigation
         _benchmarkState.value = BenchmarkState.Idle
         
@@ -190,202 +194,112 @@ class BenchmarkViewModel(
                 // instead of native CPU affinity control
                 Log.i("BenchmarkViewModel", "Using Android thread priority for performance optimization")
                 
-                // Initialize the new UI state
-                _uiState.update { currentState ->
-                    BenchmarkUiState(
-                        currentTestName = "Initializing...",
-                        completedTests = emptyList(),
-                        progress = 0f,
-                        isSingleCoreFinished = false,
-                        isRunning = true,
-                        error = null,
-                        allTestStates = emptyList() // Will be populated by the manager
-                    )
-                }
-                
-                _benchmarkState.value = BenchmarkState.Running(
-                    BenchmarkProgress(
-                        currentBenchmark = "Initializing...",
-                        progress = 0,
-                        completedBenchmarks = 0,
-                        totalBenchmarks = 20 // 10 single-core + 10 multi-core
-                    )
+                // 1. RESET STATE - Initialize test states
+                val testNames = listOf(
+                    "Single-Core Prime Generation",
+                    "Single-Core Fibonacci Recursive", 
+                    "Single-Core Matrix Multiplication",
+                    "Single-Core Hash Computing",
+                    "Single-Core String Sorting",
+                    "Single-Core Ray Tracing",
+                    "Single-Core Compression",
+                    "Single-Core Monte Carlo π",
+                    "Single-Core JSON Parsing", 
+                    "Single-Core N-Queens",
+                    "Multi-Core Prime Generation",
+                    "Multi-Core Fibonacci Memoized",
+                    "Multi-Core Matrix Multiplication", 
+                    "Multi-Core Hash Computing",
+                    "Multi-Core String Sorting",
+                    "Multi-Core Ray Tracing",
+                    "Multi-Core Compression",
+                    "Multi-Core Monte Carlo π",
+                    "Multi-Core JSON Parsing",
+                    "Multi-Core N-Queens"
                 )
                 
-                // Launch a coroutine to handle benchmark events
-                val eventJob = launch {
-                    benchmarkManager.benchmarkEvents.collect { event ->
-                        when (event.state) {
-                            "STARTED" -> {
-                                _uiState.update { currentState ->
-                                    val updatedTestStates = if (currentState.allTestStates.any { it.name == event.testName }) {
-                                        currentState.allTestStates.map { state ->
-                                            if (state.name == event.testName) state.copy(status = TestStatus.RUNNING) else state
-                                        }
-                                    } else {
-                                        currentState.allTestStates + TestState(
-                                            name = event.testName,
-                                            status = TestStatus.RUNNING,
-                                            result = null
-                                        )
-                                    }
-                                    
-                                    currentState.copy(
-                                        currentTestName = event.testName,
-                                        allTestStates = updatedTestStates
-                                    )
-                                }
-                                
-                                // Update the old benchmark state for compatibility
-                                val currentUiState = _uiState.value
-                                _benchmarkState.value = BenchmarkState.Running(
-                                    BenchmarkProgress(
-                                        currentBenchmark = event.testName,
-                                        progress = (currentUiState.allTestStates.count { it.status == TestStatus.COMPLETED } * 100 / 20).coerceAtMost(100),
-                                        completedBenchmarks = currentUiState.allTestStates.count { it.status == TestStatus.COMPLETED },
-                                        totalBenchmarks = 20
-                                    )
-                                )
+                _uiState.update { it.copy(
+                    isRunning = true,
+                    progress = 0f,
+                    currentTestName = "Initializing...",
+                    testStates = testNames.map { name -> TestState(name = name, status = TestStatus.PENDING) },
+                    error = null
+                ) }
+                
+                val totalTests = testNames.size
+                var completedTests = 0
+
+                // Execute each benchmark sequentially with UI breathing room
+                for ((index, testName) in testNames.withIndex()) {
+                    // A. UPDATE UI: Mark this specific test as RUNNING
+                    _uiState.update { state ->
+                        state.copy(
+                            currentTestName = testName,
+                            testStates = state.testStates.map { 
+                                if (it.name == testName) it.copy(status = TestStatus.RUNNING) else it 
                             }
-                            "COMPLETED" -> {
-                                // The actual result is not passed in the event, so we track separately
-                                _uiState.update { currentState ->
-                                    val updatedTestStates = currentState.allTestStates.map { state ->
-                                        if (state.name == event.testName && state.status == TestStatus.RUNNING) {
-                                            state.copy(status = TestStatus.COMPLETED)
-                                        } else {
-                                            state
-                                        }
-                                    }
-                                    
-                                    currentState.copy(
-                                        progress = (currentState.completedTests.size + 1).toFloat() / 20f,
-                                        allTestStates = updatedTestStates
-                                    )
-                                }
-                                
-                                // Update the old benchmark state for compatibility
-                                val currentUiState = _uiState.value
-                                _benchmarkState.value = BenchmarkState.Running(
-                                    BenchmarkProgress(
-                                        currentBenchmark = event.testName,
-                                        progress = ((currentUiState.allTestStates.count { it.status == TestStatus.COMPLETED } + 1) * 100 / 20).coerceAtMost(100),
-                                        completedBenchmarks = currentUiState.allTestStates.count { it.status == TestStatus.COMPLETED },
-                                        totalBenchmarks = 20
-                                    )
-                                )
-                            }
-                        }
-                    }
-                }
-                
-                // Wait for the benchmark completion with timeout
-                // Create a channel to receive the result
-                val resultChannel = kotlinx.coroutines.channels.Channel<String>()
-                
-                // Launch a coroutine to listen for benchmark completion
-                val completionJob = launch {
-                    benchmarkManager.benchmarkComplete.collect { summary ->
-                        resultChannel.send(summary)
-                        // Exit after sending the first result
-                        return@collect
-                    }
-                }
-                
-                // Start the benchmark execution
-                benchmarkManager.runAllBenchmarks("Flagship") // Using flagship mode for consistent results
-                
-                // Wait for the completion result with a timeout
-                val summaryJson = try {
-                    withTimeout(180000) { // 3 minute timeout
-                        resultChannel.receive()
-                    }
-                } catch (e: Exception) {
-                    Log.e("BenchmarkViewModel", "Timeout waiting for benchmark completion: ${e.message}")
-                    // Return a default summary in case of timeout
-                    """{
-                        "single_core_score": 0.0,
-                        "multi_core_score": 0.0,
-                        "final_score": 0.0,
-                        "normalized_score": 0.0,
-                        "rating": "★"
-                    }"""
-                } finally {
-                    resultChannel.close()
-                    completionJob.cancel()
-                }
-                
-                // Parse the summary JSON to extract scores
-                var singleCoreScore = 0.0
-                var multiCoreScore = 0.0
-                var finalWeightedScore = 0.0
-                var normalizedScore = 0.0
-                var coreRatio = 0.0
-                
-                try {
-                    val gson = Gson()
-                    val summaryMap = gson.fromJson(summaryJson, Map::class.java)
-                    singleCoreScore = (summaryMap["single_core_score"] as Double?) ?: 0.0
-                    multiCoreScore = (summaryMap["multi_core_score"] as Double?) ?: 0.0
-                    finalWeightedScore = (summaryMap["final_score"] as Double?) ?: 0.0
-                    normalizedScore = (summaryMap["normalized_score"] as Double?) ?: 0.0
-                    
-                    coreRatio = if (singleCoreScore > 0) {
-                        multiCoreScore / singleCoreScore
-                    } else {
-                        0.0
+                        )
                     }
                     
-                    Log.d("BenchmarkViewModel", "Using weighted scoring - Single: $singleCoreScore, Multi: $multiCoreScore")
-                } catch (e: Exception) {
-                    Log.e("BenchmarkViewModel", "Error parsing summary JSON: ${e.message}", e)
-                    // Keep default values (already set to 0.0 above)
-                }
-                
-                // For the detailed results, we need to get them from somewhere
-                // Since the new manager doesn't expose individual results directly, we'll create dummy results
-                val results = emptyList<com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>()
-                
-                Log.d("BenchmarkViewModel", "Individual Results: $results")
-                Log.d("BenchmarkViewModel", "Single-Core Score: $singleCoreScore")
-                Log.d("BenchmarkViewModel", "Multi-Core Score: $multiCoreScore")
-                Log.d("BenchmarkViewModel", "Core Ratio: $coreRatio")
-                Log.d("BenchmarkViewModel", "Final Weighted Score: $finalWeightedScore")
-                Log.d("BenchmarkViewModel", "Normalized Score: $normalizedScore")
-                
-                val benchmarkResults = BenchmarkResults(
-                    individualScores = results,
-                    singleCoreScore = singleCoreScore,
-                    multiCoreScore = multiCoreScore,
-                    coreRatio = coreRatio,
-                    finalWeightedScore = finalWeightedScore,
-                    normalizedScore = normalizedScore,
-                    detailedResults = results
-                )
-                
-                // Update UI state with final results
-                _uiState.update { currentState ->
-                    currentState.copy(
-                        benchmarkResults = benchmarkResults,
-                        isRunning = false
+                    // Give UI time to render the "Spinner" - CRITICAL for UI updates
+                    delay(50) 
+
+                    // B. RUN the heavy Kotlin Benchmark on Background Thread
+                    val result = withContext(Dispatchers.Default) {
+                        measureNanoTime { 
+                            runSingleBenchmark(testName) 
+                        } 
+                    }
+                    val timeMs = result / 1_000_000.0 // Convert nano to ms
+
+                    // C. UPDATE UI: Mark as COMPLETED with TIME
+                    completedTests++
+                    val newProgress = completedTests.toFloat() / totalTests.toFloat()
+                    
+                    _uiState.update { state ->
+                        state.copy(
+                            progress = newProgress,
+                            currentTestName = testName,
+                            testStates = state.testStates.map { 
+                                if (it.name == testName) it.copy(
+                                    status = TestStatus.COMPLETED, 
+                                    timeText = "${timeMs.toInt()}ms" // <--- SPECIFIC REQUIREMENT
+                                ) else it 
+                            }
+                        )
+                    }
+                    
+                    // Update legacy state for compatibility
+                    _benchmarkState.value = BenchmarkState.Running(
+                        BenchmarkProgress(
+                            currentBenchmark = testName,
+                            progress = (newProgress * 100).toInt(),
+                            completedBenchmarks = completedTests,
+                            totalBenchmarks = totalTests
+                        )
                     )
+                    
+                    // YIELD CONTROL: Allow UI thread to process state updates
+                    yield() // This gives the main thread a chance to recompose
                 }
+                
+                // D. FINALIZE: Calculate final results
+                val benchmarkResults = calculateFinalResults()
+                
+                _uiState.update { it.copy(
+                    isRunning = false,
+                    benchmarkResults = benchmarkResults
+                ) }
                 
                 _benchmarkState.value = BenchmarkState.Completed(benchmarkResults)
                 
-                // Reset the running flag on completion
-                isBenchmarkRunning = false
-                
-                // Stop foreground service after benchmarks complete
-                BenchmarkForegroundService.stop(application)
-                
-                // Save the benchmark results to the database
+                // Save to database
                 if (historyRepository != null) {
                     saveCpuBenchmarkResult(benchmarkResults)
                 }
                 
-                // Cancel the event collection job
-                eventJob.cancel()
+                // Stop foreground service
+                BenchmarkForegroundService.stop(application)
                 
             } catch (e: Exception) {
                 Log.e("BenchmarkViewModel", "Error during benchmark execution", e)
@@ -397,13 +311,161 @@ class BenchmarkViewModel(
                 }
                 _benchmarkState.value = BenchmarkState.Error(e.message ?: "Unknown error occurred")
                 
-                // Stop foreground service in case of error
                 BenchmarkForegroundService.stop(application)
-                
-                // Reset the running flag on error
+            } finally {
                 isBenchmarkRunning = false
             }
         }
+    }
+    
+    // Helper function to run individual benchmark based on name
+    private suspend fun runSingleBenchmark(testName: String): com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult {
+        val deviceTier = "Flagship"
+        val params = getWorkloadParams(deviceTier)
+        
+        return when {
+            testName.contains("Single-Core Prime Generation") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.primeGeneration(params)
+            }
+            testName.contains("Single-Core Fibonacci Recursive") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.fibonacciRecursive(params)
+            }
+            testName.contains("Single-Core Matrix Multiplication") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.matrixMultiplication(params)
+            }
+            testName.contains("Single-Core Hash Computing") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.hashComputing(params)
+            }
+            testName.contains("Single-Core String Sorting") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.stringSorting(params)
+            }
+            testName.contains("Single-Core Ray Tracing") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.rayTracing(params)
+            }
+            testName.contains("Single-Core Compression") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.compression(params)
+            }
+            testName.contains("Single-Core Monte Carlo") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.monteCarloPi(params)
+            }
+            testName.contains("Single-Core JSON Parsing") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.jsonParsing(params)
+            }
+            testName.contains("Single-Core N-Queens") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.SingleCoreBenchmarks.nqueens(params)
+            }
+            testName.contains("Multi-Core Prime Generation") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.primeGeneration(params)
+            }
+            testName.contains("Multi-Core Fibonacci Memoized") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.fibonacciMemoized(params)
+            }
+            testName.contains("Multi-Core Matrix Multiplication") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.matrixMultiplication(params)
+            }
+            testName.contains("Multi-Core Hash Computing") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.hashComputing(params)
+            }
+            testName.contains("Multi-Core String Sorting") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.stringSorting(params)
+            }
+            testName.contains("Multi-Core Ray Tracing") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.rayTracing(params)
+            }
+            testName.contains("Multi-Core Compression") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.compression(params)
+            }
+            testName.contains("Multi-Core Monte Carlo") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.monteCarloPi(params)
+            }
+            testName.contains("Multi-Core JSON Parsing") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.jsonParsing(params)
+            }
+            testName.contains("Multi-Core N-Queens") -> {
+                com.ivarna.finalbenchmark2.cpuBenchmark.algorithms.MultiCoreBenchmarks.nqueens(params)
+            }
+            else -> {
+                throw IllegalArgumentException("Unknown benchmark: $testName")
+            }
+        }
+    }
+    
+    // Helper function to get workload parameters
+    private fun getWorkloadParams(deviceTier: String): com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams {
+        return when (deviceTier.lowercase()) {
+            "slow" -> com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams(
+                primeRange = 10_000,
+                fibonacciNRange = Pair(20, 25),
+                matrixSize = 100,
+                hashDataSizeMb = 5,
+                stringCount = 50_000,
+                rayTracingResolution = Pair(128, 128),
+                rayTracingDepth = 1,
+                compressionDataSizeMb = 5,
+                monteCarloSamples = 5_000,
+                jsonDataSizeMb = 1,
+                nqueensSize = 8
+            )
+            "mid" -> com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams(
+                primeRange = 8_000_000,
+                fibonacciNRange = Pair(32, 38),
+                matrixSize = 700,
+                hashDataSizeMb = 50,
+                stringCount = 700_000,
+                rayTracingResolution = Pair(350, 350),
+                rayTracingDepth = 3,
+                compressionDataSizeMb = 30,
+                monteCarloSamples = 60_000_000,
+                jsonDataSizeMb = 5,
+                nqueensSize = 13
+            )
+            "flagship" -> com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams(
+                primeRange = 20_000_000,
+                fibonacciNRange = Pair(35, 42),
+                matrixSize = 1200,
+                hashDataSizeMb = 150,
+                stringCount = 2_000_000,
+                rayTracingResolution = Pair(600, 600),
+                rayTracingDepth = 5,
+                compressionDataSizeMb = 80,
+                monteCarloSamples = 150_000_000,
+                jsonDataSizeMb = 15,
+                nqueensSize = 14
+            )
+            else -> com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams() // Default values
+        }
+    }
+    
+    // Calculate final results from completed tests
+    private fun calculateFinalResults(): BenchmarkResults {
+        val completedResults = _uiState.value.testStates
+            .filter { it.status == TestStatus.COMPLETED && it.result != null }
+            .map { it.result!! }
+            
+        // Calculate scores using the existing scoring logic
+        val singleCoreResults = completedResults.filter { it.name.contains("Single-Core") }
+        val multiCoreResults = completedResults.filter { it.name.contains("Multi-Core") }
+        
+        val singleCoreScore = calculateWeightedScore(singleCoreResults, "SINGLE")
+        val multiCoreScore = calculateWeightedScore(multiCoreResults, "MULTI")
+        val finalWeightedScore = (singleCoreScore * 0.35) + (multiCoreScore * 0.65)
+        val normalizedScore = finalWeightedScore
+        val coreRatio = if (singleCoreScore > 0) multiCoreScore / singleCoreScore else 0.0
+        
+        return BenchmarkResults(
+            individualScores = completedResults,
+            singleCoreScore = singleCoreScore,
+            multiCoreScore = multiCoreScore,
+            coreRatio = coreRatio,
+            finalWeightedScore = finalWeightedScore,
+            normalizedScore = normalizedScore,
+            detailedResults = completedResults
+        )
+    }
+    
+    // Legacy function kept for compatibility
+    fun startBenchmark(preset: String = "Auto") {
+        runBenchmarks()
     }
     
     fun saveCpuBenchmarkResult(results: BenchmarkResults) {

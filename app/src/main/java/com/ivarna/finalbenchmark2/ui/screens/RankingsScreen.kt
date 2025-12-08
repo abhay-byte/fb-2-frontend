@@ -50,8 +50,25 @@ fun RankingsScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(vertical = 8.dp)
+            .padding(
+                top = 56.dp,
+                start = 16.dp,
+                end = 16.dp,
+                bottom = 16.dp
+            )
     ) {
+        // Header
+        Text(
+            text = "Rankings",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary,
+            textAlign = TextAlign.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
         // Filter Bar
         RankingFilterBar(
             selectedCategory = selectedCategory,

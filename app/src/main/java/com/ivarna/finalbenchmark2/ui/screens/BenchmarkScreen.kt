@@ -69,8 +69,8 @@ fun BenchmarkScreen(
     val layoutDirection = LocalLayoutDirection.current
 
     // Scroll to the active test automatically
-    LaunchedEffect(uiState.allTestStates) {
-        val runningIndex = uiState.allTestStates.indexOfFirst { it.status == TestStatus.RUNNING }
+    LaunchedEffect(uiState.testStates) {
+        val runningIndex = uiState.testStates.indexOfFirst { it.status == TestStatus.RUNNING }
         if (runningIndex >= 0) {
             listState.animateScrollToItem(runningIndex)
         }
@@ -251,7 +251,7 @@ fun BenchmarkScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.secondary,
                                     textAlign = TextAlign.End,
-                                    modifier = Modifier.width(60.dp)
+                                    modifier = Modifier.width(80.dp) // Increased width for timing
                                 )
                             }
                             
@@ -262,7 +262,7 @@ fun BenchmarkScreen(
                                 state = listState,
                                 contentPadding = PaddingValues(bottom = 40.dp) // Increased bottom padding for spacing
                             ) {
-                                items(uiState.allTestStates, key = { it.name }) { testState ->
+                                items(uiState.testStates, key = { it.name }) { testState ->
                                     TestTableRow(testState)
                                     HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
@@ -389,7 +389,7 @@ fun TestTableRow(testState: TestState) {
             .padding(vertical = 12.dp, horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Status Column
+        // 1. Status Column
         Box(modifier = Modifier.width(50.dp), contentAlignment = Alignment.CenterStart) {
             when (testState.status) {
                 TestStatus.COMPLETED -> Icon(
@@ -412,7 +412,7 @@ fun TestTableRow(testState: TestState) {
             }
         }
 
-        // Name Column
+        // 2. Name Column
         Text(
             text = testState.name.replace("Single-Core ", "").replace("Multi-Core ", ""),
             style = MaterialTheme.typography.bodyMedium,
@@ -426,17 +426,26 @@ fun TestTableRow(testState: TestState) {
             overflow = TextOverflow.Ellipsis
         )
 
-        // Time Column
-        Text(
-            text = run {
-                val result = testState.result
-                if (result != null) "${result.executionTimeMs.toInt()}ms" else "-"
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-            color = MaterialTheme.colorScheme.secondary,
-            modifier = Modifier.width(60.dp),
-            textAlign = TextAlign.End
-        )
+        // 3. Time Column (The Key Requirement!)
+        if (testState.status == TestStatus.COMPLETED && testState.timeText.isNotEmpty()) {
+            Text(
+                text = testState.timeText, // e.g., "200ms" - THE SPECIFIC REQUIREMENT
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.primary, // Using primary color for visibility
+                modifier = Modifier.width(80.dp),
+                textAlign = TextAlign.End
+            )
+        } else {
+            // Show dash for non-completed tests
+            Text(
+                text = "-",
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                modifier = Modifier.width(80.dp),
+                textAlign = TextAlign.End
+            )
+        }
     }
 }
