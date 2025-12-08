@@ -526,7 +526,8 @@ object SingleCoreBenchmarks {
                 put("total_data_processed_mb", totalDataProcessed / (1024 * 1024))
                 put("average_compressed_size", totalCompressedSize / totalIterations)
                 put("throughput_bps", throughput)
-                put("crisis_fix", "Fixed 512KB buffer prevents OOM")
+                put("workload_params_mb", params.compressionDataSizeMb) // For reference only
+                put("fixed_buffer_strategy", "Using 512KB fixed buffer for mobile safety")
             }.toString()
         )
     }

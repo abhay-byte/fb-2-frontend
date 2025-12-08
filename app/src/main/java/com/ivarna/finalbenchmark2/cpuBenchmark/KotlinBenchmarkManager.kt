@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.Dispatchers
 import org.json.JSONObject
+import org.json.JSONArray
 import kotlin.math.ln
 
 class KotlinBenchmarkManager {
@@ -285,13 +286,40 @@ class KotlinBenchmarkManager {
         
         Log.d(TAG, "Final scoring - Single: $calculatedSingleCoreScore, Multi: $calculatedMultiCoreScore, Final: $calculatedFinalScore, Normalized: $calculatedNormalizedScore")
         
-        return """{
-            "single_core_score": ${"%.2f".format(calculatedSingleCoreScore)},
-            "multi_core_score": ${"%.2f".format(calculatedMultiCoreScore)},
-            "final_score": ${"%.2f".format(calculatedFinalScore)},
-            "normalized_score": ${"%.2f".format(calculatedNormalizedScore)},
-            "rating": "$rating"
-        }"""
+        // CRITICAL FIX: Include the result arrays that BenchmarkManager expects
+        val singleCoreResultsArray = JSONArray().apply {
+            singleResults.forEach { result ->
+                put(JSONObject().apply {
+                    put("name", result.name)
+                    put("ops_per_second", result.opsPerSecond)
+                    put("execution_time_ms", result.executionTimeMs)
+                    put("is_valid", result.isValid)
+                    put("metrics_json", result.metricsJson)
+                })
+            }
+        }
+        
+        val multiCoreResultsArray = JSONArray().apply {
+            multiResults.forEach { result ->
+                put(JSONObject().apply {
+                    put("name", result.name)
+                    put("ops_per_second", result.opsPerSecond)
+                    put("execution_time_ms", result.executionTimeMs)
+                    put("is_valid", result.isValid)
+                    put("metrics_json", result.metricsJson)
+                })
+            }
+        }
+        
+        return JSONObject().apply {
+            put("single_core_score", calculatedSingleCoreScore)
+            put("multi_core_score", calculatedMultiCoreScore)
+            put("final_score", calculatedFinalScore)
+            put("normalized_score", calculatedNormalizedScore)
+            put("rating", rating)
+            put("single_core_results", singleCoreResultsArray)
+            put("multi_core_results", multiCoreResultsArray)
+        }.toString()
     }
     
     private suspend fun emitBenchmarkStart(testName: String, mode: String) {
@@ -347,18 +375,18 @@ class KotlinBenchmarkManager {
                 nqueensSize = 13
             )
             "flagship" -> WorkloadParams(
-                // CRISIS FIX: Ultra-aggressive mobile-safe parameters for 2-5 second tests
-                primeRange = 500_000,           // Reduced from 2M to 500K - mobile-safe range
-                fibonacciNRange = Pair(35, 38), // Reduced upper bound from 40 to 38
-                matrixSize = 350,               // CRITICAL FIX: Reduced from 512 to 350 (40% less work)
-                hashDataSizeMb = 1,             // CRITICAL FIX: Reduced from 10MB to 1MB (10x reduction)
-                stringCount = 12_000,           // CRITICAL FIX: Reduced from 100K to 12K (mobile-safe)
-                rayTracingResolution = Pair(400, 400), // Reduced from 600x600 for speed
-                rayTracingDepth = 3,            // Reduced from 5 to 3 for speed
-                compressionDataSizeMb = 0,      // CRITICAL FIX: 0MB - use fixed 512KB buffer instead
-                monteCarloSamples = 2_000_000,  // Reduced from 10M to 2M for speed
-                jsonDataSizeMb = 2,             // Reduced from 5MB to 2MB for speed
-                nqueensSize = 12                // Reduced from 14 to 12 for speed
+                // MOBILE-SAFE: Ultra-conservative parameters for 2-5 second tests
+                primeRange = 300_000,           // Reduced from 500K - mobile-safe range
+                fibonacciNRange = Pair(32, 34), // Reduced from 35-38 for speed
+                matrixSize = 300,               // Reduced from 350 (O(N^3) complexity - critical)
+                hashDataSizeMb = 2,             // Increased to 2MB for meaningful hash tests
+                stringCount = 20_000,           // Increased from 12K for meaningful sort tests
+                rayTracingResolution = Pair(200, 200), // Reduced from 400x400 for speed
+                rayTracingDepth = 3,            // Kept at 3 for speed
+                compressionDataSizeMb = 1,      // Set to 1MB for meaningful compression tests
+                monteCarloSamples = 500_000,    // Reduced from 2M for speed
+                jsonDataSizeMb = 1,             // Reduced from 2MB for speed
+                nqueensSize = 10                // Reduced from 12 for speed
             )
             else -> WorkloadParams() // Default values
         }
