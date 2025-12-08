@@ -1,8 +1,11 @@
 package com.ivarna.finalbenchmark2.ui.viewmodels
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.ivarna.finalbenchmark2.cpuBenchmark.CpuTopologyDetector
 import com.ivarna.finalbenchmark2.utils.RootUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +39,17 @@ data class PerformanceOptimizations(
     val cpuGovernorHints: PerformanceOptimizationStatus = PerformanceOptimizationStatus.DISABLED
 )
 
+// New data class for real-time optimization status
+data class OptimizationStatus(
+    val isSustainedPerformanceMode: Boolean = false,
+    val isHighPriorityActive: Boolean = false, // Foreground Service Status
+    val bigCoreCount: Int = 0,
+    val littleCoreCount: Int = 0,
+    val isAffinityEnabled: Boolean = false, // True if bigCoreCount > 0
+    val activeOptimizationCount: Int = 0,
+    val totalOptimizationCount: Int = 6
+)
+
 class MainViewModel : ViewModel() {
     
     private val _rootState = MutableStateFlow(RootStatus.NO_ROOT)
@@ -43,9 +57,16 @@ class MainViewModel : ViewModel() {
     
     private val _performanceOptimizations = MutableStateFlow(PerformanceOptimizations())
     val performanceOptimizations: StateFlow<PerformanceOptimizations> = _performanceOptimizations.asStateFlow()
+    
+    private val _optimizationStatus = MutableStateFlow(OptimizationStatus())
+    val optimizationStatus: StateFlow<OptimizationStatus> = _optimizationStatus.asStateFlow()
+    
+    // CPU Topology Detector instance
+    private val cpuTopologyDetector = CpuTopologyDetector()
 
     init {
         checkRootAccess()
+        loadOptimizationStatus()
     }
 
     private fun checkRootAccess() {
@@ -71,6 +92,57 @@ class MainViewModel : ViewModel() {
             
             Log.d("MainViewModel", "Final root access result: $result")
             _rootState.value = result
+        }
+    }
+
+    /**
+     * Load and update optimization status with real-time data
+     */
+    private fun loadOptimizationStatus() {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                // Detect CPU topology
+                val cpuTopology = cpuTopologyDetector.detectCpuTopology()
+                val bigCores = cpuTopology.filter { it.isBigCore && it.isOnline }
+                val littleCores = cpuTopology.filter { !it.isBigCore && it.isOnline }
+                
+                val bigCoreCount = bigCores.size
+                val littleCoreCount = littleCores.size
+                val isAffinityEnabled = bigCoreCount > 0
+                
+                // Calculate active optimizations
+                var activeCount = 0
+                
+                // For now, we'll simulate some optimization statuses
+                // In a real implementation, these would come from actual service checks
+                val isSustainedPerformanceMode = false // Would check actual sustained performance mode
+                val isHighPriorityActive = false // Would check if foreground service is running
+                
+                // Count active optimizations
+                if (isSustainedPerformanceMode) activeCount++
+                if (isHighPriorityActive) activeCount++
+                if (isAffinityEnabled) activeCount++ // CPU Affinity is active if we have big cores
+                // Add more as we implement real checks
+                
+                val optimizationStatus = OptimizationStatus(
+                    isSustainedPerformanceMode = isSustainedPerformanceMode,
+                    isHighPriorityActive = isHighPriorityActive,
+                    bigCoreCount = bigCoreCount,
+                    littleCoreCount = littleCoreCount,
+                    isAffinityEnabled = isAffinityEnabled,
+                    activeOptimizationCount = activeCount,
+                    totalOptimizationCount = 6
+                )
+                
+                _optimizationStatus.value = optimizationStatus
+                
+                Log.d("MainViewModel", "Loaded optimization status: Big cores=$bigCoreCount, Little cores=$littleCoreCount, Active=$activeCount/6")
+                
+            } catch (e: Exception) {
+                Log.e("MainViewModel", "Error loading optimization status", e)
+                // Set default values on error
+                _optimizationStatus.value = OptimizationStatus()
+            }
         }
     }
     
