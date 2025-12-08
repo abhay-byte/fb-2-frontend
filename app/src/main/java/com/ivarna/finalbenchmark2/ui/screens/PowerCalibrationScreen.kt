@@ -1,7 +1,6 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -11,7 +10,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -36,8 +34,6 @@ fun PowerCalibrationScreen(
     var selectedMultiplier by remember { mutableStateOf(powerPreferences.getMultiplier()) }
     var currentPowerInfo by remember { mutableStateOf(powerUtils.getPowerConsumptionInfo()) }
     val scope = rememberCoroutineScope()
-
-    val isDarkTheme = isSystemInDarkTheme()
 
     // Save multiplier immediately when changed and update power reading
     LaunchedEffect(selectedMultiplier) {
@@ -66,21 +62,7 @@ fun PowerCalibrationScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = if (isDarkTheme) {
-                        listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                        )
-                    } else {
-                        listOf(
-                            Color(0xFFFFFFFF),
-                            Color(0xFFF5F5F5)
-                        )
-                    }
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier
