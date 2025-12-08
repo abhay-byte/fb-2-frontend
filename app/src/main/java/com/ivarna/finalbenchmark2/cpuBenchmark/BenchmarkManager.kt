@@ -20,36 +20,32 @@ class BenchmarkManager {
     
     private var isRunning = false
     
-    // FINAL: Balanced scaling factors targeting reasonable score ranges
-    // Single-core: ~30-40 points per test (300-400 total)
-    // Multi-core: ~40-80 points per test (400-800 total)
-    private val SINGLE_CORE_SCALING_FACTORS = mapOf(
-        // Balanced factors for ~30-40 points per test
-        "Prime Generation" to 4.0e-8,    // Increased for better balance
-        "Fibonacci Recursive" to 0.02,   // Increased for better balance
-        "Matrix Multiplication" to 6.0e-8,   // Increased for better balance
-        "Hash Computing" to 1.6e-7,      // Increased for better balance
-        "String Sorting" to 2.0e-6,      // Increased for better balance
-        "Ray Tracing" to 1.2e-6,         // Increased for better balance
-        "Compression" to 1.4e-7,         // Increased for better balance
-        "Monte Carlo" to 6.0e-7,         // Increased for better balance
-        "JSON Parsing" to 2.2e-6,        // Increased for better balance
-        "N-Queens" to 8.0e-5             // Increased for better balance
+    private val SINGLE_CORE_FACTORS = mapOf(
+        "Prime Generation" to 7.8e-7,        // 81,967,213 * 7.8e-7 ≈ 64 points
+        "Fibonacci Recursive" to 8.5e-12,    // 75,609,306,369 * 8.5e-12 ≈ 64 points
+        "Matrix Multiplication" to 1.4e-10,  // 445,016,740 * 1.4e-10 ≈ 64 points
+        "Hash Computing" to 4.7e-4,          // 135,318 * 4.7e-4 ≈ 64 points
+        "String Sorting" to 8.9e-6,          // 7,223,628 * 8.9e-6 ≈ 64 points
+        "Ray Tracing" to 6.6e-5,             // 972,973 * 6.6e-5 ≈ 64 points
+        "Compression" to 7.6e-7,             // 84,087,891 * 7.6e-7 ≈ 64 points
+        "Monte Carlo" to 1.4e-4,             // 462,003 * 1.4e-4 ≈ 64 points
+        "JSON Parsing" to 9.2e-5,            // 692,159 * 9.2e-5 ≈ 64 points
+        "N-Queens" to 4.6e-3                 // 13,906 * 4.6e-3 ≈ 64 points
     )
     
-    private val MULTI_CORE_SCALING_FACTORS = mapOf(
-        // Balanced factors for ~40-80 points per test
-        "Prime Generation" to 4.0e-9,     // Increased for better balance
-        "Fibonacci Memoized" to 0.008,    // Increased for better balance
-        "Matrix Multiplication" to 8.0e-8,    // Increased for better balance
-        "Hash Computing" to 1.2e-7,       // Increased for better balance
-        "String Sorting" to 3.2e-6,       // Increased for better balance
-        "Ray Tracing" to 2.4e-6,          // Increased for better balance
-        "Compression" to 2.0e-7,          // Increased for better balance
-        "Monte Carlo" to 4.0e-7,          // Increased for better balance
-        "JSON Parsing" to 0.028,          // Increased for better balance
-        "N-Queens" to 2.0e-4              // Increased for better balance
+    private val MULTI_CORE_FACTORS = mapOf(
+        "Prime Generation" to 1.25e-5,       // 9,420,631 * 1.25e-5 ≈ 118 points
+        "Fibonacci Memoized" to 1.18e-4,    // Set for when fixed
+        "Matrix Multiplication" to 1.85e-10, // 636,346,897 * 1.85e-10 ≈ 118 points
+        "Hash Computing" to 2.9e-4,          // 407,609 * 2.9e-4 ≈ 118 points
+        "String Sorting" to 2.2e-5,          // 5,312,581 * 2.2e-5 ≈ 118 points
+        "Ray Tracing" to 9.7e-5,             // 1,212,121 * 9.7e-5 ≈ 118 points
+        "Compression" to 1.55e-6,            // 75,972,299 * 1.55e-6 ≈ 118 points
+        "Monte Carlo" to 2.7e-4,             // 438,784 * 2.7e-4 ≈ 118 points
+        "JSON Parsing" to 2.75e-4,           // 428,421 * 2.75e-4 ≈ 118 points
+        "N-Queens" to 2.7e-4                 // 434,338 * 2.7e-4 ≈ 118 points
     )
+
     
     // Default scaling factor for unknown benchmarks
     private val DEFAULT_SCALING_FACTOR = 0.00001
@@ -241,7 +237,7 @@ class BenchmarkManager {
         
         // Determine if this is single-core or multi-core
         val isMultiCore = benchmarkName.contains("Multi-Core", ignoreCase = true)
-        val factorsMap = if (isMultiCore) MULTI_CORE_SCALING_FACTORS else SINGLE_CORE_SCALING_FACTORS
+        val factorsMap = if (isMultiCore) MULTI_CORE_FACTORS else SINGLE_CORE_FACTORS
         
         // Remove "Single-Core " or "Multi-Core " prefix for matching
         val cleanName = benchmarkName

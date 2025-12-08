@@ -26,29 +26,28 @@ class KotlinBenchmarkManager {
         // UPDATED SCALING FACTORS - Optimized algorithms with new factors
         // Target: ~10,000 total points for flagship devices with optimized algorithms
         private val SINGLE_CORE_FACTORS = mapOf(
-            "Prime Generation" to 2.5e-5,     // Optimized: Higher due to reduced allocations
-            "Fibonacci Recursive" to 1.2e-5,  // Optimized: Raw CPU usage without memoization
-            "Matrix Multiplication" to 4.0e-6, // Optimized: Cache-friendly algorithms
-            "Hash Computing" to 6.0e-3,       // Optimized: SHA-256 throughput focus
-            "String Sorting" to 5.0e-3,       // Optimized: Pre-generated strings, measure only sort
-            "Ray Tracing" to 1.5e-3,          // Optimized: Parallel ray computation
-            "Compression" to 5.0e-4,          // Optimized: Static buffer, zero allocation
-            "Monte Carlo" to 2.0e-4,          // Optimized: ThreadLocalRandom, primitive only
-            "JSON Parsing" to 1.8e-3,         // Optimized: Element counting focus
-            "N-Queens" to 8.0e-2              // Optimized: Backtracking efficiency
+            "Prime Generation" to 4.3e-7,        // 81,967,213 * 4.3e-7 ≈ 35 points
+            "Fibonacci Recursive" to 4.6e-12,    // 75,609,306,369 * 4.6e-12 ≈ 35 points
+            "Matrix Multiplication" to 7.8e-11,  // 445,016,740 * 7.8e-11 ≈ 35 points
+            "Hash Computing" to 2.6e-4,          // 135,318 * 2.6e-4 ≈ 35 points
+            "String Sorting" to 4.8e-6,          // 7,223,628 * 4.8e-6 ≈ 35 points
+            "Ray Tracing" to 3.6e-5,             // 972,973 * 3.6e-5 ≈ 35 points
+            "Compression" to 4.2e-7,             // 84,087,891 * 4.2e-7 ≈ 35 points
+            "Monte Carlo" to 7.6e-5,             // 462,003 * 7.6e-5 ≈ 35 points
+            "JSON Parsing" to 5.1e-5,            // 692,159 * 5.1e-5 ≈ 35 points
+            "N-Queens" to 2.5e-3                 // 13,906 * 2.5e-3 ≈ 35 points
         )
-        
         private val MULTI_CORE_FACTORS = mapOf(
-            "Prime Generation" to 6.0e-6,     // Optimized: Parallel prime counting
-            "Fibonacci Recursive" to 1.0e-5,  // Optimized: No memoization, pure parallel
-            "Matrix Multiplication" to 3.5e-6, // Optimized: Parallel matrix operations
-            "Hash Computing" to 3.0e-3,       // Optimized: Parallel SHA-256 hashing
-            "String Sorting" to 3.0e-3,       // Optimized: Pre-generated, parallel sort
-            "Ray Tracing" to 1.0e-3,          // Optimized: Parallel ray tracing
-            "Compression" to 6.0e-4,          // Optimized: Static buffer, parallel compression
-            "Monte Carlo" to 3.5e-4,          // Optimized: ThreadLocalRandom, parallel samples
-            "JSON Parsing" to 3.5e-3,         // Optimized: Parallel JSON parsing
-            "N-Queens" to 3.0e-3              // Optimized: Work-stealing parallel backtracking
+            "Prime Generation" to 1.25e-5,       // 9,420,631 * 1.25e-5 ≈ 118 points
+            "Fibonacci Recursive" to 1.18e-4,    // Set for when fixed
+            "Matrix Multiplication" to 1.85e-10, // 636,346,897 * 1.85e-10 ≈ 118 points
+            "Hash Computing" to 2.9e-4,          // 407,609 * 2.9e-4 ≈ 118 points
+            "String Sorting" to 2.2e-5,          // 5,312,581 * 2.2e-5 ≈ 118 points
+            "Ray Tracing" to 9.7e-5,             // 1,212,121 * 9.7e-5 ≈ 118 points
+            "Compression" to 1.55e-6,            // 75,972,299 * 1.55e-6 ≈ 118 points
+            "Monte Carlo" to 2.7e-4,             // 438,784 * 2.7e-4 ≈ 118 points
+            "JSON Parsing" to 2.75e-4,           // 428,421 * 2.75e-4 ≈ 118 points
+            "N-Queens" to 2.7e-4                 // 434,338 * 2.7e-4 ≈ 118 points
         )
     }
     
