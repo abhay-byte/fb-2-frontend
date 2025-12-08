@@ -48,7 +48,8 @@ import com.ivarna.finalbenchmark2.utils.RootAccessPreferences
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    rootStatus: RootStatus = RootStatus.NO_ROOT // Root status from MainViewModel
+    rootStatus: RootStatus = RootStatus.NO_ROOT, // Root status from MainViewModel
+    onBackClick: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val themePreferences = remember { ThemePreferences(context) }
@@ -115,31 +116,44 @@ fun SettingsScreen(
     }
     
     FinalBenchmark2Theme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            val scrollState = rememberScrollState()
-            
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = 56.dp, // Add top padding to account for status bar area
-                             start = 16.dp,
-                             end = 16.dp,
-                             bottom = 16.dp)
-                    .verticalScroll(scrollState)
-            ) {
-                // Header
-                Text(
-                    text = "Settings",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
+        Scaffold(
+            topBar = {
+                CenterAlignedTopAppBar(
+                    title = { 
+                        Text(
+                            "Settings",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                imageVector = Icons.Rounded.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.Transparent
+                    )
                 )
+            }
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                val scrollState = rememberScrollState()
+                
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .padding(start = 8.dp, end = 8.dp, bottom = 16.dp)
+                        .verticalScroll(scrollState)
+                ) {
                 
                 // Root Access Card (at the top)
                 Card(
@@ -359,6 +373,7 @@ fun SettingsScreen(
                 
                 // About Section
                 AboutSection()
+                }
             }
         }
     }

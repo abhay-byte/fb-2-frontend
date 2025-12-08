@@ -68,11 +68,6 @@ fun MainNavigation(
             route = "history",
             icon = Icons.Default.List,
             label = "History"
-        ),
-        BottomNavigationItem(
-            route = "settings",
-            icon = Icons.Default.Settings,
-            label = "Settings"
         )
     )
 
@@ -126,7 +121,8 @@ fun MainNavigation(
                 }
                 composable("settings") {
                     SettingsScreen(
-                        rootStatus = rootStatus
+                        rootStatus = rootStatus,
+                        onBackClick = { navController.popBackStack() }
                     )
                 }
                 // Keep the existing benchmark flow - consolidate into one route

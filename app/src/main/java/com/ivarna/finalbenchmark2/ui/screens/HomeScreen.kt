@@ -60,6 +60,7 @@ import com.ivarna.finalbenchmark2.ui.viewmodels.PerformanceOptimizationStatus
 import com.ivarna.finalbenchmark2.ui.viewmodels.PerformanceOptimizations
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.MainViewModel
+import com.ivarna.finalbenchmark2.ui.components.AppTopBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -107,18 +108,26 @@ fun HomeScreen(
     }
 
     FinalBenchmark2Theme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+        Scaffold(
+            topBar = {
+                AppTopBar(
+                    onSettingsClick = onNavigateToSettings
+                )
+            }
+        ) { innerPadding ->
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
             ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .verticalScroll(rememberScrollState())
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                 
                 // App logo
                 val currentTheme by LocalThemeMode.current
@@ -447,6 +456,7 @@ fun HomeScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 8.dp)
                 )
+                }
             }
         }
     }
