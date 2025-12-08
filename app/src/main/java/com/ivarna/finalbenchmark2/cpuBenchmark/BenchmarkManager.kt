@@ -409,7 +409,7 @@ class BenchmarkManager {
                         result
                     }
                 }
-                "runMultiCoreFibonacciMemoized" -> {
+                "runMultiCoreFibonacciRecursive" -> {
                     runBlocking {
                         val result = MultiCoreBenchmarks.fibonacciRecursive(workloadParams)
                         Log.d("BenchmarkManager", "Result from multi-core fibonacciRecursive: $result")
@@ -692,10 +692,10 @@ class BenchmarkManager {
         )
     }
     
-    private suspend fun runMultiCoreFibonacciMemoized(): BenchmarkResult {
+    private suspend fun runMultiCoreFibonacciRecursive(): BenchmarkResult {
         delay((400..800).random().toLong())
         return BenchmarkResult(
-            name = "Multi-Core Fibonacci Memoized",
+            name = "Multi-Core Fibonacci Recursive",
             executionTimeMs = (400..800).random().toDouble(),
             opsPerSecond = (15000..25000).random() / 100.0,
             isValid = true,
