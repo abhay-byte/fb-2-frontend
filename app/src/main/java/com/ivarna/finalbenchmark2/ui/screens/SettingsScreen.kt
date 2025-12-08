@@ -153,7 +153,7 @@ fun SettingsScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(innerPadding)
-                        .padding(start = 8.dp, end = 8.dp, bottom = 16.dp)
+                        .padding(start = 16.dp, end = 16.dp, bottom = 16.dp) // Standard 16dp spacing
                         .verticalScroll(scrollState)
                 ) {
                 
@@ -378,7 +378,7 @@ fun SettingsScreen(
                             .padding(16.dp)
                     ) {
                         Text(
-                            text = "Onboarding Settings",
+                            text = "App Tour & Setup",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary,
@@ -386,7 +386,7 @@ fun SettingsScreen(
                         )
                         
                         Text(
-                            text = "Reset and view the onboarding screens to see the app introduction and root access check flow.",
+                            text = "Revisit the welcome guide to verify root access, customize themes, and calibrate power settings.",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(bottom = 16.dp),
@@ -398,16 +398,19 @@ fun SettingsScreen(
                                 // Navigate directly to onboarding screens without resetting app
                                 onNavigateToOnboarding()
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.HelpOutline,
+                                imageVector = Icons.Rounded.RocketLaunch,
                                 contentDescription = null,
                                 modifier = Modifier.size(18.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "View Onboarding Screens",
+                                text = "Restart Onboarding",
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
