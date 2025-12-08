@@ -485,25 +485,43 @@ object SingleCoreBenchmarks {
     
     /**
      * Test 8: Monte Carlo Simulation for π
-     * FIXED: Use ThreadLocalRandom for zero-allocation random number generation
+     * OPTIMIZED: Increased samples for better accuracy, optimized random generation
      */
     suspend fun monteCarloPi(params: WorkloadParams): BenchmarkResult = withContext(Dispatchers.Default) {
-        Log.d(TAG, "Starting Monte Carlo π (samples: ${params.monteCarloSamples}) - FIXED: ThreadLocalRandom")
+        Log.d(TAG, "Starting Monte Carlo π (samples: ${params.monteCarloSamples}) - OPTIMIZED: Better accuracy")
         CpuAffinityManager.setMaxPerformance()
         
+        // OPTIMIZED: Increase sample size for better accuracy if too small
+        val baseSamples = params.monteCarloSamples
+        val samples = if (baseSamples < 100000) 100000 else baseSamples
+        
         val (result, timeMs) = BenchmarkHelpers.measureBenchmark {
-            val samples = params.monteCarloSamples
             var insideCircle = 0L
             
-            // FIXED: Use ThreadLocalRandom for better performance and no object allocation
+            // OPTIMIZED: Use ThreadLocalRandom with batch processing for better performance
             val random = ThreadLocalRandom.current()
             
-            for (i in 0 until samples) {
-                val x = random.nextDouble() * 2.0 - 1.0  // Random value between -1 and 1
-                val y = random.nextDouble() * 2.0 - 1.0  // Random value between -1 and 1
+            // Process in batches to reduce branch prediction misses
+            val batchSize = 1000
+            var processed = 0
+            
+            while (processed < samples) {
+                val currentBatchSize = minOf(batchSize, samples - processed)
                 
-                if (x * x + y * y <= 1.0) {
-                    insideCircle++
+                repeat(currentBatchSize) {
+                    val x = random.nextDouble() * 2.0 - 1.0  // Random value between -1 and 1
+                    val y = random.nextDouble() * 2.0 - 1.0  // Random value between -1 and 1
+                    
+                    if (x * x + y * y <= 1.0) {
+                        insideCircle++
+                    }
+                }
+                
+                processed += currentBatchSize
+                
+                // Yield occasionally to prevent UI freeze
+                if (processed % 10000 == 0) {
+                    kotlinx.coroutines.yield()
                 }
             }
             
@@ -512,8 +530,12 @@ object SingleCoreBenchmarks {
         }
         
         val (piEstimate, insideCircle) = result
-        val samples = params.monteCarloSamples
         val opsPerSecond = samples.toDouble() / (timeMs / 1000.0)
+        val accuracy = kotlin.math.abs(piEstimate - kotlin.math.PI)
+        
+        // OPTIMIZED: Tighter accuracy check for larger sample sizes
+        val accuracyThreshold = if (samples >= 100000) 0.05 else 0.1
+        val isValid = accuracy < accuracyThreshold && timeMs > 0 && opsPerSecond > 0
         
         CpuAffinityManager.resetPerformance()
         
@@ -521,13 +543,16 @@ object SingleCoreBenchmarks {
             name = "Single-Core Monte Carlo π",
             executionTimeMs = timeMs.toDouble(),
             opsPerSecond = opsPerSecond,
-            isValid = kotlin.math.abs(piEstimate - kotlin.math.PI) < 0.1,  // Reasonable accuracy check
+            isValid = isValid,
             metricsJson = JSONObject().apply {
                 put("samples", samples)
+                put("original_samples", baseSamples)
                 put("pi_estimate", piEstimate)
                 put("actual_pi", kotlin.math.PI)
-                put("accuracy", kotlin.math.abs(piEstimate - kotlin.math.PI))
-                put("optimization", "ThreadLocalRandom for zero-allocation")
+                put("accuracy", accuracy)
+                put("accuracy_threshold", accuracyThreshold)
+                put("inside_circle", insideCircle)
+                put("optimization", "Increased samples, batch processing, improved accuracy")
             }.toString()
         )
     }
@@ -628,12 +653,12 @@ object SingleCoreBenchmarks {
                 val diag2 = BooleanArray(2 * n - 1) { false }  // For diagonal /
                 
                 fun backtrack(row: Int): Int {
-                    if (row == boardSize) return 1  // Found a solution
+                    if (row == n) return 1  // Found a solution
                     
                     var solutions = 0
-                    for (col in 0 until boardSize) {
+                    for (col in 0 until n) {
                         val d1Idx = row + col
-                        val d2Idx = boardSize - 1 + col - row
+                        val d2Idx = n - 1 + col - row
                         
                         if (!cols[col] && !diag1[d1Idx] && !diag2[d2Idx]) {
                             // Place queen
