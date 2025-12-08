@@ -203,7 +203,9 @@ fun MainNavigation(
                     BenchmarkScreen(
                         preset = preset,
                         onBenchmarkComplete = { summaryJson ->
-                            navController.navigate("result/$summaryJson")
+                            // URL-encode the JSON to handle special characters properly
+                            val encodedJson = java.net.URLEncoder.encode(summaryJson, "UTF-8")
+                            navController.navigate("result/$encodedJson")
                         },
                         onBenchmarkStart = {
                             activity?.startAllOptimizations()
@@ -215,27 +217,40 @@ fun MainNavigation(
                     )
                 }
                 composable("result/{summaryJson}") { backStackEntry ->
-                    val summaryJson = backStackEntry.arguments?.getString("summaryJson") ?: "{}"
+                    val encodedSummaryJson = backStackEntry.arguments?.getString("summaryJson") ?: "{}"
+                    // URL-decode the JSON to handle special characters properly
+                    val summaryJson = try {
+                        java.net.URLDecoder.decode(encodedSummaryJson, "UTF-8")
+                    } catch (e: Exception) {
+                        // Fallback to original if decoding fails
+                        encodedSummaryJson
+                    }
                     ResultScreen(
                         summaryJson = summaryJson,
                         onRunAgain = {
                             navController.popBackStack()
-                            navController.navigate("benchmark")
+                            navController.navigate("benchmark/Auto")
                         },
                         onBackToHome = {
                             navController.popBackStack()
                             navController.navigate("home")
                         },
                         onShowDetailedResults = { detailedResults ->
-                            // Pass the summary JSON to the detailed results screen
-                            navController.navigate("detailed-results/${summaryJson.replace("\"", "%22").replace("'", "%27")}")
+                            // URL-encode the JSON to handle special characters properly
+                            val encodedJson = java.net.URLEncoder.encode(summaryJson, "UTF-8")
+                            navController.navigate("detailed-results/$encodedJson")
                         }
                     )
                 }
                 composable("detailed-results/{summaryJson}") { backStackEntry ->
-                    val summaryJson = backStackEntry.arguments?.getString("summaryJson") ?: "{}"
-                    // Decode URL-encoded characters
-                    val decodedSummaryJson = summaryJson.replace("%22", "\"").replace("%27", "'")
+                    val encodedSummaryJson = backStackEntry.arguments?.getString("summaryJson") ?: "{}"
+                    // URL-decode the JSON to handle special characters properly
+                    val decodedSummaryJson = try {
+                        java.net.URLDecoder.decode(encodedSummaryJson, "UTF-8")
+                    } catch (e: Exception) {
+                        // Fallback to original if decoding fails
+                        encodedSummaryJson
+                    }
                     DetailedResultScreen(
                         summaryJson = decodedSummaryJson,
                         onBack = {
