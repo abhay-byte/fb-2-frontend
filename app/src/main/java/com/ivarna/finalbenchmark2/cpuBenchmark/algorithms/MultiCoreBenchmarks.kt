@@ -1,12 +1,16 @@
 package com.ivarna.finalbenchmark2.cpuBenchmark.algorithms
 
+import android.os.Process
 import android.util.Log
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
 import com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams
 import com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
 import kotlinx.coroutines.*
+import kotlinx.coroutines.internal.MainDispatcherFactory
 import org.json.JSONObject
 import java.security.MessageDigest
+import java.util.concurrent.*
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 
 object MultiCoreBenchmarks {
@@ -14,6 +18,28 @@ object MultiCoreBenchmarks {
     
     // Number of threads = number of physical cores
     private val numThreads = Runtime.getRuntime().availableProcessors()
+    
+    /**
+     * Custom high-priority dispatcher that creates a FixedThreadPool with all threads set to URGENT priority.
+     * This forces Android's EAS to schedule threads on all available cores (Big, Mid, and Little cores)
+     * instead of limiting them to just performance cores.
+     */
+    private val highPriorityDispatcher: CoroutineDispatcher by lazy {
+        val threadCount = numThreads
+        val threadFactory = ThreadFactory { runnable ->
+            Thread(runnable).apply {
+                // Set high priority using Android's Process API
+                // THREAD_PRIORITY_URGENT_DISPLAY = -10 (highest priority for UI tasks)
+                Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
+                name = "BenchmarkWorker-${threadId.getAndIncrement()}"
+            }
+        }
+        
+        val executor = Executors.newFixedThreadPool(threadCount, threadFactory)
+        executor.asCoroutineDispatcher()
+    }
+    
+    private val threadId = AtomicInteger(0)
     
     /**
      * Test 1: Parallel Prime Generation
@@ -26,9 +52,9 @@ object MultiCoreBenchmarks {
             val n = params.primeRange
             val chunkSize = n / numThreads
             
-            // Process chunks in parallel
+            // Process chunks in parallel using high-priority dispatcher
             val results = (0 until numThreads).map { threadId ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     val start = threadId * chunkSize
                     val end = if (threadId == numThreads - 1) n else (threadId + 1) * chunkSize
                     
@@ -82,9 +108,9 @@ object MultiCoreBenchmarks {
                 }
             }
             
-            // Calculate in parallel
+            // Calculate in parallel using high-priority dispatcher
             (start..end).map { n ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     fibMemo(n)
                 }
             }.awaitAll()
@@ -124,9 +150,9 @@ object MultiCoreBenchmarks {
             val b = Array(size) { DoubleArray(size) { Random.nextDouble() } }
             val c = Array(size) { DoubleArray(size) }
             
-            // Parallel matrix multiplication - divide work by rows
+            // Parallel matrix multiplication - divide work by rows using high-priority dispatcher
             (0 until size).map { i ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     for (j in 0 until size) {
                         for (k in 0 until size) {
                             c[i][j] += a[i][k] * b[k][j]
@@ -175,10 +201,10 @@ object MultiCoreBenchmarks {
         val (result, timeMs) = BenchmarkHelpers.measureBenchmarkSuspend {
             val data = ByteArray(bufferSize) { 0xAA.toByte() }
             
-            // Process iterations in parallel across threads
+            // Process iterations in parallel across threads using high-priority dispatcher
             val iterationsPerThread = iterations / numThreads
             val hashResults = (0 until numThreads).map { threadId ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     val digest = MessageDigest.getInstance("SHA-256")
                     var threadHashCount = 0
                     
@@ -230,9 +256,9 @@ object MultiCoreBenchmarks {
         val chunkSize = params.stringCount / numThreads
         
         val (result, timeMs) = BenchmarkHelpers.measureBenchmark {
-            // Generate random strings in parallel
+            // Generate random strings in parallel using high-priority dispatcher
             val allStrings = (0 until numThreads).map { i ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     val start = i * chunkSize
                     val end = if (i == numThreads - 1) params.stringCount else (i + 1) * chunkSize
                     List(end - start) { 
@@ -359,9 +385,9 @@ object MultiCoreBenchmarks {
                 Sphere(Vec3(-1.0, -0.5, -1.2), 0.4)
             )
             
-            // Render the image in parallel by rows
+            // Render the image in parallel by rows using high-priority dispatcher
             val rowResults = (0 until numThreads).map { i ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     val startRow = i * rowsPerThread
                     val endRow = if (i == numThreads - 1) height else (i + 1) * rowsPerThread
                     val threadPixels = mutableListOf<Vec3>()
@@ -512,9 +538,9 @@ object MultiCoreBenchmarks {
         val samplesPerThread = params.monteCarloSamples / numThreads
         
         val (result, timeMs) = BenchmarkHelpers.measureBenchmark {
-            // Run Monte Carlo simulation in parallel across threads
+            // Run Monte Carlo simulation in parallel across threads using high-priority dispatcher
             val results = (0 until numThreads).map { _ ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     var insideCircle = 0L
                     val samples = samplesPerThread
                     
@@ -599,9 +625,9 @@ object MultiCoreBenchmarks {
             val jsonData = generateComplexJson(dataSize)
             val chunkSize = jsonData.length / numThreads
             
-            // Process chunks in parallel
+            // Process chunks in parallel using high-priority dispatcher
             val results = (0 until numThreads).map { i ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     val start = i * chunkSize
                     val end = if (i == numThreads - 1) jsonData.length else (i + 1) * chunkSize
                     val chunk = jsonData.substring(start, end)
@@ -663,9 +689,9 @@ object MultiCoreBenchmarks {
             // Each thread starts with a different column in the first row
             val initialTasks = (0 until minOf(n, numThreads)).toList()
             
-            // Process tasks in parallel
+            // Process tasks in parallel using high-priority dispatcher
             val solutions = (0 until initialTasks.size).map { i ->
-                async(Dispatchers.Default) {
+                async(highPriorityDispatcher) {
                     val firstCol = initialTasks[i]
                     
                     // Solve N-Queens with the first queen placed at (0, firstCol)
