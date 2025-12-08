@@ -70,8 +70,7 @@ fun WelcomeScreen(
                 // Action Button - anchored at bottom
                 Button(
                     onClick = {
-                        // Mark onboarding as completed
-                        onboardingPreferences.setOnboardingCompleted()
+                        // Don't mark onboarding as completed yet - let root check screen handle it
                         onNextClicked()
                     },
                     modifier = Modifier

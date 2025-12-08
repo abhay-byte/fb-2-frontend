@@ -27,6 +27,13 @@ class RootUtils {
         }
         
         /**
+         * Fast root check for UI purposes - uses shorter timeouts
+         */
+        fun canExecuteRootCommandFast(): Boolean {
+            return canExecuteRootCommandQuick()
+        }
+        
+        /**
          * Checks if root access is working using a more robust approach
          */
         fun canExecuteRootCommandRobust(): Boolean {
@@ -87,6 +94,53 @@ class RootUtils {
             
             Log.d(TAG, "All robust root commands failed")
             return false
+        }
+        
+        /**
+         * Quick root check for UI purposes - uses shorter timeouts and fewer commands
+         */
+        fun canExecuteRootCommandQuick(): Boolean {
+            // Quick check - just one command with shorter timeout
+            var process: Process? = null
+            try {
+                Log.d(TAG, "Performing quick root check: su -c 'id'")
+                process = Runtime.getRuntime().exec("su -c 'id'")
+                
+                // Create a thread to wait for the process with shorter timeout
+                val waitThread = Thread {
+                    try {
+                        Thread.sleep(1000) // 1 second timeout for quick check
+                        if (process != null) {
+                            try {
+                                process.exitValue()
+                            } catch (e: Exception) {
+                                Log.d(TAG, "Quick root command timed out after 1 second")
+                                process.destroy()
+                            }
+                        }
+                    } catch (e: InterruptedException) {
+                        // Thread interrupted, do nothing
+                    }
+                }
+                
+                waitThread.start()
+                waitThread.join(1000) // 1 second timeout
+                
+                val exitCode = process.waitFor()
+                Log.d(TAG, "Quick root check exit code: $exitCode")
+                val result = exitCode == 0
+                Log.d(TAG, "Quick root check result: $result")
+                return result
+            } catch (e: Exception) {
+                Log.e(TAG, "Error in quick root check: ${e.message}", e)
+                return false
+            } finally {
+                try {
+                    process?.destroy()
+                } catch (e: Exception) {
+                    // Ignore errors during process destruction
+                }
+            }
         }
         
         /**

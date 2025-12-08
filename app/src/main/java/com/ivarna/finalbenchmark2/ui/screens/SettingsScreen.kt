@@ -44,12 +44,14 @@ import com.ivarna.finalbenchmark2.ui.viewmodels.RootStatus
 import com.ivarna.finalbenchmark2.utils.ThemePreferences
 import com.ivarna.finalbenchmark2.utils.PowerConsumptionPreferences
 import com.ivarna.finalbenchmark2.utils.RootAccessPreferences
+import com.ivarna.finalbenchmark2.utils.OnboardingPreferences
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     rootStatus: RootStatus = RootStatus.NO_ROOT, // Root status from MainViewModel
-    onBackClick: () -> Unit = {}
+    onBackClick: () -> Unit = {},
+    onNavigateToOnboarding: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val themePreferences = remember { ThemePreferences(context) }
@@ -358,6 +360,57 @@ fun SettingsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp)
                         )
+                    }
+                }
+                
+                // Onboarding Settings Card
+                val onboardingPreferences = remember { OnboardingPreferences(context) }
+                
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Onboarding Settings",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 12.dp)
+                        )
+                        
+                        Text(
+                            text = "Reset and view the onboarding screens to see the app introduction and root access check flow.",
+                            fontSize = 14.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(bottom = 16.dp),
+                            lineHeight = 18.sp
+                        )
+                        
+                        Button(
+                            onClick = {
+                                // Navigate directly to onboarding screens without resetting app
+                                onNavigateToOnboarding()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.HelpOutline,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "View Onboarding Screens",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
                     }
                 }
                 

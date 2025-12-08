@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
 import com.ivarna.finalbenchmark2.ui.screens.*
 import com.ivarna.finalbenchmark2.ui.screens.DetailedResultScreen
+import com.ivarna.finalbenchmark2.ui.screens.RootCheckScreen
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryViewModel
 import com.ivarna.finalbenchmark2.ui.screens.HistoryDetailScreen
 import com.ivarna.finalbenchmark2.navigation.FrostedGlassNavigationBar
@@ -107,8 +108,17 @@ fun MainNavigation(
                 composable("welcome") {
                     WelcomeScreen(
                         onNextClicked = {
-                            navController.navigate("benchmark/flagship") {
+                            navController.navigate("root-check") {
                                 popUpTo("welcome") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable("root-check") {
+                    RootCheckScreen(
+                        onNextClicked = {
+                            navController.navigate("benchmark/flagship") {
+                                popUpTo("root-check") { inclusive = true }
                             }
                         }
                     )
@@ -139,7 +149,13 @@ fun MainNavigation(
                 composable("settings") {
                     SettingsScreen(
                         rootStatus = rootStatus,
-                        onBackClick = { navController.popBackStack() }
+                        onBackClick = { navController.popBackStack() },
+                        onNavigateToOnboarding = {
+                            navController.navigate("welcome") {
+                                // Clear the back stack up to home
+                                popUpTo("home") { inclusive = false }
+                            }
+                        }
                     )
                 }
                 // Keep the existing benchmark flow - consolidate into one route
