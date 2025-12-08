@@ -300,14 +300,14 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
                         val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
                         InfoRow("GPU Name", gpuInfo.basicInfo.name)
                         InfoRow("GPU Vendor", gpuInfo.basicInfo.vendor)
-                        InfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
+                        LongInfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
                         // Display more detailed Vulkan info if available
                         if (gpuInfo.vulkanInfo != null && gpuInfo.vulkanInfo.supported) {
                             val vulkanInfo = gpuInfo.vulkanInfo
                             val vulkanVersion = vulkanInfo.apiVersion ?: "Supported"
-                            InfoRow("Vulkan", vulkanVersion)
+                            LongInfoRow("Vulkan", vulkanVersion)
                         } else if (gpuInfo.basicInfo.vulkanVersion != null) {
-                            InfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion)
+                            LongInfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion)
                         } else {
                             InfoRow("Vulkan", "Not Supported")
                         }
@@ -800,14 +800,14 @@ fun GpuOverviewCard(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo, gpuFreque
                 InfoRow("GPU Name", basicInfo.name)
                 InfoRow("Vendor", basicInfo.vendor)
                 InfoRow("Driver Version", basicInfo.driverVersion)
-                InfoRow("OpenGL ES", basicInfo.openGLVersion)
+                LongInfoRow("OpenGL ES", basicInfo.openGLVersion)
                 // Display more detailed Vulkan info if available
                 if (gpuInfo.vulkanInfo != null && gpuInfo.vulkanInfo.supported) {
                     val vulkanInfo = gpuInfo.vulkanInfo
                     val vulkanVersion = vulkanInfo.apiVersion ?: "Supported"
-                    InfoRow("Vulkan", vulkanVersion)
+                    LongInfoRow("Vulkan", vulkanVersion)
                 } else if (basicInfo.vulkanVersion != null) {
-                    InfoRow("Vulkan", basicInfo.vulkanVersion)
+                    LongInfoRow("Vulkan", basicInfo.vulkanVersion)
                 } else {
                     InfoRow("Vulkan", "Not Supported")
                 }
@@ -1511,10 +1511,12 @@ fun InfoRow(label: String, value: String, isSupported: Boolean? = null) {
             text = label,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(0.4f) // Give label 40% width max
         )
         
         Row(
+            modifier = Modifier.weight(0.6f), // Give value 60% width
+            horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
             isSupported?.let { supported ->
@@ -1532,9 +1534,70 @@ fun InfoRow(label: String, value: String, isSupported: Boolean? = null) {
                 text = value,
                 style = MaterialTheme.typography.bodyMedium,
                 color = if (value.isEmpty()) MaterialTheme.colorScheme.tertiary
-                       else MaterialTheme.colorScheme.onSurfaceVariant
+                       else MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.End,
+                softWrap = true,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
             )
         }
+    }
+}
+
+/**
+ * Enhanced InfoRow specifically for long text values like GPU OpenGL/Vulkan versions
+ */
+@Composable
+fun LongInfoRow(label: String, value: String, isSupported: Boolean? = null) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(0.4f) // Give label 40% width max
+            )
+            
+            Row(
+                modifier = Modifier.weight(0.6f), // Give value 60% width
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                isSupported?.let { supported ->
+                    Icon(
+                        painter = if (supported) painterResource(id = com.ivarna.finalbenchmark2.R.drawable.check_24)
+                                  else painterResource(id = com.ivarna.finalbenchmark2.R.drawable.close_24),
+                        contentDescription = if (supported) "Supported" else "Not Supported",
+                        tint = if (supported) Color(0xFF4CAF50) else Color(0xFFEF5350),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+        }
+        
+        // Value text in a separate row below the label and icon
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (value.isEmpty()) MaterialTheme.colorScheme.tertiary
+                   else MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Start,
+            softWrap = true,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp)
+        )
     }
 }
 

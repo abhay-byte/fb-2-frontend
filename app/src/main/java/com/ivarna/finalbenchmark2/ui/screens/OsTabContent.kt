@@ -1,6 +1,8 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
@@ -31,6 +33,7 @@ fun OsTabContent(viewModel: OsViewModel) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState()) // Add scrolling capability
             .padding(16.dp),
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
@@ -61,6 +64,9 @@ fun OsTabContent(viewModel: OsViewModel) {
                 modifier = Modifier.padding(16.dp)
             )
         }
+        
+        // Add bottom padding spacer to prevent content from being flush with navigation bar
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
