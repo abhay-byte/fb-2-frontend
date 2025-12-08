@@ -173,13 +173,8 @@ fun RootCheckScreen(
                 // Action Button - anchored at bottom
                 Button(
                     onClick = {
-                        // Mark onboarding as completed in background and navigate
-                        scope.launch {
-                            withContext(Dispatchers.IO) {
-                                onboardingPreferences.setOnboardingCompleted()
-                            }
-                            onNextClicked()
-                        }
+                        // Simply navigate to next screen - onboarding will be marked completed in theme selection
+                        onNextClicked()
                     },
                     modifier = Modifier
                         .fillMaxWidth()

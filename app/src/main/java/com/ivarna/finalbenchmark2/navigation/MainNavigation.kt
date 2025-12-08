@@ -29,6 +29,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ivarna.finalbenchmark2.ui.screens.*
 import com.ivarna.finalbenchmark2.ui.screens.DetailedResultScreen
 import com.ivarna.finalbenchmark2.ui.screens.RootCheckScreen
+import com.ivarna.finalbenchmark2.ui.screens.ThemeSelectionScreen
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryViewModel
 import com.ivarna.finalbenchmark2.ui.screens.HistoryDetailScreen
 import com.ivarna.finalbenchmark2.navigation.FrostedGlassNavigationBar
@@ -117,8 +118,17 @@ fun MainNavigation(
                 composable("root-check") {
                     RootCheckScreen(
                         onNextClicked = {
-                            navController.navigate("benchmark/flagship") {
+                            navController.navigate("theme-selection") {
                                 popUpTo("root-check") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable("theme-selection") {
+                    ThemeSelectionScreen(
+                        onNextClicked = {
+                            navController.navigate("benchmark/flagship") {
+                                popUpTo("theme-selection") { inclusive = true }
                             }
                         }
                     )

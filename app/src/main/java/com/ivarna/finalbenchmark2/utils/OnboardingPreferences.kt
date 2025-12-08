@@ -9,7 +9,7 @@ class OnboardingPreferences(private val context: Context) {
     companion object {
         private const val ONBOARDING_COMPLETED_KEY = "onboarding_completed"
         private const val ONBOARDING_VERSION_KEY = "onboarding_version"
-        private const val CURRENT_ONBOARDING_VERSION = 2 // Version 2 includes root check screen
+        private const val CURRENT_ONBOARDING_VERSION = 3 // Version 3 includes theme selection screen
     }
     
     fun isOnboardingCompleted(): Boolean {
