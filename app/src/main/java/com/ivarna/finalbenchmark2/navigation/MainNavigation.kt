@@ -30,6 +30,7 @@ import com.ivarna.finalbenchmark2.ui.screens.*
 import com.ivarna.finalbenchmark2.ui.screens.DetailedResultScreen
 import com.ivarna.finalbenchmark2.ui.screens.RootCheckScreen
 import com.ivarna.finalbenchmark2.ui.screens.ThemeSelectionScreen
+import com.ivarna.finalbenchmark2.ui.screens.PermissionsScreen
 import com.ivarna.finalbenchmark2.ui.viewmodels.HistoryViewModel
 import com.ivarna.finalbenchmark2.ui.screens.HistoryDetailScreen
 import com.ivarna.finalbenchmark2.navigation.FrostedGlassNavigationBar
@@ -118,8 +119,17 @@ fun MainNavigation(
                 composable("root-check") {
                     RootCheckScreen(
                         onNextClicked = {
-                            navController.navigate("theme-selection") {
+                            navController.navigate("permissions") {
                                 popUpTo("root-check") { inclusive = true }
+                            }
+                        }
+                    )
+                }
+                composable("permissions") {
+                    PermissionsScreen(
+                        onNextClicked = {
+                            navController.navigate("theme-selection") {
+                                popUpTo("permissions") { inclusive = true }
                             }
                         }
                     )

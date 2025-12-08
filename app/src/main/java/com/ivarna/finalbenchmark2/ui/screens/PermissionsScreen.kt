@@ -2,284 +2,225 @@ package com.ivarna.finalbenchmark2.ui.screens
 
 import android.Manifest
 import android.os.Build
+import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
+import com.ivarna.finalbenchmark2.utils.OnboardingPreferences
 
-@OptIn(ExperimentalMaterial3Api::class)
+sealed interface PermissionUiState {
+    object Checking : PermissionUiState
+    object NotGranted : PermissionUiState
+    object Granted : PermissionUiState
+    object NotRequired : PermissionUiState
+}
+
 @Composable
 fun PermissionsScreen(
     onNextClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var permissionUiState by remember { mutableStateOf<PermissionUiState>(PermissionUiState.Checking) }
     val context = LocalContext.current
+    val onboardingPreferences = remember { OnboardingPreferences(context) }
     
-    // Permission state tracking
-    var isPermissionGranted by remember { mutableStateOf(false) }
-    var isAndroid13Plus by remember { mutableStateOf(Build.VERSION.SDK_INT >= 33) }
+    // Check permission status when screen loads
+    val hasPermissionChecked = remember { mutableStateOf(false) }
     
-    // Check initial permission state
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= 33) {
-            isPermissionGranted = ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (!hasPermissionChecked.value) {
+            // Check permission status
+            permissionUiState = if (Build.VERSION.SDK_INT >= 33) {
+                val hasPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.POST_NOTIFICATIONS
+                ) == PackageManager.PERMISSION_GRANTED
+                
+                if (hasPermission) {
+                    PermissionUiState.Granted
+                } else {
+                    PermissionUiState.NotGranted
+                }
+            } else {
+                // Android < 13 doesn't require this permission
+                PermissionUiState.NotRequired
+            }
+            hasPermissionChecked.value = true
         }
     }
     
-    // Permission launcher
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        isPermissionGranted = isGranted
-    }
-    
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surface,
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                    )
-                )
-            )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
+    MaterialTheme {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
-            // Header Section
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(top = 20.dp)
-            ) {
-                // Icon Card
-                Card(
-                    modifier = Modifier.size(100.dp),
-                    shape = RoundedCornerShape(30.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 12.dp)
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Notifications,
-                            contentDescription = "Permissions",
-                            modifier = Modifier.size(80.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(32.dp))
-                
-                // Headline
-                Text(
-                    text = "Stay Running",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 32.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
-                
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // Subtext
-                Text(
-                    text = "Benchmarks are heavy operations. Without proper permissions, the OS might kill the app before tests finish.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 16.sp
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    lineHeight = 24.sp
-                )
-            }
-            
-            // Explanation Card - Centered
-            Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
+                // Central content - centered vertically
                 Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    // Title
-                    Text(
-                        text = "Why do we need this?",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
+                    // Notifications Icon
+                    Icon(
+                        imageVector = Icons.Rounded.Notifications,
+                        contentDescription = "Notifications Permission",
+                        modifier = Modifier.size(80.dp),
+                        tint = MaterialTheme.colorScheme.primary
                     )
                     
-                    // Body
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Headline Text
                     Text(
-                        text = "We use a Foreground Service to mark the benchmark process as 'User Visible'. This prevents Android from killing the app to save battery while high-intensity tests are running. This requires Notification permissions to display the 'Benchmark Running' status.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 20.sp
+                        text = "Stay Running",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
                     )
-                }
-            }
-            
-            // Permission Status & Action
-            if (Build.VERSION.SDK_INT >= 33) {
-                if (isPermissionGranted) {
-                    // State B: Permission Granted
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    // Subtext
+                    Text(
+                        text = "Benchmarks are heavy operations. Without proper permissions, the OS might kill the app before tests finish.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    
+                    Spacer(modifier = Modifier.height(32.dp))
+                    
+                    // Explanation Card
                     Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.outlinedCardColors(
-                            containerColor = Color(0xFF4CAF50).copy(alpha = 0.1f)
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
                         ),
-                        border = CardDefaults.outlinedCardBorder().copy(
-                            width = 2.dp,
-                            brush = androidx.compose.ui.graphics.SolidColor(
-                                Color(0xFF4CAF50)
-                            )
-                        ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier.padding(20.dp)
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = "Permission Granted",
-                                modifier = Modifier.size(28.dp),
-                                tint = Color(0xFF4CAF50)
+                            Text(
+                                text = "Why do we need this?",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Start
                             )
                             
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
                             Text(
-                                text = "Permission Granted",
-                                style = MaterialTheme.typography.bodyLarge.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                    fontSize = 16.sp
-                                ),
-                                color = Color(0xFF4CAF50)
+                                text = "We use a Foreground Service to mark the benchmark process as 'User Visible'. This prevents Android from killing the app to save battery while high-intensity tests are running. This requires Notification permissions to display the 'Benchmark Running' status.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Start
                             )
                         }
                     }
-                } else {
-                    // State A: Not Granted - Show Allow Button
-                    Button(
-                        onClick = {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        ),
-                        shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(
-                            text = "Allow Notifications",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 16.sp
+                    
+                    Spacer(modifier = Modifier.height(24.dp))
+                    
+                    // Permission Status and Action
+                    when (permissionUiState) {
+                        is PermissionUiState.Checking -> {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(32.dp),
+                                color = MaterialTheme.colorScheme.primary
                             )
-                        )
+                        }
+                        
+                        is PermissionUiState.NotGranted -> {
+                            val permissionLauncher = rememberLauncherForActivityResult(
+                                ActivityResultContracts.RequestPermission()
+                            ) { isGranted ->
+                                permissionUiState = if (isGranted) {
+                                    PermissionUiState.Granted
+                                } else {
+                                    PermissionUiState.NotGranted
+                                }
+                            }
+                            
+                            Button(
+                                onClick = {
+                                    permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "Allow Notifications",
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                        
+                        is PermissionUiState.Granted -> {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Start
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Notifications,
+                                    contentDescription = "Permission Granted",
+                                    tint = Color(0xFF4CAF50),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                
+                                Spacer(modifier = Modifier.width(12.dp))
+                                
+                                Text(
+                                    text = "Permission Granted",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = Color(0xFF4CAF50)
+                                )
+                            }
+                        }
+                        
+                        is PermissionUiState.NotRequired -> {
+                            Text(
+                                text = "Auto-Granted (Android < 13)",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
-            } else {
-                // State C: Android < 13
-                Card(
+                
+                // Action Button - anchored at bottom
+                Button(
+                    onClick = {
+                        onNextClicked()
+                    },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.outlinedCardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f)
-                    ),
-                    border = CardDefaults.outlinedCardBorder().copy(
-                        width = 2.dp,
-                        brush = androidx.compose.ui.graphics.SolidColor(
-                            MaterialTheme.colorScheme.tertiary
-                        )
-                    ),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        .padding(horizontal = 16.dp)
                 ) {
                     Text(
-                        text = "Auto-Granted (Android < 13)\nThis permission is not required on your device.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 14.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp),
-                        lineHeight = 20.sp
+                        text = "Next",
+                        style = MaterialTheme.typography.titleMedium
                     )
                 }
-            }
-            
-            // Next Button - Anchored to bottom
-            Button(
-                onClick = onNextClicked,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .height(56.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                ),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Text(
-                    text = "Next",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 18.sp
-                    )
-                )
             }
         }
     }

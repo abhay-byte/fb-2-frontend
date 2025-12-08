@@ -73,7 +73,6 @@ fun HomeScreen(
 
     // --- State Holders for Data ---
     val context = LocalContext.current
-    val mainViewModel: MainViewModel = viewModel()
     
     // Temperature State
     val tempUtils = remember { TemperatureUtils(context) }
@@ -91,9 +90,6 @@ fun HomeScreen(
     var powerInfo by remember { mutableStateOf(powerUtils.getPowerConsumptionInfo()) }
 
     var isDataInitialized by remember { mutableStateOf(false) }
-
-    // Collect optimization status from ViewModel
-    val optimizationStatus by mainViewModel.optimizationStatus.collectAsStateWithLifecycle()
 
     // Workload Selection State
     val workloadOptions = listOf("Low", "Mid", "Flagship")
@@ -330,8 +326,105 @@ fun HomeScreen(
             // =========================================================
             // PERFORMANCE OPTIMIZATIONS CARD
             // =========================================================
+            // PERFORMANCE OPTIMIZATIONS CARD
+            // =========================================================
+            // Access the MainActivity to get the sustained performance mode status
+            val context = LocalContext.current
+            val activity = context as? com.ivarna.finalbenchmark2.MainActivity
+            val sustainedPerformanceStatus = if (activity != null) {
+                activity.isSustainedPerformanceModeActive()
+            } else {
+                false
+            }
+            
+            val wakeLockStatus = if (activity != null) {
+                activity.isWakeLockActive()
+            } else {
+                false
+            }
+            
+            // Determine wake lock status text for display
+            val wakeLockStatusText = if (activity != null) {
+                if (activity.isWakeLockActive()) {
+                    "Active" // When benchmark is running
+                } else if (activity.isWakeLockReady()) {
+                    "Ready" // When initialized but not yet acquired
+                } else {
+                    "Disabled" // When not available
+                }
+            } else {
+                "Unknown"
+            }
+            
+            val screenAlwaysOnStatus = if (activity != null) {
+                activity.isScreenAlwaysOnActive()
+            } else {
+                false
+            }
+            
+            // NEW: Get CPU optimization statuses
+            val highPriorityThreadingStatus = if (activity != null) {
+                activity.isHighPriorityThreadingActive()
+            } else {
+                false
+            }
+            
+            val performanceHintStatus = if (activity != null) {
+                activity.isPerformanceHintActive()
+            } else {
+                false
+            }
+            
+            val cpuAffinityStatus = if (activity != null) {
+                activity.isCpuAffinityActive()
+            } else {
+                false
+            }
+            
+            val bigCoreCount = if (activity != null) {
+                activity.getBigCoreCount()
+            } else {
+                0
+            }
+            
+            val littleCoreCount = if (activity != null) {
+                activity.getLittleCoreCount()
+            } else {
+                0
+            }
+            
+            // NEW: Get foreground service and governor hint statuses
+            val foregroundServiceStatus = if (activity != null) {
+                activity.isForegroundServiceActive()
+            } else {
+                false
+            }
+            
+            val governorHintStatus = if (activity != null) {
+                activity.isGovernorHintApplied()
+            } else {
+                false
+            }
+            
+            val originalGovernor = if (activity != null) {
+                activity.getOriginalGovernor()
+            } else {
+                "Unknown"
+            }
+            
             PerformanceOptimizationsCard(
-                optimizationStatus = optimizationStatus
+                sustainedPerformanceStatus = sustainedPerformanceStatus,
+                wakeLockStatus = wakeLockStatus,
+                screenAlwaysOnStatus = screenAlwaysOnStatus,
+                wakeLockStatusText = wakeLockStatusText,
+                highPriorityThreadingStatus = highPriorityThreadingStatus,
+                performanceHintStatus = performanceHintStatus,
+                cpuAffinityStatus = cpuAffinityStatus,
+                bigCoreCount = bigCoreCount,
+                littleCoreCount = littleCoreCount,
+                foregroundServiceStatus = foregroundServiceStatus,
+                governorHintStatus = governorHintStatus,
+                originalGovernor = originalGovernor
             )
             
             // Workload Selection Dropdown
@@ -467,7 +560,18 @@ fun CompactStatItem(icon: ImageVector, value: String, tint: Color) {
 
 @Composable
 fun PerformanceOptimizationsCard(
-    optimizationStatus: com.ivarna.finalbenchmark2.ui.viewmodels.OptimizationStatus
+    sustainedPerformanceStatus: Boolean,
+    wakeLockStatus: Boolean,
+    screenAlwaysOnStatus: Boolean,
+    wakeLockStatusText: String = if (wakeLockStatus) "Active" else "Ready",  // Changed to "Ready" when not active
+    highPriorityThreadingStatus: Boolean,
+    performanceHintStatus: Boolean,
+    cpuAffinityStatus: Boolean,
+    bigCoreCount: Int,
+    littleCoreCount: Int,
+    foregroundServiceStatus: Boolean = false,
+    governorHintStatus: Boolean = false,
+    originalGovernor: String? = "Unknown"
 ) {
     var isExpanded by remember { mutableStateOf(false) }
 
@@ -503,9 +607,22 @@ fun PerformanceOptimizationsCard(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Count how many optimizations are active
+                    val activeCount = listOf(
+                        sustainedPerformanceStatus,
+                        wakeLockStatus,
+                        screenAlwaysOnStatus,
+                        highPriorityThreadingStatus,
+                        performanceHintStatus,
+                        cpuAffinityStatus,
+                        foregroundServiceStatus,
+                        governorHintStatus
+                    ).count { it }
+                    val totalOptimizations = 8
+                    
                     Text(
-                        text = "${optimizationStatus.activeOptimizationCount}/${optimizationStatus.totalOptimizationCount}",
-                        color = if (optimizationStatus.activeOptimizationCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        text = "$activeCount/$totalOptimizations",
+                        color = if (activeCount > 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 14.sp
                     )
@@ -535,66 +652,95 @@ fun PerformanceOptimizationsCard(
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
 
-                    // CPU Affinity Control Detail - Now dynamic!
-                    OptimizationDetailRow(
-                        title = "CPU Affinity Control",
-                        description = "Enabled (${optimizationStatus.bigCoreCount} Big, ${optimizationStatus.littleCoreCount} Little cores)",
-                        status = if (optimizationStatus.isAffinityEnabled) {
-                            PerformanceOptimizationStatus.ENABLED
-                        } else {
-                            PerformanceOptimizationStatus.DISABLED
-                        }
-                    )
-                    
-                    // Foreground Service Detail - Now dynamic!
-                    OptimizationDetailRow(
-                        title = "Foreground Service",
-                        description = if (optimizationStatus.isHighPriorityActive) {
-                            "Active (Service Ready)"
-                        } else {
-                            "Disabled"
-                        },
-                        status = if (optimizationStatus.isHighPriorityActive) {
-                            PerformanceOptimizationStatus.ENABLED
-                        } else {
-                            PerformanceOptimizationStatus.DISABLED
-                        }
-                    )
-                    
-                    // Sustained Performance Mode Detail - Now dynamic!
+                    // Sustained Performance Mode Detail
                     OptimizationDetailRow(
                         title = "Sustained Performance Mode",
                         description = "Prevents thermal throttling during benchmarks",
-                        status = if (optimizationStatus.isSustainedPerformanceMode) {
+                        status = if (sustainedPerformanceStatus) {
                             PerformanceOptimizationStatus.ENABLED
                         } else {
                             PerformanceOptimizationStatus.DISABLED
                         }
                     )
                     
-                    // Other optimizations (these would need real implementation)
-                    OptimizationDetailRow(
-                        title = "High Priority Threading",
-                        description = "Maximum CPU time allocation for benchmark threads",
-                        status = PerformanceOptimizationStatus.DISABLED // TODO: Implement real check
-                    )
-                    
-                    OptimizationDetailRow(
-                        title = "Performance Hint API",
-                        description = "Guides scheduler for optimal core selection (Android 12+)",
-                        status = PerformanceOptimizationStatus.NOT_SUPPORTED // TODO: Implement real check
-                    )
-                    
+                    // Wake Lock Management Detail
                     OptimizationDetailRow(
                         title = "Wake Lock Management",
                         description = "Keeps CPU running at full speed",
-                        status = PerformanceOptimizationStatus.READY // Shows as ready initially
+                        status = if (wakeLockStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else if (wakeLockStatusText == "Ready") {
+                            PerformanceOptimizationStatus.READY  // Show READY when initialized but not acquired
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        },
+                        statusText = wakeLockStatusText // Pass the custom status text
                     )
                     
+                    // Screen Always On Detail
                     OptimizationDetailRow(
                         title = "Screen Always On",
                         description = "Prevents performance degradation from screen-off CPU throttling",
-                        status = PerformanceOptimizationStatus.DISABLED // TODO: Implement real check
+                        status = if (screenAlwaysOnStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // NEW: High Priority Threading Detail
+                    OptimizationDetailRow(
+                        title = "High Priority Threading",
+                        description = "Maximum CPU time allocation for benchmark threads",
+                        status = if (highPriorityThreadingStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // NEW: Performance Hint API Detail
+                    OptimizationDetailRow(
+                        title = "Performance Hint API",
+                        description = "Guides scheduler for optimal core selection (Android 12+)",
+                        status = if (performanceHintStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.NOT_SUPPORTED  // For older Android versions
+                        }
+                    )
+                    
+                    // NEW: CPU Affinity Control Detail
+                    OptimizationDetailRow(
+                        title = "CPU Affinity Control",
+                        description = "$bigCoreCount big cores, $littleCoreCount little cores detected",
+                        status = if (cpuAffinityStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // NEW: Foreground Service Detail
+                    OptimizationDetailRow(
+                        title = "Foreground Service",
+                        description = "Maintains maximum priority during benchmark",
+                        status = if (foregroundServiceStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
+                    )
+                    
+                    // NEW: CPU Governor Hints Detail
+                    OptimizationDetailRow(
+                        title = "CPU Governor Hints",
+                        description = "Current: ${originalGovernor ?: "Unknown"} (requires root to change)",
+                        status = if (governorHintStatus) {
+                            PerformanceOptimizationStatus.ENABLED
+                        } else {
+                            PerformanceOptimizationStatus.DISABLED
+                        }
                     )
                 }
             }
