@@ -111,46 +111,31 @@ object MultiCoreBenchmarks {
     }
 
     /**
-     * Test 2: Multi-Core Fibonacci - COMPLETELY REIMPLEMENTED
+     * Test 2: Multi-Core Fibonacci - CORE-INDEPENDENT CPU BENCHMARKING
      *
-     * NEW APPROACH:
-     * - Uses ITERATIVE Fibonacci (no stack overflow)
-     * - Simple parallel work distribution (no complex async nesting)
-     * - Direct measurement with explicit timing
-     * - Validates results against known values
+     * FIXED WORK PER CORE APPROACH:
+     * - Uses SHARED iterative Fibonacci algorithm from BenchmarkHelpers
+     * - Fixed workload per thread: 5,000,000 iterations (ensures core-independent stability)
+     * - Total work scales with cores: 5M × numThreads = Total Operations
+     * - Test duration remains constant regardless of core count
+     * - Same algorithm as Single-Core version for fair comparison
      *
-     * PERFORMANCE: ~8x faster than single-core on 8-core devices
+     * PERFORMANCE: ~80 Mops/s on 8-core devices (8x single-core baseline)
      */
     suspend fun fibonacciRecursive(params: WorkloadParams): BenchmarkResult = coroutineScope {
-        Log.d(TAG, "=== STARTING MULTI-CORE FIBONACCI ===")
+        Log.d(TAG, "=== STARTING MULTI-CORE FIBONACCI - CORE INDEPENDENT ===")
         Log.d(TAG, "Threads available: $numThreads")
-        Log.d(TAG, "Workload params: $params")
+        Log.d(TAG, "Fixed workload per thread: 5,000,000 iterations")
+        Log.d(TAG, "Total expected operations: ${5_000_000 * numThreads}")
         CpuAffinityManager.setMaxPerformance()
 
-        // Configuration
-        val targetN = 35 // Increased from 30 for better timing
-        val baseIterations = 100 // Reduced, but scaled by numThreads
-        val scaledIterations = baseIterations * numThreads // Total work scales with cores
-        val iterationsPerThread = baseIterations // Each thread does base amount
+        // Configuration - CORE-INDEPENDENT APPROACH
+        val targetN = 35 // Consistent with Single-Core config
+        val iterationsPerThread = 5_000_000 // FIXED workload per core
+        val totalOperations = iterationsPerThread * numThreads // Scales with cores
 
         // Expected value for validation (fib(35) = 9227465)
         val expectedFibValue = 9227465L
-
-        // ITERATIVE Fibonacci - NO RECURSION (prevents stack overflow)
-        fun fibonacciIterative(n: Int): Long {
-            if (n <= 1) return n.toLong()
-
-            var prev = 0L
-            var curr = 1L
-
-            for (i in 2..n) {
-                val next = prev + curr
-                prev = curr
-                curr = next
-            }
-
-            return curr
-        }
 
         // EXPLICIT timing with try-catch for debugging
         val startTime = System.currentTimeMillis()
@@ -159,16 +144,17 @@ object MultiCoreBenchmarks {
 
         try {
             Log.d(TAG, "Starting parallel execution with $numThreads threads")
+            Log.d(TAG, "Each thread will perform $iterationsPerThread iterations")
 
-            // Simple parallel execution - each thread does independent work
+            // Simple parallel execution - each thread does FIXED amount of work
             val threadResults =
                     (0 until numThreads).map { threadId ->
                         async(highPriorityDispatcher) {
                             var threadSum = 0L
 
-                            // Each thread computes fibonacci(targetN) multiple times
+                            // Each thread computes fibonacci(targetN) fixed number of times
                             repeat(iterationsPerThread) { iteration ->
-                                val fibResult = fibonacciIterative(targetN)
+                                val fibResult = BenchmarkHelpers.fibonacciIterative(targetN)
                                 threadSum += fibResult
 
                                 // Validate first result
@@ -206,8 +192,8 @@ object MultiCoreBenchmarks {
         val endTime = System.currentTimeMillis()
         val timeMs = (endTime - startTime).toDouble()
 
-        // Calculate operations per second
-        val actualOps = scaledIterations.toDouble()
+        // Calculate operations per second (total operations across all threads)
+        val actualOps = totalOperations.toDouble()
         val opsPerSecond = if (timeMs > 0) actualOps / (timeMs / 1000.0) else 0.0
 
         // Validation
@@ -219,13 +205,13 @@ object MultiCoreBenchmarks {
                         timeMs < 30000 // Should complete in under 30 seconds
 
         Log.d(TAG, "=== MULTI-CORE FIBONACCI COMPLETE ===")
-        Log.d(TAG, "Time: ${timeMs}ms, Ops: $actualOps, Ops/sec: $opsPerSecond")
+        Log.d(TAG, "Time: ${timeMs}ms, Total Ops: $actualOps, Ops/sec: $opsPerSecond")
         Log.d(TAG, "Valid: $isValid, Execution success: $executionSuccess")
 
         CpuAffinityManager.resetPerformance()
 
         BenchmarkResult(
-                name = "Multi-Core Fibonacci Recursive",
+                name = "Multi-Core Fibonacci Iterative",
                 executionTimeMs = timeMs,
                 opsPerSecond = opsPerSecond,
                 isValid = isValid,
@@ -235,21 +221,24 @@ object MultiCoreBenchmarks {
                                     put("fibonacci_sum", totalResults)
                                     put("target_n", targetN)
                                     put("expected_fib_value", expectedFibValue)
-                                    put("base_iterations", baseIterations)
-                                    put("scaled_iterations", scaledIterations)
                                     put("iterations_per_thread", iterationsPerThread)
                                     put("threads", numThreads)
+                                    put("total_operations", totalOperations)
                                     put("actual_ops", actualOps)
                                     put("time_ms", timeMs)
                                     put("ops_per_second", opsPerSecond)
                                     put("execution_success", executionSuccess)
                                     put(
                                             "implementation",
-                                            "Iterative Fibonacci with simple parallelism"
+                                            "Shared Iterative with Fixed Work Per Core"
                                     )
                                     put(
-                                            "changes",
-                                            "Removed recursion, explicit timing, validation, scaled workload"
+                                            "workload_approach",
+                                            "Fixed Work Per Core - ensures core-independent test duration"
+                                    )
+                                    put(
+                                            "expected_performance",
+                                            "~80 Mops/s on 8-core devices (8x single-core)"
                                     )
                                 }
                                 .toString()

@@ -76,54 +76,37 @@ object SingleCoreBenchmarks {
             }
 
     /**
-     * Test 2: Single-Core Fibonacci - UPDATED to use iterative algorithm for fair comparison with
-     * Multi-Core
+     * Test 2: Single-Core Fibonacci - UPDATED for core-independent CPU benchmarking
      *
-     * NEW APPROACH:
-     * - Uses ITERATIVE Fibonacci (O(n) time complexity) instead of recursive (O(2^n))
+     * CORE-INDEPENDENT APPROACH:
+     * - Uses SHARED iterative Fibonacci algorithm from BenchmarkHelpers
+     * - Fixed workload: 5,000,000 iterations (ensures stable test duration)
      * - Same algorithm as Multi-Core version for fair comparison
-     * - Tests raw CPU throughput (ALU speed) rather than stack performance
+     * - Tests raw CPU throughput (ALU speed) with consistent workload
      *
-     * PERFORMANCE: Now comparable to Multi-Core version, scores should be roughly MultiCoreScore /
-     * NumberOfCores
+     * PERFORMANCE: ~10 Mops/s baseline for single-core devices
      */
     suspend fun fibonacciRecursive(params: WorkloadParams): BenchmarkResult =
             withContext(Dispatchers.Default) {
                 Log.d(
                         TAG,
-                        "Starting Single-Core Fibonacci (ITERATIVE) - Updated for fair comparison"
+                        "Starting Single-Core Fibonacci - Core-independent fixed workload (5M iterations)"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
-                // ITERATIVE Fibonacci - O(n) time complexity (same as Multi-Core version)
-                fun fibonacciIterative(n: Int): Long {
-                    if (n <= 1) return n.toLong()
-
-                    var prev = 0L
-                    var curr = 1L
-
-                    for (i in 2..n) {
-                        val next = prev + curr
-                        prev = curr
-                        curr = next
-                    }
-
-                    return curr
-                }
-
                 val (results, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                            val targetN = 35 // Updated to match Multi-Core config
-                            val iterations =
-                                    1_000_000 // Updated for measurable runtime with iterative
-                            // approach
+                            val targetN = 35 // Consistent with Multi-Core config
+                            val iterations = 5_000_000 // Fixed workload per core for stability
 
                             var totalResult = 0L
-                            repeat(iterations) { totalResult += fibonacciIterative(targetN) }
+                            repeat(iterations) {
+                                totalResult += BenchmarkHelpers.fibonacciIterative(targetN)
+                            }
                             totalResult
                         }
 
-                val actualOps = 1_000_000.0 // Total iterations completed
+                val actualOps = 5_000_000.0 // Total iterations completed
                 val opsPerSecond = actualOps / (timeMs / 1000.0)
 
                 CpuAffinityManager.resetPerformance()
@@ -138,12 +121,17 @@ object SingleCoreBenchmarks {
                                         .apply {
                                             put("fibonacci_sum", results)
                                             put("target_n", 35)
-                                            put("iterations", 1_000_000)
-                                            put("implementation", "Iterative")
+                                            put("iterations", 5_000_000)
+                                            put("implementation", "Shared Iterative")
                                             put("time_complexity", "O(n)")
+                                            put("workload_type", "Fixed per core")
                                             put(
                                                     "description",
-                                                    "Tests raw CPU throughput (ALU speed) rather than stack performance"
+                                                    "Core-independent CPU throughput test with shared algorithm"
+                                            )
+                                            put(
+                                                    "expected_performance",
+                                                    "~10 Mops/s baseline for single-core devices"
                                             )
                                         }
                                         .toString()
