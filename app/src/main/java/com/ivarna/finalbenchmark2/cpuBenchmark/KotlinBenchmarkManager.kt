@@ -542,6 +542,8 @@ class KotlinBenchmarkManager {
                         "slow" ->
                                 WorkloadParams(
                                         primeRange = 100_000,
+                                        stringSortCount =
+                                                20_000, // FIXED WORK PER CORE: Slower devices
                                         fibonacciNRange = Pair(25, 27),
                                         fibonacciIterations = 2_000_000,
                                         matrixSize = 128, // CACHE-RESIDENT: Fixed small size
@@ -563,6 +565,8 @@ class KotlinBenchmarkManager {
                         "mid" ->
                                 WorkloadParams(
                                         primeRange = 200_000,
+                                        stringSortCount =
+                                                50_000, // FIXED WORK PER CORE: Medium devices
                                         fibonacciNRange = Pair(28, 30),
                                         fibonacciIterations = 10_000_000,
                                         matrixSize = 128, // CACHE-RESIDENT: Fixed small size
@@ -584,6 +588,8 @@ class KotlinBenchmarkManager {
                         "flagship" ->
                                 WorkloadParams(
                                         // CACHE-RESIDENT STRATEGY: Small matrices with high
+                                        stringSortCount =
+                                                100_000, // FIXED WORK PER CORE: Flagship devices
                                         // iterations
                                         // Prevents OOM crashes and enables true 8x scaling
                                         primeRange = 5_000_000,

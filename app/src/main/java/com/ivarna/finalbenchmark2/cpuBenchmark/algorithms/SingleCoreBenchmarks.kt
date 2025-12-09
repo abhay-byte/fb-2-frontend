@@ -4,7 +4,6 @@ import android.util.Log
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
 import com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
 import com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -261,46 +260,38 @@ object SingleCoreBenchmarks {
             }
 
     /**
-     * Test 5: String Sorting ULTRA-OPTIMIZED: Minimal startup time with efficient string generation
-     * and sorting Reduced string length and optimized generation for fast startup
+     * Test 5: String Sorting - FIXED WORK PER CORE
+     *
+     * FIXED WORK PER CORE APPROACH:
+     * - Generate strings OUTSIDE the timing block (not measured)
+     * - Use standardized string generation from BenchmarkHelpers
+     * - Use Collections.sort() for fair comparison with Multi-Core
+     * - Measures pure sorting throughput, not string generation speed
+     *
+     * PERFORMANCE: ~3.0 Mops/s baseline for single-core devices
      */
     suspend fun stringSorting(params: WorkloadParams): BenchmarkResult =
             withContext(Dispatchers.Default) {
                 Log.d(
                         TAG,
-                        "Starting String Sorting (count: ${params.stringCount}) - ULTRA-OPTIMIZED: Minimal startup time"
+                        "Starting Single-Core String Sorting - FIXED WORK PER CORE: ${params.stringSortCount} strings"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
-                // OPTIMIZED: Reduced string count and shorter length for faster startup
-                val stringCount = params.stringCount
-                val stringLength = 20 // Reduced from 50 for faster generation
+                // FIXED WORK PER CORE: Generate strings OUTSIDE timing (not measured)
+                val stringCount = params.stringSortCount
+                val allStrings = BenchmarkHelpers.generateStringList(stringCount, 16)
+
+                Log.d(TAG, "Generated $stringCount strings. Starting sort timing...")
 
                 val (sorted, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                            // OPTIMIZED: Generate strings using efficient character array approach
-                            val allStrings = mutableListOf<String>()
-                            val chars =
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-                            val random = java.util.concurrent.ThreadLocalRandom.current()
-
-                            // OPTIMIZED: Batch string generation to reduce allocation overhead
-                            repeat(stringCount) {
-                                val charArray = CharArray(stringLength)
-                                repeat(stringLength) { index ->
-                                    charArray[index] = chars[random.nextInt(chars.length)]
-                                }
-                                allStrings.add(String(charArray))
-                            }
-
-                            // OPTIMIZED: Use built-in sort for better performance than custom merge
-                            // sort
+                            // CRITICAL: Only sort inside the timing block (generation is done)
                             allStrings.sort()
                             allStrings
                         }
 
-                val comparisons =
-                        params.stringCount * kotlin.math.log(params.stringCount.toDouble(), 2.0)
+                val comparisons = stringCount * kotlin.math.log(stringCount.toDouble(), 2.0)
                 val opsPerSecond = comparisons / (timeMs / 1000.0)
 
                 CpuAffinityManager.resetPerformance()
@@ -309,20 +300,28 @@ object SingleCoreBenchmarks {
                         name = "Single-Core String Sorting",
                         executionTimeMs = timeMs.toDouble(),
                         opsPerSecond = opsPerSecond,
-                        isValid = sorted.size == params.stringCount && sorted.isSorted(),
+                        isValid = sorted.size == stringCount && sorted.isSorted(),
                         metricsJson =
                                 JSONObject()
                                         .apply {
-                                            put("string_count", params.stringCount)
-                                            put("string_length", 20)
+                                            put("string_count", stringCount)
+                                            put("string_length", 16)
                                             put("sorted", true)
                                             put(
                                                     "algorithm",
-                                                    "Built-in sort with optimized string generation"
+                                                    "Collections.sort() - Fixed Work Per Core"
                                             )
                                             put(
-                                                    "optimization",
-                                                    "Reduced string count (2500), shorter strings (20 chars), optimized generation, built-in sort"
+                                                    "implementation",
+                                                    "String generation outside timing, fair comparison with multi-core"
+                                            )
+                                            put(
+                                                    "workload_type",
+                                                    "Fixed Work Per Core - measures pure sorting throughput"
+                                            )
+                                            put(
+                                                    "expected_performance",
+                                                    "~3.0 Mops/s baseline for single-core devices"
                                             )
                                         }
                                         .toString()

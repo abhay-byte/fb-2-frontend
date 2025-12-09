@@ -164,4 +164,25 @@ object BenchmarkHelpers {
         // 3. Return throughput metric
         return bufferSize.toLong() * iterations
     }
+
+    /**
+     * Generate a list of random strings efficiently for benchmarking
+     *
+     * FIXED WORK PER CORE: Efficient string generation for fair benchmarking
+     *
+     * @param count Number of strings to generate
+     * @param length Length of each string (default: 16 characters)
+     * @return MutableList<String> containing random strings
+     */
+    fun generateStringList(count: Int, length: Int = 16): MutableList<String> {
+        val chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        val random = java.util.concurrent.ThreadLocalRandom.current()
+        val list = ArrayList<String>(count)
+        repeat(count) {
+            val charArray = CharArray(length)
+            repeat(length) { i -> charArray[i] = chars[random.nextInt(chars.length)] }
+            list.add(String(charArray))
+        }
+        return list
+    }
 }
