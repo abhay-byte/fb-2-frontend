@@ -571,7 +571,8 @@ class KotlinBenchmarkManager {
                                 WorkloadParams(
                                         // HEAVY: Standardized parameters for consistent 1.5-2.0s
                                         // execution
-                                        primeRange = 2_000_000, // HEAVY: Increased from 250,000 to
+                                        primeRange =
+                                                100_000_000, // HEAVY: Increased from 250,000 to
                                         // 2,000,000 (8x)
                                         fibonacciNRange = Pair(30, 32),
                                         matrixSize = 600, // HEAVY: Increased from 350 to 600 (O(N³)

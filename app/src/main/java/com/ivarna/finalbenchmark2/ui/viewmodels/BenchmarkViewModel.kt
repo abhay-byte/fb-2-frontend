@@ -316,7 +316,12 @@ class BenchmarkViewModel(
                                                                                                                                 TestStatus
                                                                                                                                         .COMPLETED,
                                                                                                                         timeText =
-                                                                                                                                "${event.timeMs}ms"
+                                                                                                                                String.format(
+                                                                                                                                        Locale.US,
+                                                                                                                                        "%.2f s",
+                                                                                                                                        event.timeMs /
+                                                                                                                                                1000.0
+                                                                                                                                )
                                                                                                                 )
                                                                                                         else
                                                                                                                 it
