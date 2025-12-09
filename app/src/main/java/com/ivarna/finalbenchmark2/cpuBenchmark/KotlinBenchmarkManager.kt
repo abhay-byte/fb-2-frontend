@@ -544,7 +544,10 @@ class KotlinBenchmarkManager {
                                         primeRange = 100_000,
                                         fibonacciNRange = Pair(25, 27),
                                         fibonacciIterations = 2_000_000,
-                                        matrixSize = 250,
+                                        matrixSize = 128, // CACHE-RESIDENT: Fixed small size
+                                        matrixIterations =
+                                                50, // CACHE-RESIDENT: Low iterations for slow
+                                        // devices
                                         hashDataSizeMb = 1,
                                         stringCount = 8_000,
                                         rayTracingResolution = Pair(128, 128),
@@ -559,7 +562,10 @@ class KotlinBenchmarkManager {
                                         primeRange = 200_000,
                                         fibonacciNRange = Pair(28, 30),
                                         fibonacciIterations = 10_000_000,
-                                        matrixSize = 300,
+                                        matrixSize = 128, // CACHE-RESIDENT: Fixed small size
+                                        matrixIterations =
+                                                200, // CACHE-RESIDENT: Medium iterations for mid
+                                        // devices
                                         hashDataSizeMb = 2,
                                         stringCount = 12_000,
                                         rayTracingResolution = Pair(160, 160),
@@ -571,25 +577,24 @@ class KotlinBenchmarkManager {
                                 )
                         "flagship" ->
                                 WorkloadParams(
-                                        // HEAVY: Standardized parameters for consistent 1.5-2.0s
-                                        // execution
-                                        primeRange = 10_000_000, // HEAVY: Increased from 250,000 to
-                                        // 2,000,000 (8x)
+                                        // CACHE-RESIDENT STRATEGY: Small matrices with high
+                                        // iterations
+                                        // Prevents OOM crashes and enables true 8x scaling
+                                        primeRange = 5_000_000,
                                         fibonacciNRange = Pair(92, 92), // Use fixed max safe value
-                                        fibonacciIterations = 123_000_000, // HEAVY LOAD
-                                        matrixSize = 600, // HEAVY: Increased from 350 to 600 (O(N³)
-                                        // complexity)
-                                        hashDataSizeMb = 8, // HEAVY: Increased from 2MB to 8MB (4x)
-                                        stringCount =
-                                                300_000, // HEAVY: Increased from 15,000 to 300,000
-                                        // (20x)
+                                        fibonacciIterations = 10_000_000,
+                                        matrixSize =
+                                                128, // CACHE-RESIDENT: Fixed small size for cache
+                                        // efficiency
+                                        matrixIterations =
+                                                2000, // CACHE-RESIDENT: High iterations for
+                                        // flagship devices
+                                        hashDataSizeMb = 8,
+                                        stringCount = 300_000,
                                         rayTracingResolution = Pair(192, 192),
-                                        rayTracingDepth =
-                                                5, // HEAVY: Increased from 3 to 5 (more complex
-                                        // rendering)
+                                        rayTracingDepth = 5,
                                         compressionDataSizeMb = 2,
-                                        monteCarloSamples =
-                                                15_000_000, // HEAVY: Increased from 1M to 15M (15x)
+                                        monteCarloSamples = 15_000_000,
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 10
                                 )

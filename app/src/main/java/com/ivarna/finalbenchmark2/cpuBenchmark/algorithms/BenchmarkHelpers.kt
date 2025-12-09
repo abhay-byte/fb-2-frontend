@@ -89,33 +89,48 @@ object BenchmarkHelpers {
     }
 
     /**
-     * Fixed Work Per Core Matrix Multiplication
+     * Cache-Resident Matrix Multiplication
      *
-     * Performs a complete matrix multiplication (A × B = C) using optimized i-k-j loop order for
-     * cache efficiency. Each call represents a full independent matrix multiplication.
+     * Performs multiple matrix multiplications (A × B = C) using optimized i-k-j loop order for
+     * cache efficiency. Uses small matrices that fit in CPU cache to prevent memory bottlenecks.
      *
-     * @param size The size of the square matrices (size × size)
-     * @return The checksum of the resulting matrix C
+     * CACHE-RESIDENT STRATEGY:
+     * - Small matrix size (128x128) fits in L2/L3 cache
+     * - Multiple repetitions to maintain CPU utilization
+     * - Matrices A and B allocated once, reused across repetitions
+     * - Only matrix C is reset between repetitions
      *
-     * This function implements the Fixed Work Per Core strategy where each core performs its own
-     * independent full matrix multiplication rather than splitting one operation.
+     * @param size The size of the square matrices (size × size) - should be small (128)
+     * @param repetitions Number of times to repeat the matrix multiplication
+     * @return The checksum of the final resulting matrix C
      */
-    fun performMatrixMultiplication(size: Int): Long {
-        // Initialize matrices A, B, and C
+    fun performMatrixMultiplication(size: Int, repetitions: Int = 1): Long {
+        // OPTIMIZED: Initialize matrices A and B ONCE (cache-resident strategy)
         val a = Array(size) { DoubleArray(size) { kotlin.random.Random.nextDouble() } }
         val b = Array(size) { DoubleArray(size) { kotlin.random.Random.nextDouble() } }
-        val c = Array(size) { DoubleArray(size) }
 
-        // OPTIMIZED: Use i-k-j loop order for better cache locality
-        for (i in 0 until size) {
-            for (k in 0 until size) {
-                val aik = a[i][k]
-                for (j in 0 until size) {
-                    c[i][j] += aik * b[k][j]
+        // CACHE-RESIDENT: Repeat the multiplication multiple times
+        repeat(repetitions) { rep ->
+            // Initialize result matrix C for this repetition
+            val c = Array(size) { DoubleArray(size) }
+
+            // OPTIMIZED: Use i-k-j loop order for better cache locality
+            for (i in 0 until size) {
+                for (k in 0 until size) {
+                    val aik = a[i][k]
+                    for (j in 0 until size) {
+                        c[i][j] += aik * b[k][j]
+                    }
                 }
+            }
+
+            // For the last repetition, return the checksum
+            if (rep == repetitions - 1) {
+                return calculateMatrixChecksum(c)
             }
         }
 
-        return calculateMatrixChecksum(c)
+        // This should never be reached, but Kotlin requires a return statement
+        return 0L
     }
 }

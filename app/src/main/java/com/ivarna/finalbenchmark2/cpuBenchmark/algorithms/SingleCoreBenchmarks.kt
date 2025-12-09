@@ -139,29 +139,31 @@ object SingleCoreBenchmarks {
             }
 
     /**
-     * Test 3: Matrix Multiplication - Fixed Work Per Core
+     * Test 3: Matrix Multiplication - Cache-Resident Strategy
      *
-     * Uses the centralized matrix multiplication function from BenchmarkHelpers. Each single-core
-     * test performs ONE complete matrix multiplication. Complexity: O(n³) Tests: Floating-point
-     * operations, cache efficiency
+     * Uses small matrices (128x128) that fit in CPU cache to prevent memory bottlenecks. Performs
+     * multiple repetitions to maintain CPU utilization and achieve meaningful benchmark times.
+     * Complexity: O(n³ × iterations) Tests: CPU compute performance, not memory bandwidth.
      */
     suspend fun matrixMultiplication(params: WorkloadParams): BenchmarkResult =
             withContext(Dispatchers.Default) {
                 Log.d(
                         TAG,
-                        "Starting Single-Core Matrix Multiplication (size: ${params.matrixSize}) - Fixed Work Per Core"
+                        "Starting Single-Core Matrix Multiplication (size: ${params.matrixSize}, iterations: ${params.matrixIterations}) - Cache-Resident Strategy"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
                 val size = params.matrixSize
+                val iterations = params.matrixIterations
 
                 val (checksum, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                            // Call centralized matrix multiplication function
-                            BenchmarkHelpers.performMatrixMultiplication(size)
+                            // CACHE-RESIDENT: Call matrix multiplication with repetitions
+                            BenchmarkHelpers.performMatrixMultiplication(size, iterations)
                         }
 
-                val totalOps = size.toLong() * size * size * 2 // multiply + add for each element
+                // CACHE-RESIDENT: Total operations = size³ × 2 (multiply + add) × iterations
+                val totalOps = size.toLong() * size * size * 2 * iterations
                 val opsPerSecond = totalOps / (timeMs / 1000.0)
 
                 CpuAffinityManager.resetPerformance()
@@ -175,15 +177,21 @@ object SingleCoreBenchmarks {
                                 JSONObject()
                                         .apply {
                                             put("matrix_size", size)
+                                            put("matrix_iterations", iterations)
                                             put("result_checksum", checksum)
+                                            put("total_operations", totalOps)
                                             put(
                                                     "implementation",
-                                                    "Fixed Work Per Core - uses centralized BenchmarkHelpers function"
+                                                    "Cache-Resident Strategy - Small matrices with multiple repetitions"
                                             )
-                                            put("workload_type", "Single matrix multiplication")
+                                            put("workload_type", "Multiple matrix multiplications")
                                             put(
-                                                    "optimization",
-                                                    "Cache-friendly i-k-j loop order, reduced yield frequency"
+                                                    "strategy",
+                                                    "Uses 128x128 matrices that fit in L2/L3 cache to prevent memory bottlenecks"
+                                            )
+                                            put(
+                                                    "benefit",
+                                                    "Tests CPU compute performance, enables true 8x multi-core scaling"
                                             )
                                         }
                                         .toString()

@@ -43,7 +43,8 @@ data class WorkloadParams(
         val primeRange: Int = 250000,
         val fibonacciNRange: Pair<Int, Int> = Pair(30, 32),
         val fibonacciIterations: Int = 1_000_000,
-        val matrixSize: Int = 350,
+        val matrixSize: Int = 128, // FIXED: Small size for cache-resident strategy
+        val matrixIterations: Int = 200, // FIXED: Number of repetitions for cache-resident strategy
         val hashDataSizeMb: Int = 2,
         val stringCount: Int = 2500,
         val rayTracingResolution: Pair<Int, Int> = Pair(192, 192),
