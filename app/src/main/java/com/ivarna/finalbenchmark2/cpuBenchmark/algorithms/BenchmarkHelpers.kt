@@ -87,4 +87,35 @@ object BenchmarkHelpers {
         }
         return curr
     }
+
+    /**
+     * Fixed Work Per Core Matrix Multiplication
+     *
+     * Performs a complete matrix multiplication (A × B = C) using optimized i-k-j loop order for
+     * cache efficiency. Each call represents a full independent matrix multiplication.
+     *
+     * @param size The size of the square matrices (size × size)
+     * @return The checksum of the resulting matrix C
+     *
+     * This function implements the Fixed Work Per Core strategy where each core performs its own
+     * independent full matrix multiplication rather than splitting one operation.
+     */
+    fun performMatrixMultiplication(size: Int): Long {
+        // Initialize matrices A, B, and C
+        val a = Array(size) { DoubleArray(size) { kotlin.random.Random.nextDouble() } }
+        val b = Array(size) { DoubleArray(size) { kotlin.random.Random.nextDouble() } }
+        val c = Array(size) { DoubleArray(size) }
+
+        // OPTIMIZED: Use i-k-j loop order for better cache locality
+        for (i in 0 until size) {
+            for (k in 0 until size) {
+                val aik = a[i][k]
+                for (j in 0 until size) {
+                    c[i][j] += aik * b[k][j]
+                }
+            }
+        }
+
+        return calculateMatrixChecksum(c)
+    }
 }

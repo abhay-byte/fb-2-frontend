@@ -139,14 +139,17 @@ object SingleCoreBenchmarks {
             }
 
     /**
-     * Test 3: Matrix Multiplication Optimized: Cache-friendly i-k-j loop order, minimal yielding
-     * Complexity: O(n³) Tests: Floating-point operations, cache efficiency
+     * Test 3: Matrix Multiplication - Fixed Work Per Core
+     *
+     * Uses the centralized matrix multiplication function from BenchmarkHelpers. Each single-core
+     * test performs ONE complete matrix multiplication. Complexity: O(n³) Tests: Floating-point
+     * operations, cache efficiency
      */
     suspend fun matrixMultiplication(params: WorkloadParams): BenchmarkResult =
             withContext(Dispatchers.Default) {
                 Log.d(
                         TAG,
-                        "Starting Matrix Multiplication (size: ${params.matrixSize}) - OPTIMIZED"
+                        "Starting Single-Core Matrix Multiplication (size: ${params.matrixSize}) - Fixed Work Per Core"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
@@ -154,26 +157,8 @@ object SingleCoreBenchmarks {
 
                 val (checksum, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                            // Initialize matrices
-                            val a = Array(size) { DoubleArray(size) { Random.nextDouble() } }
-                            val b = Array(size) { DoubleArray(size) { Random.nextDouble() } }
-                            val c = Array(size) { DoubleArray(size) }
-
-                            // OPTIMIZED: Use i-k-j loop order for better cache locality
-                            for (i in 0 until size) {
-                                for (k in 0 until size) {
-                                    val aik = a[i][k]
-                                    for (j in 0 until size) {
-                                        c[i][j] += aik * b[k][j]
-                                    }
-                                }
-                                // OPTIMIZED: Only yield every 50 rows to reduce overhead
-                                if (i % 50 == 0) {
-                                    kotlinx.coroutines.yield()
-                                }
-                            }
-
-                            BenchmarkHelpers.calculateMatrixChecksum(c)
+                            // Call centralized matrix multiplication function
+                            BenchmarkHelpers.performMatrixMultiplication(size)
                         }
 
                 val totalOps = size.toLong() * size * size * 2 // multiply + add for each element
@@ -191,6 +176,11 @@ object SingleCoreBenchmarks {
                                         .apply {
                                             put("matrix_size", size)
                                             put("result_checksum", checksum)
+                                            put(
+                                                    "implementation",
+                                                    "Fixed Work Per Core - uses centralized BenchmarkHelpers function"
+                                            )
+                                            put("workload_type", "Single matrix multiplication")
                                             put(
                                                     "optimization",
                                                     "Cache-friendly i-k-j loop order, reduced yield frequency"
