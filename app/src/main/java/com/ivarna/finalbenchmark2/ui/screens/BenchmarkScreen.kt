@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import android.util.Log
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.ivarna.finalbenchmark2.ui.models.SystemStats
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme

@@ -12,22 +12,6 @@
 
 ---
 
-### **1️⃣ Setup Environment & Build Native Libraries**
-
-```sh
-# Set up Android NDK environment variable
-export ANDROID_NDK_HOME=/path/to/your/ndk
-export ANDROID_NDK_HOME="/home/abhay/Android/Sdk/ndk/29.0.14206865" && bash build_android_native.sh
-
-source "$HOME/.cargo/env" && cd benchmark/cpu_benchmark && cargo ndk --target arm64-v8a --output-dir ../../app/src/main/jniLibs/arm64-v8a build --release && cargo ndk --target armeabi-v7a --output-dir ../../app/src/main/jniLibs/armeabi-v7a build --release && cargo ndk --target x86_64 --output-dir ../../app/src/main/jniLibs/x86_64 build --release
-
-
-# Build native CPU benchmark libraries for all architectures
-./build_android_native.sh
-```
-
----
-
 ### **2️⃣ Sync Dependencies**
 
 ```sh
