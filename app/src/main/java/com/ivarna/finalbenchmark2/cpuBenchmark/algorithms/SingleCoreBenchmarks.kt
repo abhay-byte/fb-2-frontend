@@ -282,7 +282,14 @@ object SingleCoreBenchmarks {
                 val stringCount = params.stringSortCount
                 val allStrings = BenchmarkHelpers.generateStringList(stringCount, 16)
 
-                Log.d(TAG, "Generated $stringCount strings. Starting sort timing...")
+                Log.d(TAG, "Generated $stringCount strings. Cleaning memory...")
+
+                // FORCE GC to clear generation garbage
+                System.gc()
+                // Small sleep to let GC finish and CPU settle
+                kotlinx.coroutines.delay(200)
+
+                Log.d(TAG, "Memory cleaned. Starting sort timing...")
 
                 val (sorted, timeMs) =
                         BenchmarkHelpers.measureBenchmark {

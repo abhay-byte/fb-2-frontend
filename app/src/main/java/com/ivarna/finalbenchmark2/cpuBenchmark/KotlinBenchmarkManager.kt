@@ -543,7 +543,8 @@ class KotlinBenchmarkManager {
                                 WorkloadParams(
                                         primeRange = 100_000,
                                         stringSortCount =
-                                                20_000, // FIXED WORK PER CORE: Slower devices
+                                                10_000, // FIXED: Reduced for Memory Bandwidth
+                                        // optimization
                                         fibonacciNRange = Pair(25, 27),
                                         fibonacciIterations = 2_000_000,
                                         matrixSize = 128, // CACHE-RESIDENT: Fixed small size
@@ -554,7 +555,6 @@ class KotlinBenchmarkManager {
                                         hashIterations =
                                                 200_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
-                                        stringCount = 8_000,
                                         rayTracingResolution = Pair(128, 128),
                                         rayTracingDepth = 2,
                                         compressionDataSizeMb = 1,
@@ -566,7 +566,8 @@ class KotlinBenchmarkManager {
                                 WorkloadParams(
                                         primeRange = 200_000,
                                         stringSortCount =
-                                                50_000, // FIXED WORK PER CORE: Medium devices
+                                                25_000, // FIXED: Reduced for Memory Bandwidth
+                                        // optimization
                                         fibonacciNRange = Pair(28, 30),
                                         fibonacciIterations = 10_000_000,
                                         matrixSize = 128, // CACHE-RESIDENT: Fixed small size
@@ -577,7 +578,6 @@ class KotlinBenchmarkManager {
                                         hashIterations =
                                                 500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
-                                        stringCount = 12_000,
                                         rayTracingResolution = Pair(160, 160),
                                         rayTracingDepth = 3,
                                         compressionDataSizeMb = 2,
@@ -589,7 +589,8 @@ class KotlinBenchmarkManager {
                                 WorkloadParams(
                                         // CACHE-RESIDENT STRATEGY: Small matrices with high
                                         stringSortCount =
-                                                100_000, // FIXED WORK PER CORE: Flagship devices
+                                                50_000, // FIXED: Reduced for Memory Bandwidth
+                                        // optimization
                                         // iterations
                                         // Prevents OOM crashes and enables true 8x scaling
                                         primeRange = 5_000_000,
@@ -603,9 +604,8 @@ class KotlinBenchmarkManager {
                                         // flagship devices
                                         hashDataSizeMb = 8,
                                         hashIterations =
-                                                5_000_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                                1_000_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
-                                        stringCount = 300_000,
                                         rayTracingResolution = Pair(192, 192),
                                         rayTracingDepth = 5,
                                         compressionDataSizeMb = 2,

@@ -550,7 +550,14 @@ object MultiCoreBenchmarks {
                             }
                             .awaitAll()
 
-            Log.d(TAG, "All string lists generated. Starting parallel sorting...")
+            Log.d(TAG, "All string lists generated. Cleaning memory...")
+
+            // FORCE GC to clear generation garbage
+            System.gc()
+            // Small sleep to let GC finish and CPU settle
+            kotlinx.coroutines.delay(200)
+
+            Log.d(TAG, "Memory cleaned. Starting parallel sorting...")
 
             // STEP 2: TIME ONLY THE SORTING (measured)
             Log.d(TAG, "Starting parallel sort timing...")
