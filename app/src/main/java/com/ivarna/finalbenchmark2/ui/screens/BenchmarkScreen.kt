@@ -51,7 +51,7 @@ fun BenchmarkScreen(
             key = "BenchmarkViewModelWithHistory",
             factory = object : androidx.lifecycle.ViewModelProvider.Factory {
                 override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                    return BenchmarkViewModel(historyRepository = historyRepository, application = application) as T
+                    return BenchmarkViewModel(historyRepository = historyRepository, application = application, onBenchmarkCompleteCallback = onBenchmarkComplete) as T
                 }
             }
         )
@@ -88,11 +88,14 @@ fun BenchmarkScreen(
         }
     }
     
-    // Handle completion (Navigation logic)
-    LaunchedEffect(Unit) {
+    // Handle completion (Navigation logic) - Multiple mechanisms to ensure it works
+    LaunchedEffect(viewModel.benchmarkState) {
+        Log.d("BenchmarkScreen", "Starting benchmarkState collection...")
         viewModel.benchmarkState.collect { state ->
+            Log.d("BenchmarkScreen", "Received benchmark state: $state")
             when (state) {
                 is BenchmarkState.Completed -> {
+                    Log.d("BenchmarkScreen", "Benchmark completed! Triggering navigation...")
                     val results = state.results
                     
                     // Sanitize values to prevent Infinity/NaN JSON serialization errors
@@ -124,17 +127,62 @@ fun BenchmarkScreen(
                     val gson = com.google.gson.Gson()
                     val summaryJson = gson.toJson(summaryData)
                     
+                    Log.d("BenchmarkScreen", "Calling onBenchmarkEnd and onBenchmarkComplete...")
                     onBenchmarkEnd?.invoke()
                     onBenchmarkComplete(summaryJson)
+                    Log.d("BenchmarkScreen", "Navigation triggered successfully!")
                 }
                 is BenchmarkState.Error -> {
+                    Log.d("BenchmarkScreen", "Benchmark error: ${state.message}")
                     // Handle error state if needed
                     onBenchmarkEnd?.invoke()
                     onBenchmarkComplete("{\"error\": \"${state.message}\"}")
                 }
                 else -> {
+                    Log.d("BenchmarkScreen", "Benchmark state: $state (no action needed)")
                     // Do nothing for other states
                 }
+            }
+        }
+    }
+    
+    // ADDITIONAL COMPLETION DETECTION: Watch for 100% progress
+    LaunchedEffect(uiState.progress) {
+        if (uiState.progress >= 1.0f && !uiState.isRunning) {
+            Log.d("BenchmarkScreen", "Detected 100% completion via progress monitoring")
+            // Double-check that we have results
+            uiState.benchmarkResults?.let { results ->
+                Log.d("BenchmarkScreen", "Found benchmark results, creating navigation JSON...")
+                fun sanitize(value: Double): Double = when {
+                    value.isInfinite() -> 0.0
+                    value.isNaN() -> 0.0
+                    else -> value
+                }
+                
+                val summaryData = mapOf(
+                    "single_core_score" to sanitize(results.singleCoreScore),
+                    "multi_core_score" to sanitize(results.multiCoreScore),
+                    "final_score" to sanitize(results.finalWeightedScore),
+                    "normalized_score" to sanitize(results.normalizedScore),
+                    "rating" to determineRating(results.normalizedScore),
+                    "detailed_results" to results.detailedResults.map { result ->
+                        mapOf(
+                            "name" to result.name,
+                            "executionTimeMs" to sanitize(result.executionTimeMs),
+                            "opsPerSecond" to sanitize(result.opsPerSecond),
+                            "isValid" to result.isValid,
+                            "metricsJson" to result.metricsJson
+                        )
+                    }
+                )
+                
+                val gson = com.google.gson.Gson()
+                val summaryJson = gson.toJson(summaryData)
+                
+                Log.d("BenchmarkScreen", "Progress-based navigation: Calling onBenchmarkEnd and onBenchmarkComplete...")
+                onBenchmarkEnd?.invoke()
+                onBenchmarkComplete(summaryJson)
+                Log.d("BenchmarkScreen", "Progress-based navigation triggered!")
             }
         }
     }

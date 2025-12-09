@@ -96,7 +96,8 @@ sealed class BenchmarkState {
 
 class BenchmarkViewModel(
     private val historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository? = null,
-    private val application: Application
+    private val application: Application,
+    private val onBenchmarkCompleteCallback: ((String) -> Unit)? = null
 ) : ViewModel() {
     private val _benchmarkState = MutableStateFlow<BenchmarkState>(BenchmarkState.Idle)
     val benchmarkState: StateFlow<BenchmarkState> = _benchmarkState
@@ -305,6 +306,49 @@ class BenchmarkViewModel(
                 ) }
                 
                 _benchmarkState.value = BenchmarkState.Completed(finalResults)
+                
+                // Log completion to help debug navigation issues
+                Log.d("BenchmarkViewModel", "Benchmark completed! State set to Completed with results: ${finalResults.finalWeightedScore}")
+                
+                // DIRECT CALLBACK: Call the completion callback directly to ensure navigation works
+                if (onBenchmarkCompleteCallback != null) {
+                    try {
+                        // Create summary JSON similar to what BenchmarkScreen expects
+                        fun sanitize(value: Double): Double = when {
+                            value.isInfinite() -> 0.0
+                            value.isNaN() -> 0.0
+                            else -> value
+                        }
+                        
+                        val summaryData = mapOf(
+                            "single_core_score" to sanitize(finalResults.singleCoreScore),
+                            "multi_core_score" to sanitize(finalResults.multiCoreScore),
+                            "final_score" to sanitize(finalResults.finalWeightedScore),
+                            "normalized_score" to sanitize(finalResults.normalizedScore),
+                            "rating" to "Good", // Simple rating for now
+                            "detailed_results" to finalResults.detailedResults.map { result ->
+                                mapOf(
+                                    "name" to result.name,
+                                    "executionTimeMs" to sanitize(result.executionTimeMs),
+                                    "opsPerSecond" to sanitize(result.opsPerSecond),
+                                    "isValid" to result.isValid,
+                                    "metricsJson" to result.metricsJson
+                                )
+                            }
+                        )
+                        
+                        val gson = com.google.gson.Gson()
+                        val summaryJson = gson.toJson(summaryData)
+                        
+                        Log.d("BenchmarkViewModel", "Calling onBenchmarkCompleteCallback with JSON: $summaryJson")
+                        onBenchmarkCompleteCallback!!(summaryJson)
+                        Log.d("BenchmarkViewModel", "onBenchmarkCompleteCallback called successfully")
+                    } catch (e: Exception) {
+                        Log.e("BenchmarkViewModel", "Error calling onBenchmarkCompleteCallback: ${e.message}", e)
+                    }
+                } else {
+                    Log.w("BenchmarkViewModel", "onBenchmarkCompleteCallback is null - navigation will rely on flow collection")
+                }
                 
                 // Save to database
                 if (historyRepository != null) {
