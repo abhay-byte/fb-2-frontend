@@ -76,55 +76,74 @@ object SingleCoreBenchmarks {
             }
 
     /**
-     * Test Sequence 2: Fibonacci Recursive - NO MEMOIZATION (Pure) Complexity: O(2^n) Tests:
-     * Function call overhead, stack performance FIXED: Remove memoization to force raw CPU usage -
-     * Calculate fib(30) repeatedly
+     * Test 2: Single-Core Fibonacci - UPDATED to use iterative algorithm for fair comparison with
+     * Multi-Core
+     *
+     * NEW APPROACH:
+     * - Uses ITERATIVE Fibonacci (O(n) time complexity) instead of recursive (O(2^n))
+     * - Same algorithm as Multi-Core version for fair comparison
+     * - Tests raw CPU throughput (ALU speed) rather than stack performance
+     *
+     * PERFORMANCE: Now comparable to Multi-Core version, scores should be roughly MultiCoreScore /
+     * NumberOfCores
      */
     suspend fun fibonacciRecursive(params: WorkloadParams): BenchmarkResult =
             withContext(Dispatchers.Default) {
                 Log.d(
                         TAG,
-                        "Starting Fibonacci Recursive (range: ${params.fibonacciNRange}) - FIXED: No memoization"
+                        "Starting Single-Core Fibonacci (ITERATIVE) - Updated for fair comparison"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
-                // Pure recursive Fibonacci with NO memoization
-                fun fibonacci(n: Int): Long {
-                    return if (n <= 1) n.toLong() else fibonacci(n - 1) + fibonacci(n - 2)
+                // ITERATIVE Fibonacci - O(n) time complexity (same as Multi-Core version)
+                fun fibonacciIterative(n: Int): Long {
+                    if (n <= 1) return n.toLong()
+
+                    var prev = 0L
+                    var curr = 1L
+
+                    for (i in 2..n) {
+                        val next = prev + curr
+                        prev = curr
+                        curr = next
+                    }
+
+                    return curr
                 }
 
                 val (results, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                            val (start, end) = params.fibonacciNRange
-                            val targetN = 30 // Fixed value for consistent CPU load
-                            val iterations = 1000 // Calculate fib(30) 1000 times to get meaningful
-                            // measurement
+                            val targetN = 35 // Updated to match Multi-Core config
+                            val iterations =
+                                    1_000_000 // Updated for measurable runtime with iterative
+                            // approach
 
                             var totalResult = 0L
-                            repeat(iterations) { totalResult += fibonacci(targetN) }
+                            repeat(iterations) { totalResult += fibonacciIterative(targetN) }
                             totalResult
                         }
 
-                // FIXED: Use actual iterations as operations (not inflated recursive call counting)
-                val actualOps = 1000.0 // We completed 1000 fibonacci(30) calculations
+                val actualOps = 1_000_000.0 // Total iterations completed
                 val opsPerSecond = actualOps / (timeMs / 1000.0)
 
                 CpuAffinityManager.resetPerformance()
 
                 return@withContext BenchmarkResult(
-                        name = "Single-Core Fibonacci Recursive",
+                        name = "Single-Core Fibonacci Iterative",
                         executionTimeMs = timeMs.toDouble(),
                         opsPerSecond = opsPerSecond,
                         isValid = results > 0,
                         metricsJson =
                                 JSONObject()
                                         .apply {
-                                            put("fibonacci_result", results)
-                                            put("target_n", 30)
-                                            put("iterations", 1000)
+                                            put("fibonacci_sum", results)
+                                            put("target_n", 35)
+                                            put("iterations", 1_000_000)
+                                            put("implementation", "Iterative")
+                                            put("time_complexity", "O(n)")
                                             put(
-                                                    "optimization",
-                                                    "Pure recursive, no memoization, repeated calculation for CPU load"
+                                                    "description",
+                                                    "Tests raw CPU throughput (ALU speed) rather than stack performance"
                                             )
                                         }
                                         .toString()

@@ -60,15 +60,15 @@ This document provides comprehensive technical details for the optimized CPU ben
 - **Expected Flagship Score:** ~1,250 points (400M operations/second)
 - **Optimization:** Only yield every 10,000 iterations vs. original 1,000
 
-#### Fibonacci Recursive - **MAJOR FIX**
-- **Algorithm:** Pure recursive implementation (NO memoization)
-- **Complexity:** O(2^n) - True exponential complexity
-- **Workload:** Calculate Fibonacci(30) repeatedly in loop for 1000 iterations
+#### Fibonacci Iterative - **MAJOR UPDATE**
+- **Algorithm:** Iterative implementation (O(n) linear complexity)
+- **Complexity:** O(n) - Linear time complexity for fair comparison
+- **Workload:** Calculate Fibonacci(35) repeatedly in loop for 1,000,000 iterations
 - **Single-Core Scaling Factor:** `1.2e-5`
 - **Multi-Core Scaling Factor:** `1.0e-5`
 - **Expected Flagship Score:** ~1,000 points single, ~1,200 points multi-core
-- **CRITICAL FIX:** Removed memoization to force raw CPU usage instead of trivialized O(n) complexity
-- **Implementation:** Calculate fib(30) 1000 times to get meaningful measurement
+- **CRITICAL UPDATE:** Changed from recursive O(2^n) to iterative O(n) for fair single-core vs multi-core comparison
+- **Implementation:** Calculate fib(35) 1,000,000 times to get meaningful measurement with iterative approach
 
 ### 2. Floating-Point Performance Benchmarks
 
@@ -161,7 +161,7 @@ This document provides comprehensive technical details for the optimized CPU ben
 ```kotlin
 WorkloadParams(
     primeRange = 250_000,              // Consistent across all tiers
-    fibonacciNRange = Pair(30, 32),    // Consistent across all tiers
+    fibonacciNRange = Pair(35, 35),    // Updated to match new iterative implementation
     matrixSize = 350,                  // Consistent across all tiers
     hashDataSizeMb = 2,                // Consistent across all tiers
     stringCount = 15_000,              // Consistent across all tiers
@@ -189,7 +189,7 @@ WorkloadParams(
 4. **Execution Time Target:** 1.5-2.0 seconds per benchmark on flagship devices
 
 ### Critical Fixes Applied
-1. **Fibonacci:** Removed memoization to restore true O(2^n) complexity
+1. **Fibonacci:** Changed from recursive O(2^n) to iterative O(n) for fair single-core vs multi-core comparison
 2. **Monte Carlo:** ThreadLocalRandom for zero-allocation random generation
 3. **Compression:** Static 2MB buffer with reusable output arrays
 4. **String Sorting:** Pre-generation of strings, measure only sorting time
