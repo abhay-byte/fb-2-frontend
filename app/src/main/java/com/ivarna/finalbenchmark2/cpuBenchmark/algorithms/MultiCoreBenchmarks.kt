@@ -491,7 +491,7 @@ object MultiCoreBenchmarks {
                                     put("hashes_per_sec", opsPerSecond)
                                     put("time_ms", timeMs)
                                     put("execution_success", executionSuccess)
-                                    put("implementation", "Centralized with Fixed Work Per Core")
+                                    put("implementation", "Pure Kotlin FNV Hash - No Native Locks")
                                     put(
                                             "workload_approach",
                                             "Fixed Work Per Core - ensures core-independent test duration"
