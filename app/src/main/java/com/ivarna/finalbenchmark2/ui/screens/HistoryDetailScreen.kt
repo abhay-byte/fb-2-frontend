@@ -31,480 +31,677 @@ fun HistoryDetailScreen(
         onBackClick: () -> Unit,
         historyRepository: com.ivarna.finalbenchmark2.data.repository.HistoryRepository
 ) {
-    // Parse initial data if available
-    val initialData =
-            remember(initialDataJson) {
-                if (initialDataJson.isNotEmpty()) {
-                    try {
-                        val gson = com.google.gson.Gson()
-                        gson.fromJson(initialDataJson, HistoryUiModel::class.java)
-                    } catch (e: Exception) {
-                        android.util.Log.e(
-                                "HistoryDetailScreen",
-                                "Error parsing initial data JSON: ${e.message}"
-                        )
-                        null
-                    }
-                } else {
-                    null
-                }
-            }
-
-    val resultState by historyRepository.getResultById(benchmarkId).collectAsState(initial = null)
-
-    // State for delete confirmation dialog
-    var showDeleteDialog by remember { mutableStateOf(false) }
-
-    // Determine what to display: full result if loaded, initial data if available and result not
-    // loaded, or null if nothing available
-    val displayData =
-            resultState?.benchmarkResult
-                    ?: if (initialData != null) {
-                        // Create a minimal BenchmarkResult from initial data for immediate display
-                        com.ivarna.finalbenchmark2.data.database.entities.BenchmarkResultEntity(
-                                id = initialData.id,
-                                totalScore = initialData.finalScore,
-                                singleCoreScore = initialData.singleCoreScore,
-                                multiCoreScore = initialData.multiCoreScore,
-                                normalizedScore = initialData.normalizedScore,
-                                timestamp = initialData.timestamp,
-                                type = initialData.testName,
-                                detailedResultsJson = "" // Will be populated when full data loads
-                        )
-                    } else null
-
-    // Get context and scope for sharing and deleting functionality
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-
-    // Function to share benchmark results
-    val shareBenchmark: () -> Unit = {
-        displayData?.let { data ->
-            // Parse detailed results from JSON string if available
-            val detailedResults =
-                    try {
-                        if (resultState?.benchmarkResult?.detailedResultsJson?.isNotEmpty() == true
-                        ) {
-                            val gson = com.google.gson.Gson()
-                            val listType =
-                                    object :
-                                                    com.google.gson.reflect.TypeToken<
-                                                            List<
-                                                                    com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>>() {}
-                                            .type
-                            gson.fromJson(
-                                    resultState?.benchmarkResult?.detailedResultsJson ?: "",
-                                    listType
-                            ) as
-                                    List<com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>
-                        } else {
-                            emptyList()
-                        }
-                    } catch (e: Exception) {
-                        android.util.Log.e(
-                                "HistoryDetailScreen",
-                                "Error parsing detailed results JSON: ${e.message}"
-                        )
-                        emptyList()
-                    }
-
-            // Get device info to include in the share text
-            val deviceInfo =
-                    com.ivarna.finalbenchmark2.utils.DeviceInfoCollector.getDeviceInfo(context)
-
-            // Format the share text
-            val shareText = buildString {
-                appendLine("FinalBenchmark Result")
-                appendLine("Date: ${formatDate(data.timestamp)}")
-                appendLine("Type: ${data.type}")
-                appendLine()
-                appendLine("Device Info:")
-                appendLine("SOC: ${deviceInfo.socName}")
-                appendLine("CPU: ${deviceInfo.manufacturer} ${deviceInfo.deviceModel}")
-                appendLine(
-                        "Cores: ${deviceInfo.totalCores} (${deviceInfo.bigCores} big + ${deviceInfo.smallCores} small)"
-                )
-                appendLine("GPU: ${deviceInfo.gpuModel} (${deviceInfo.gpuVendor})")
-                appendLine()
-                appendLine("Scores:")
-                appendLine("Total Score: ${String.format("%.0f", data.totalScore)}")
-                appendLine("Normalized: ${String.format("%.0f", data.normalizedScore)}")
-                appendLine()
-                appendLine("CPU Scores:")
-                appendLine("Single-Core: ${String.format("%.0f", data.singleCoreScore)}")
-                appendLine("Multi-Core: ${String.format("%.0f", data.multiCoreScore)}")
-                appendLine()
-                appendLine("Individual Details:")
-                detailedResults.forEach { result ->
-                    appendLine(
-                            "- ${result.name}: ${String.format(Locale.US, "%.3f", result.opsPerSecond / 1_000_000_000.0)} Gops/s (${String.format(Locale.US, "%.2f s", result.executionTimeMs / 1000.0)})"
-                    )
-                }
-            }
-
-            val sendIntent =
-                    Intent(Intent.ACTION_SEND).apply {
-                        putExtra(Intent.EXTRA_TEXT, shareText)
-                        type = "text/plain"
-                    }
-            val shareIntent = Intent.createChooser(sendIntent, "Share Benchmark")
-            context.startActivity(shareIntent)
-        }
-    }
-
-    // Function to delete benchmark
-    val deleteBenchmark: () -> Unit = {
-        displayData?.let { data ->
-            // We need to launch the suspend function in a coroutine scope
-            scope.launch { historyRepository.deleteResultById(data.id) }
-            onBackClick()
-        }
-    }
-
-    Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                        title = { Text("Benchmark Details") },
-                        navigationIcon = {
-                            IconButton(onClick = onBackClick) {
-                                Icon(Icons.Rounded.ArrowBack, contentDescription = "Back")
-                            }
-                        },
-                        actions = {
-                            IconButton(onClick = { shareBenchmark() }) {
-                                Icon(Icons.Rounded.Share, contentDescription = "Share")
-                            }
-                            IconButton(onClick = { showDeleteDialog = true }) {
-                                Icon(Icons.Rounded.Delete, contentDescription = "Delete")
-                            }
-                        }
-                )
-            }
-    ) { padding ->
-        // Delete confirmation dialog
-        if (showDeleteDialog) {
-            AlertDialog(
-                    onDismissRequest = { showDeleteDialog = false },
-                    title = { Text("Delete Benchmark") },
-                    text = {
-                        Text(
-                                "Are you sure you want to delete this benchmark? This action cannot be undone."
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                                onClick = {
-                                    deleteBenchmark()
-                                    showDeleteDialog = false
+        // Parse initial data if available
+        val initialData =
+                remember(initialDataJson) {
+                        if (initialDataJson.isNotEmpty()) {
+                                try {
+                                        val gson = com.google.gson.Gson()
+                                        gson.fromJson(initialDataJson, HistoryUiModel::class.java)
+                                } catch (e: Exception) {
+                                        android.util.Log.e(
+                                                "HistoryDetailScreen",
+                                                "Error parsing initial data JSON: ${e.message}"
+                                        )
+                                        null
                                 }
-                        ) { Text("Delete") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showDeleteDialog = false }) { Text("Cancel") }
-                    }
-            )
-        }
-        // Use displayData which contains either full result or initial data
-        displayData?.let { data ->
-            // Parse detailed results from JSON string if available
-            val detailedResults =
-                    try {
-                        if (resultState?.benchmarkResult?.detailedResultsJson?.isNotEmpty() == true
-                        ) {
-                            val gson = com.google.gson.Gson()
-                            val listType =
-                                    object :
-                                                    com.google.gson.reflect.TypeToken<
-                                                            List<
-                                                                    com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>>() {}
-                                            .type
-                            gson.fromJson(
-                                    resultState?.benchmarkResult?.detailedResultsJson ?: "",
-                                    listType
-                            ) as
-                                    List<com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>
                         } else {
-                            emptyList()
+                                null
                         }
-                    } catch (e: Exception) {
-                        android.util.Log.e(
-                                "HistoryDetailScreen",
-                                "Error parsing detailed results JSON: ${e.message}"
-                        )
-                        emptyList()
-                    }
+                }
 
-            LazyColumn(
-                    modifier = Modifier.padding(padding).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                // 1. Hero Score Card
-                item {
-                    Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            colors =
-                                    CardDefaults.cardColors(
-                                            containerColor =
-                                                    MaterialTheme.colorScheme.primaryContainer
-                                    ),
-                            shape = MaterialTheme.shapes.large
-                    ) {
-                        Column(
-                                modifier = Modifier.padding(32.dp).fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                    text = String.format("%.0f", data.totalScore),
-                                    style = MaterialTheme.typography.displayMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Text(
-                                    text =
-                                            "Normalized: ${String.format("%.0f", data.normalizedScore)}",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
+        val resultState by
+                historyRepository.getResultById(benchmarkId).collectAsState(initial = null)
 
-                            // Date and Rating
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                        Icons.Rounded.Event,
-                                        null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                        // Helper to format long timestamp
-                                        text = formatDate(data.timestamp),
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                )
-                            }
+        // State for delete confirmation dialog
+        var showDeleteDialog by remember { mutableStateOf(false) }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+        // Determine what to display: full result if loaded, initial data if available and result
+        // not
+        // loaded, or null if nothing available
+        val displayData =
+                resultState?.benchmarkResult
+                        ?: if (initialData != null) {
+                                // Create a minimal BenchmarkResult from initial data for immediate
+                                // display
+                                com.ivarna.finalbenchmark2.data.database.entities
+                                        .BenchmarkResultEntity(
+                                                id = initialData.id,
+                                                totalScore = initialData.finalScore,
+                                                singleCoreScore = initialData.singleCoreScore,
+                                                multiCoreScore = initialData.multiCoreScore,
+                                                normalizedScore = initialData.normalizedScore,
+                                                timestamp = initialData.timestamp,
+                                                type = initialData.testName,
+                                                detailedResultsJson =
+                                                        "" // Will be populated when full data loads
+                                        )
+                        } else null
 
-                            // Rating stars
-                            val rating = calculateRating(data.normalizedScore)
-                            Row {
-                                repeat(5) { index ->
-                                    Icon(
-                                            imageVector =
-                                                    if (index < rating) Icons.Rounded.Star
-                                                    else Icons.Rounded.StarBorder,
-                                            contentDescription = "Rating star",
-                                            tint =
-                                                    if (index < rating)
-                                                            MaterialTheme.colorScheme.secondary
-                                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(20.dp)
-                                    )
+        // Get context and scope for sharing and deleting functionality
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+
+        // Function to share benchmark results
+        val shareBenchmark: () -> Unit = {
+                displayData?.let { data ->
+                        // Parse detailed results from JSON string if available
+                        val detailedResults =
+                                try {
+                                        if (resultState?.benchmarkResult?.detailedResultsJson
+                                                        ?.isNotEmpty() == true
+                                        ) {
+                                                val gson = com.google.gson.Gson()
+                                                val listType =
+                                                        object :
+                                                                        com.google.gson.reflect.TypeToken<
+                                                                                List<
+                                                                                        com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>>() {}
+                                                                .type
+                                                gson.fromJson(
+                                                        resultState
+                                                                ?.benchmarkResult
+                                                                ?.detailedResultsJson
+                                                                ?: "",
+                                                        listType
+                                                ) as
+                                                        List<
+                                                                com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>
+                                        } else {
+                                                emptyList()
+                                        }
+                                } catch (e: Exception) {
+                                        android.util.Log.e(
+                                                "HistoryDetailScreen",
+                                                "Error parsing detailed results JSON: ${e.message}"
+                                        )
+                                        emptyList()
                                 }
-                            }
+
+                        // Get device info to include in the share text
+                        val deviceInfo =
+                                com.ivarna.finalbenchmark2.utils.DeviceInfoCollector.getDeviceInfo(
+                                        context
+                                )
+
+                        // Format the share text
+                        val shareText = buildString {
+                                appendLine("FinalBenchmark Result")
+                                appendLine("Date: ${formatDate(data.timestamp)}")
+                                appendLine("Type: ${data.type}")
+                                appendLine()
+                                appendLine("Device Info:")
+                                appendLine("SOC: ${deviceInfo.socName}")
+                                appendLine(
+                                        "CPU: ${deviceInfo.manufacturer} ${deviceInfo.deviceModel}"
+                                )
+                                appendLine(
+                                        "Cores: ${deviceInfo.totalCores} (${deviceInfo.bigCores} big + ${deviceInfo.smallCores} small)"
+                                )
+                                appendLine("GPU: ${deviceInfo.gpuModel} (${deviceInfo.gpuVendor})")
+                                appendLine()
+                                appendLine("Scores:")
+                                appendLine("Total Score: ${String.format("%.0f", data.totalScore)}")
+                                appendLine(
+                                        "Normalized: ${String.format("%.0f", data.normalizedScore)}"
+                                )
+                                appendLine()
+                                appendLine("CPU Scores:")
+                                appendLine(
+                                        "Single-Core: ${String.format("%.0f", data.singleCoreScore)}"
+                                )
+                                appendLine(
+                                        "Multi-Core: ${String.format("%.0f", data.multiCoreScore)}"
+                                )
+                                appendLine()
+                                appendLine("Individual Details:")
+                                detailedResults.forEach { result ->
+                                        appendLine(
+                                                "- ${result.name}: ${String.format(Locale.US, "%.2f", result.opsPerSecond / 1_000_000.0)} Mops/s (${String.format(Locale.US, "%.2f s", result.executionTimeMs / 1000.0)})"
+                                        )
+                                }
                         }
-                    }
-                }
 
-                // 2. Performance Breakdown Card
-                item {
-                    Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        // Single Core Card
-                        DetailCard(
-                                title = "Single-Core",
-                                value = data.singleCoreScore,
-                                icon = Icons.Rounded.Memory,
-                                modifier = Modifier.weight(1f)
-                        )
-                        // Multi Core Card
-                        DetailCard(
-                                title = "Multi-Core",
-                                value = data.multiCoreScore,
-                                icon = Icons.Rounded.Hub,
-                                modifier = Modifier.weight(1f)
-                        )
-                    }
+                        val sendIntent =
+                                Intent(Intent.ACTION_SEND).apply {
+                                        putExtra(Intent.EXTRA_TEXT, shareText)
+                                        type = "text/plain"
+                                }
+                        val shareIntent = Intent.createChooser(sendIntent, "Share Benchmark")
+                        context.startActivity(shareIntent)
                 }
-
-                // 3. Detailed Test Results Header
-                item {
-                    Text(
-                            text = "Individual Test Results",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 8.dp)
-                    )
-                }
-
-                // 4. Detailed Test Results
-                items(detailedResults) { result -> TestResultRow(result = result) }
-            }
         }
-                ?: run {
-                    // Show initial data card while loading detailed data, or loading indicator if
-                    // no initial data
-                    if (initialData != null) {
+
+        // Function to delete benchmark
+        val deleteBenchmark: () -> Unit = {
+                displayData?.let { data ->
+                        // We need to launch the suspend function in a coroutine scope
+                        scope.launch { historyRepository.deleteResultById(data.id) }
+                        onBackClick()
+                }
+        }
+
+        Scaffold(
+                topBar = {
+                        CenterAlignedTopAppBar(
+                                title = { Text("Benchmark Details") },
+                                navigationIcon = {
+                                        IconButton(onClick = onBackClick) {
+                                                Icon(
+                                                        Icons.Rounded.ArrowBack,
+                                                        contentDescription = "Back"
+                                                )
+                                        }
+                                },
+                                actions = {
+                                        IconButton(onClick = { shareBenchmark() }) {
+                                                Icon(
+                                                        Icons.Rounded.Share,
+                                                        contentDescription = "Share"
+                                                )
+                                        }
+                                        IconButton(onClick = { showDeleteDialog = true }) {
+                                                Icon(
+                                                        Icons.Rounded.Delete,
+                                                        contentDescription = "Delete"
+                                                )
+                                        }
+                                }
+                        )
+                }
+        ) { padding ->
+                // Delete confirmation dialog
+                if (showDeleteDialog) {
+                        AlertDialog(
+                                onDismissRequest = { showDeleteDialog = false },
+                                title = { Text("Delete Benchmark") },
+                                text = {
+                                        Text(
+                                                "Are you sure you want to delete this benchmark? This action cannot be undone."
+                                        )
+                                },
+                                confirmButton = {
+                                        TextButton(
+                                                onClick = {
+                                                        deleteBenchmark()
+                                                        showDeleteDialog = false
+                                                }
+                                        ) { Text("Delete") }
+                                },
+                                dismissButton = {
+                                        TextButton(onClick = { showDeleteDialog = false }) {
+                                                Text("Cancel")
+                                        }
+                                }
+                        )
+                }
+                // Use displayData which contains either full result or initial data
+                displayData?.let { data ->
+                        // Parse detailed results from JSON string if available
+                        val detailedResults =
+                                try {
+                                        if (resultState?.benchmarkResult?.detailedResultsJson
+                                                        ?.isNotEmpty() == true
+                                        ) {
+                                                val gson = com.google.gson.Gson()
+                                                val listType =
+                                                        object :
+                                                                        com.google.gson.reflect.TypeToken<
+                                                                                List<
+                                                                                        com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>>() {}
+                                                                .type
+                                                gson.fromJson(
+                                                        resultState
+                                                                ?.benchmarkResult
+                                                                ?.detailedResultsJson
+                                                                ?: "",
+                                                        listType
+                                                ) as
+                                                        List<
+                                                                com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult>
+                                        } else {
+                                                emptyList()
+                                        }
+                                } catch (e: Exception) {
+                                        android.util.Log.e(
+                                                "HistoryDetailScreen",
+                                                "Error parsing detailed results JSON: ${e.message}"
+                                        )
+                                        emptyList()
+                                }
+
                         LazyColumn(
                                 modifier = Modifier.padding(padding).padding(16.dp),
                                 verticalArrangement = Arrangement.spacedBy(16.dp),
                                 contentPadding = PaddingValues(bottom = 16.dp)
                         ) {
-                            // 1. Hero Score Card with initial data
-                            item {
-                                Card(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors =
-                                                CardDefaults.cardColors(
-                                                        containerColor =
-                                                                MaterialTheme.colorScheme
-                                                                        .primaryContainer
-                                                ),
-                                        shape = MaterialTheme.shapes.large
-                                ) {
-                                    Column(
-                                            modifier = Modifier.padding(32.dp).fillMaxWidth(),
-                                            horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                                text =
-                                                        String.format(
-                                                                "%.0f",
-                                                                initialData.finalScore
+                                // 1. Hero Score Card
+                                item {
+                                        Card(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                colors =
+                                                        CardDefaults.cardColors(
+                                                                containerColor =
+                                                                        MaterialTheme.colorScheme
+                                                                                .primaryContainer
                                                         ),
-                                                style = MaterialTheme.typography.displayMedium,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Text(
-                                                text =
-                                                        "Normalized: ${String.format("%.0f", initialData.normalizedScore)}",
-                                                style = MaterialTheme.typography.bodyLarge,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Spacer(modifier = Modifier.height(16.dp))
+                                                shape = MaterialTheme.shapes.large
+                                        ) {
+                                                Column(
+                                                        modifier =
+                                                                Modifier.padding(32.dp)
+                                                                        .fillMaxWidth(),
+                                                        horizontalAlignment =
+                                                                Alignment.CenterHorizontally
+                                                ) {
+                                                        Text(
+                                                                text =
+                                                                        String.format(
+                                                                                "%.0f",
+                                                                                data.totalScore
+                                                                        ),
+                                                                style =
+                                                                        MaterialTheme.typography
+                                                                                .displayMedium,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color =
+                                                                        MaterialTheme.colorScheme
+                                                                                .onPrimaryContainer
+                                                        )
+                                                        Text(
+                                                                text =
+                                                                        "Normalized: ${String.format("%.0f", data.normalizedScore)}",
+                                                                style =
+                                                                        MaterialTheme.typography
+                                                                                .bodyLarge,
+                                                                color =
+                                                                        MaterialTheme.colorScheme
+                                                                                .onPrimaryContainer
+                                                        )
+                                                        Spacer(modifier = Modifier.height(16.dp))
 
-                                        // Date and Rating
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                    Icons.Rounded.Event,
-                                                    null,
-                                                    modifier = Modifier.size(16.dp),
-                                                    tint =
-                                                            MaterialTheme.colorScheme
-                                                                    .onPrimaryContainer
-                                            )
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(
-                                                    // Helper to format long timestamp
-                                                    text = formatDate(initialData.timestamp),
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    color =
-                                                            MaterialTheme.colorScheme
-                                                                    .onPrimaryContainer
-                                            )
+                                                        // Date and Rating
+                                                        Row(
+                                                                verticalAlignment =
+                                                                        Alignment.CenterVertically
+                                                        ) {
+                                                                Icon(
+                                                                        Icons.Rounded.Event,
+                                                                        null,
+                                                                        modifier =
+                                                                                Modifier.size(
+                                                                                        16.dp
+                                                                                ),
+                                                                        tint =
+                                                                                MaterialTheme
+                                                                                        .colorScheme
+                                                                                        .onPrimaryContainer
+                                                                )
+                                                                Spacer(
+                                                                        modifier =
+                                                                                Modifier.width(8.dp)
+                                                                )
+                                                                Text(
+                                                                        // Helper to format long
+                                                                        // timestamp
+                                                                        text =
+                                                                                formatDate(
+                                                                                        data.timestamp
+                                                                                ),
+                                                                        style =
+                                                                                MaterialTheme
+                                                                                        .typography
+                                                                                        .bodyMedium,
+                                                                        color =
+                                                                                MaterialTheme
+                                                                                        .colorScheme
+                                                                                        .onPrimaryContainer
+                                                                )
+                                                        }
+
+                                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                                        // Rating stars
+                                                        val rating =
+                                                                calculateRating(
+                                                                        data.normalizedScore
+                                                                )
+                                                        Row {
+                                                                repeat(5) { index ->
+                                                                        Icon(
+                                                                                imageVector =
+                                                                                        if (index <
+                                                                                                        rating
+                                                                                        )
+                                                                                                Icons.Rounded
+                                                                                                        .Star
+                                                                                        else
+                                                                                                Icons.Rounded
+                                                                                                        .StarBorder,
+                                                                                contentDescription =
+                                                                                        "Rating star",
+                                                                                tint =
+                                                                                        if (index <
+                                                                                                        rating
+                                                                                        )
+                                                                                                MaterialTheme
+                                                                                                        .colorScheme
+                                                                                                        .secondary
+                                                                                        else
+                                                                                                MaterialTheme
+                                                                                                        .colorScheme
+                                                                                                        .onSurfaceVariant,
+                                                                                modifier =
+                                                                                        Modifier.size(
+                                                                                                20.dp
+                                                                                        )
+                                                                        )
+                                                                }
+                                                        }
+                                                }
                                         }
+                                }
 
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        // Rating stars
-                                        val rating = calculateRating(initialData.normalizedScore)
-                                        Row {
-                                            repeat(5) { index ->
-                                                Icon(
-                                                        imageVector =
-                                                                if (index < rating)
-                                                                        Icons.Rounded.Star
-                                                                else Icons.Rounded.StarBorder,
-                                                        contentDescription = "Rating star",
-                                                        tint =
-                                                                if (index < rating)
-                                                                        MaterialTheme.colorScheme
-                                                                                .secondary
-                                                                else
-                                                                        MaterialTheme.colorScheme
-                                                                                .onSurfaceVariant,
-                                                        modifier = Modifier.size(20.dp)
+                                // 2. Performance Breakdown Card
+                                item {
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                        ) {
+                                                // Single Core Card
+                                                DetailCard(
+                                                        title = "Single-Core",
+                                                        value = data.singleCoreScore,
+                                                        icon = Icons.Rounded.Memory,
+                                                        modifier = Modifier.weight(1f)
                                                 )
-                                            }
+                                                // Multi Core Card
+                                                DetailCard(
+                                                        title = "Multi-Core",
+                                                        value = data.multiCoreScore,
+                                                        icon = Icons.Rounded.Hub,
+                                                        modifier = Modifier.weight(1f)
+                                                )
                                         }
-                                    }
                                 }
-                            }
 
-                            // 2. Performance Breakdown Card
-                            item {
-                                Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    // Single Core Card
-                                    DetailCard(
-                                            title = "Single-Core",
-                                            value = initialData.singleCoreScore,
-                                            icon = Icons.Rounded.Memory,
-                                            modifier = Modifier.weight(1f)
-                                    )
-                                    // Multi Core Card
-                                    DetailCard(
-                                            title = "Multi-Core",
-                                            value = initialData.multiCoreScore,
-                                            icon = Icons.Rounded.Hub,
-                                            modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-
-                            // 3. Loading indicator for detailed results
-                            item {
-                                Text(
-                                        text = "Individual Test Results",
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(start = 8.dp)
-                                )
-                            }
-
-                            item {
-                                Card(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        colors =
-                                                CardDefaults.cardColors(
-                                                        containerColor =
-                                                                MaterialTheme.colorScheme
-                                                                        .surfaceContainerLow
-                                                ),
-                                        shape = MaterialTheme.shapes.medium
-                                ) {
-                                    Row(
-                                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        CircularProgressIndicator(
-                                                modifier = Modifier.padding(16.dp)
-                                        )
+                                // 3. Detailed Test Results Header
+                                item {
                                         Text(
-                                                text = "Loading detailed results...",
-                                                modifier = Modifier.padding(start = 16.dp)
+                                                text = "Individual Test Results",
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                modifier = Modifier.padding(start = 8.dp)
                                         )
-                                    }
                                 }
-                            }
+
+                                // 4. Detailed Test Results
+                                items(detailedResults) { result -> TestResultRow(result = result) }
                         }
-                    } else {
-                        // Show loading indicator if no initial data is available
-                        Box(
-                                modifier = Modifier.fillMaxSize().padding(16.dp),
-                                contentAlignment = Alignment.Center
-                        ) { CircularProgressIndicator() }
-                    }
                 }
-    }
+                        ?: run {
+                                // Show initial data card while loading detailed data, or loading
+                                // indicator if
+                                // no initial data
+                                if (initialData != null) {
+                                        LazyColumn(
+                                                modifier = Modifier.padding(padding).padding(16.dp),
+                                                verticalArrangement = Arrangement.spacedBy(16.dp),
+                                                contentPadding = PaddingValues(bottom = 16.dp)
+                                        ) {
+                                                // 1. Hero Score Card with initial data
+                                                item {
+                                                        Card(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                colors =
+                                                                        CardDefaults.cardColors(
+                                                                                containerColor =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .primaryContainer
+                                                                        ),
+                                                                shape = MaterialTheme.shapes.large
+                                                        ) {
+                                                                Column(
+                                                                        modifier =
+                                                                                Modifier.padding(
+                                                                                                32.dp
+                                                                                        )
+                                                                                        .fillMaxWidth(),
+                                                                        horizontalAlignment =
+                                                                                Alignment
+                                                                                        .CenterHorizontally
+                                                                ) {
+                                                                        Text(
+                                                                                text =
+                                                                                        String.format(
+                                                                                                "%.0f",
+                                                                                                initialData
+                                                                                                        .finalScore
+                                                                                        ),
+                                                                                style =
+                                                                                        MaterialTheme
+                                                                                                .typography
+                                                                                                .displayMedium,
+                                                                                fontWeight =
+                                                                                        FontWeight
+                                                                                                .Bold,
+                                                                                color =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .onPrimaryContainer
+                                                                        )
+                                                                        Text(
+                                                                                text =
+                                                                                        "Normalized: ${String.format("%.0f", initialData.normalizedScore)}",
+                                                                                style =
+                                                                                        MaterialTheme
+                                                                                                .typography
+                                                                                                .bodyLarge,
+                                                                                color =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .onPrimaryContainer
+                                                                        )
+                                                                        Spacer(
+                                                                                modifier =
+                                                                                        Modifier.height(
+                                                                                                16.dp
+                                                                                        )
+                                                                        )
+
+                                                                        // Date and Rating
+                                                                        Row(
+                                                                                verticalAlignment =
+                                                                                        Alignment
+                                                                                                .CenterVertically
+                                                                        ) {
+                                                                                Icon(
+                                                                                        Icons.Rounded
+                                                                                                .Event,
+                                                                                        null,
+                                                                                        modifier =
+                                                                                                Modifier.size(
+                                                                                                        16.dp
+                                                                                                ),
+                                                                                        tint =
+                                                                                                MaterialTheme
+                                                                                                        .colorScheme
+                                                                                                        .onPrimaryContainer
+                                                                                )
+                                                                                Spacer(
+                                                                                        modifier =
+                                                                                                Modifier.width(
+                                                                                                        8.dp
+                                                                                                )
+                                                                                )
+                                                                                Text(
+                                                                                        // Helper to
+                                                                                        // format
+                                                                                        // long
+                                                                                        // timestamp
+                                                                                        text =
+                                                                                                formatDate(
+                                                                                                        initialData
+                                                                                                                .timestamp
+                                                                                                ),
+                                                                                        style =
+                                                                                                MaterialTheme
+                                                                                                        .typography
+                                                                                                        .bodyMedium,
+                                                                                        color =
+                                                                                                MaterialTheme
+                                                                                                        .colorScheme
+                                                                                                        .onPrimaryContainer
+                                                                                )
+                                                                        }
+
+                                                                        Spacer(
+                                                                                modifier =
+                                                                                        Modifier.height(
+                                                                                                8.dp
+                                                                                        )
+                                                                        )
+
+                                                                        // Rating stars
+                                                                        val rating =
+                                                                                calculateRating(
+                                                                                        initialData
+                                                                                                .normalizedScore
+                                                                                )
+                                                                        Row {
+                                                                                repeat(5) { index ->
+                                                                                        Icon(
+                                                                                                imageVector =
+                                                                                                        if (index <
+                                                                                                                        rating
+                                                                                                        )
+                                                                                                                Icons.Rounded
+                                                                                                                        .Star
+                                                                                                        else
+                                                                                                                Icons.Rounded
+                                                                                                                        .StarBorder,
+                                                                                                contentDescription =
+                                                                                                        "Rating star",
+                                                                                                tint =
+                                                                                                        if (index <
+                                                                                                                        rating
+                                                                                                        )
+                                                                                                                MaterialTheme
+                                                                                                                        .colorScheme
+                                                                                                                        .secondary
+                                                                                                        else
+                                                                                                                MaterialTheme
+                                                                                                                        .colorScheme
+                                                                                                                        .onSurfaceVariant,
+                                                                                                modifier =
+                                                                                                        Modifier.size(
+                                                                                                                20.dp
+                                                                                                        )
+                                                                                        )
+                                                                                }
+                                                                        }
+                                                                }
+                                                        }
+                                                }
+
+                                                // 2. Performance Breakdown Card
+                                                item {
+                                                        Row(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                horizontalArrangement =
+                                                                        Arrangement.spacedBy(16.dp)
+                                                        ) {
+                                                                // Single Core Card
+                                                                DetailCard(
+                                                                        title = "Single-Core",
+                                                                        value =
+                                                                                initialData
+                                                                                        .singleCoreScore,
+                                                                        icon = Icons.Rounded.Memory,
+                                                                        modifier =
+                                                                                Modifier.weight(1f)
+                                                                )
+                                                                // Multi Core Card
+                                                                DetailCard(
+                                                                        title = "Multi-Core",
+                                                                        value =
+                                                                                initialData
+                                                                                        .multiCoreScore,
+                                                                        icon = Icons.Rounded.Hub,
+                                                                        modifier =
+                                                                                Modifier.weight(1f)
+                                                                )
+                                                        }
+                                                }
+
+                                                // 3. Loading indicator for detailed results
+                                                item {
+                                                        Text(
+                                                                text = "Individual Test Results",
+                                                                style =
+                                                                        MaterialTheme.typography
+                                                                                .headlineSmall,
+                                                                fontWeight = FontWeight.Bold,
+                                                                modifier =
+                                                                        Modifier.padding(
+                                                                                start = 8.dp
+                                                                        )
+                                                        )
+                                                }
+
+                                                item {
+                                                        Card(
+                                                                modifier = Modifier.fillMaxWidth(),
+                                                                colors =
+                                                                        CardDefaults.cardColors(
+                                                                                containerColor =
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .surfaceContainerLow
+                                                                        ),
+                                                                shape = MaterialTheme.shapes.medium
+                                                        ) {
+                                                                Row(
+                                                                        modifier =
+                                                                                Modifier.fillMaxWidth()
+                                                                                        .padding(
+                                                                                                16.dp
+                                                                                        ),
+                                                                        verticalAlignment =
+                                                                                Alignment
+                                                                                        .CenterVertically,
+                                                                        horizontalArrangement =
+                                                                                Arrangement.Center
+                                                                ) {
+                                                                        CircularProgressIndicator(
+                                                                                modifier =
+                                                                                        Modifier.padding(
+                                                                                                16.dp
+                                                                                        )
+                                                                        )
+                                                                        Text(
+                                                                                text =
+                                                                                        "Loading detailed results...",
+                                                                                modifier =
+                                                                                        Modifier.padding(
+                                                                                                start =
+                                                                                                        16.dp
+                                                                                        )
+                                                                        )
+                                                                }
+                                                        }
+                                                }
+                                        }
+                                } else {
+                                        // Show loading indicator if no initial data is available
+                                        Box(
+                                                modifier = Modifier.fillMaxSize().padding(16.dp),
+                                                contentAlignment = Alignment.Center
+                                        ) { CircularProgressIndicator() }
+                                }
+                        }
+        }
 }
 
 @Composable
@@ -514,91 +711,92 @@ fun DetailCard(
         icon: androidx.compose.ui.graphics.vector.ImageVector,
         modifier: Modifier = Modifier
 ) {
-    Card(
-            modifier = modifier,
-            colors =
-                    CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainer
-                    ),
-            shape = MaterialTheme.shapes.medium
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(title, style = MaterialTheme.typography.labelMedium)
-            Text(
-                    text = String.format("%.0f", value),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.SemiBold
-            )
+        Card(
+                modifier = modifier,
+                colors =
+                        CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainer
+                        ),
+                shape = MaterialTheme.shapes.medium
+        ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(title, style = MaterialTheme.typography.labelMedium)
+                        Text(
+                                text = String.format("%.0f", value),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.SemiBold
+                        )
+                }
         }
-    }
 }
 
 @Composable
 fun TestResultRow(result: BenchmarkResult) {
-    Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors =
-                    CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
-                    ),
-            shape = MaterialTheme.shapes.medium
-    ) {
-        Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
+        Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                        CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+                        ),
+                shape = MaterialTheme.shapes.medium
         ) {
-            Icon(
-                    if (result.isValid) Icons.Rounded.CheckCircle else Icons.Rounded.Warning,
-                    null,
-                    tint =
-                            if (result.isValid) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error,
-                    modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                        text = result.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Medium
-                )
-                Text(
-                        text =
-                                "Time: ${String.format(Locale.US, "%.2f s", result.executionTimeMs / 1000.0)}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                    text =
-                            String.format(
-                                    Locale.US,
-                                    "%.3f Gops/s",
-                                    result.opsPerSecond / 1_000_000_000.0
-                            ),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
-            )
+                Row(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        Icon(
+                                if (result.isValid) Icons.Rounded.CheckCircle
+                                else Icons.Rounded.Warning,
+                                null,
+                                tint =
+                                        if (result.isValid) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                        text = result.name,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                        text =
+                                                "Time: ${String.format(Locale.US, "%.2f s", result.executionTimeMs / 1000.0)}",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                                text =
+                                        String.format(
+                                                Locale.US,
+                                                "%.2f Mops/s",
+                                                result.opsPerSecond / 1_000_000.0
+                                        ),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                        )
+                }
         }
-    }
 }
 
 private fun formatDate(timestamp: Long): String {
-    val date = Date(timestamp)
-    val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
-    return sdf.format(date)
+        val date = Date(timestamp)
+        val sdf = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+        return sdf.format(date)
 }
 
 private fun calculateRating(score: Double): Int {
-    return when {
-        score >= 80000 -> 5
-        score >= 60000 -> 4
-        score >= 40000 -> 3
-        score >= 20000 -> 2
-        else -> 1
-    }
+        return when {
+                score >= 80000 -> 5
+                score >= 60000 -> 4
+                score >= 40000 -> 3
+                score >= 20000 -> 2
+                else -> 1
+        }
 }

@@ -142,7 +142,7 @@ fun DetailedResultListItem(result: BenchmarkResult) {
                                         )
                                         Text(
                                                 text =
-                                                        "Score: ${String.format(Locale.US, "%.3f Gops/s", result.opsPerSecond / 1_000_000_000.0)}",
+                                                        "Score: ${String.format(Locale.US, "%.2f Mops/s", result.opsPerSecond / 1_000_000.0)}",
                                                 fontSize = 14.sp,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
