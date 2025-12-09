@@ -63,12 +63,16 @@ This document provides comprehensive technical details for the optimized CPU ben
 #### Fibonacci Iterative - **MAJOR UPDATE**
 - **Algorithm:** Iterative implementation (O(n) linear complexity)
 - **Complexity:** O(n) - Linear time complexity for fair comparison
-- **Workload:** Calculate Fibonacci(35) repeatedly in loop for 1,000,000 iterations
+- **Workload:** Calculate Fibonacci(35) repeatedly in configurable loop iterations
 - **Single-Core Scaling Factor:** `1.2e-5`
 - **Multi-Core Scaling Factor:** `1.0e-5`
 - **Expected Flagship Score:** ~1,000 points single, ~1,200 points multi-core
 - **CRITICAL UPDATE:** Changed from recursive O(2^n) to iterative O(n) for fair single-core vs multi-core comparison
-- **Implementation:** Calculate fib(35) 1,000,000 times to get meaningful measurement with iterative approach
+- **CONFIGURABLE WORKLOAD:** Tier-specific fibonacciIterations parameter for flexible scaling:
+  * Slow tier: 2,000,000 iterations
+  * Mid tier: 10,000,000 iterations
+  * Flagship tier: 25,000,000 iterations
+- **Implementation:** Calculate fib(35) configurable number of times for meaningful measurement with iterative approach
 
 ### 2. Floating-Point Performance Benchmarks
 
@@ -157,20 +161,54 @@ This document provides comprehensive technical details for the optimized CPU ben
 
 ## Workload Parameters by Device Tier
 
-### Standardized Parameters (Official Scoring)
+### Tier-Specific Parameters (Flexible Scaling)
 ```kotlin
+// Slow Tier Configuration
 WorkloadParams(
-    primeRange = 250_000,              // Consistent across all tiers
-    fibonacciNRange = Pair(35, 35),    // Updated to match new iterative implementation
-    matrixSize = 350,                  // Consistent across all tiers
-    hashDataSizeMb = 2,                // Consistent across all tiers
-    stringCount = 15_000,              // Consistent across all tiers
-    rayTracingResolution = Pair(192, 192), // Consistent across all tiers
-    rayTracingDepth = 3,               // Consistent across all tiers
-    compressionDataSizeMb = 2,         // Consistent across all tiers
-    monteCarloSamples = 1_000_000,     // Consistent across all tiers
-    jsonDataSizeMb = 1,                // Consistent across all tiers
-    nqueensSize = 10                   // Consistent across all tiers
+    primeRange = 100_000,
+    fibonacciNRange = Pair(25, 27),
+    fibonacciIterations = 2_000_000,   // Quick test for low-end devices
+    matrixSize = 250,
+    hashDataSizeMb = 1,
+    stringCount = 8_000,
+    rayTracingResolution = Pair(128, 128),
+    rayTracingDepth = 2,
+    compressionDataSizeMb = 1,
+    monteCarloSamples = 200_000,
+    jsonDataSizeMb = 1,
+    nqueensSize = 8
+)
+
+// Mid Tier Configuration
+WorkloadParams(
+    primeRange = 200_000,
+    fibonacciNRange = Pair(28, 30),
+    fibonacciIterations = 10_000_000,  // Moderate test for mid-range devices
+    matrixSize = 300,
+    hashDataSizeMb = 2,
+    stringCount = 12_000,
+    rayTracingResolution = Pair(160, 160),
+    rayTracingDepth = 3,
+    compressionDataSizeMb = 2,
+    monteCarloSamples = 500_000,
+    jsonDataSizeMb = 1,
+    nqueensSize = 9
+)
+
+// Flagship Tier Configuration
+WorkloadParams(
+    primeRange = 10_000_000,
+    fibonacciNRange = Pair(92, 92),    // Maximum safe Fibonacci value
+    fibonacciIterations = 25_000_000,  // Heavy workload for flagship devices
+    matrixSize = 600,
+    hashDataSizeMb = 8,
+    stringCount = 300_000,
+    rayTracingResolution = Pair(192, 192),
+    rayTracingDepth = 5,
+    compressionDataSizeMb = 2,
+    monteCarloSamples = 15_000_000,
+    jsonDataSizeMb = 1,
+    nqueensSize = 10
 )
 ```
 
@@ -252,9 +290,19 @@ CPU Intensive Work -> Minimal GC -> CPU Intensive Work -> ...
 ## Maintenance and Updates
 
 ### Version History
+- **v3.1:** Added configurable fibonacciIterations parameter for flexible benchmark scaling
+  * Added fibonacciIterations field to WorkloadParams with tier-specific values
+  * Updated single-core and multi-core benchmarks to use configurable iterations
+  * Implemented device-tier specific scaling: 2M (slow), 10M (mid), 25M (flagship)
 - **v3.0:** Major refactoring with zero-allocation optimization and algorithm fixes
 - **v2.0:** Crisis fixes removal and optimization
 - **v1.0:** Initial implementation with tier-based parameters
+
+### Fibonacci Configuration Benefits
+- **Flexible Scaling:** Different device tiers now have appropriate workload intensity
+- **Fair Comparison:** Ensures meaningful benchmark duration across all devices
+- **Performance Optimization:** Prevents timeouts on low-end devices while maintaining load on flagship devices
+- **Configurable:** Easy to adjust iteration counts for future optimizations
 
 ### Future Considerations
 - Adaptive workload sizing based on device capabilities
