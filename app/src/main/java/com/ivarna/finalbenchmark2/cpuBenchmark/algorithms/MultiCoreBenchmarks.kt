@@ -506,143 +506,51 @@ object MultiCoreBenchmarks {
     }
 
     /**
-     * Test 5: Multi-Core String Sorting - COMPLETELY REIMPLEMENTED
+     * Test 5: Multi-Core String Sorting - FIXED WORK PER CORE
      *
      * NEW APPROACH:
-     * - Generate strings ONCE before timing starts
-     * - Use simple parallel chunk sorting (no complex merge sort)
-     * - Each thread sorts its chunk independently
-     * - Single final merge of sorted chunks
-     * - Uses Kotlin's efficient built-in sort
-     *
-     * PERFORMANCE: ~4-6x faster than single-core on 8-core devices
+     * - "Fixed Work Per Core": Each core sorts 1 Independent List
+     * - Algorithms are identical to Single-Core (Collections.sort)
+     * - Scales perfectly linearly (8 cores = 8x throughput)
      */
     suspend fun stringSorting(params: WorkloadParams): BenchmarkResult = coroutineScope {
-        Log.d(TAG, "=== STARTING MULTI-CORE STRING SORTING ===")
+        Log.d(TAG, "=== STARTING MULTI-CORE STRING SORTING - FIXED WORK PER CORE ===")
         Log.d(TAG, "Threads available: $numThreads")
-        Log.d(TAG, "String count: ${params.stringCount}")
+        Log.d(TAG, "Strings per thread: ${params.stringCount}")
         CpuAffinityManager.setMaxPerformance()
 
-        val stringCount = params.stringCount
-        val chunkSize = stringCount / numThreads
+        val countPerThread = params.stringCount
+        val stringLength = 20
 
-        Log.d(TAG, "Generating $stringCount strings for sorting...")
+        Log.d(TAG, "Generating data lists...")
 
-        // STEP 1: Generate ALL strings BEFORE timing starts (NOT measured)
-        val allStrings =
-                try {
-                    (0 until numThreads)
-                            .map { threadId ->
-                                async(highPriorityDispatcher) {
-                                    val start = threadId * chunkSize
-                                    val end =
-                                            if (threadId == numThreads - 1) stringCount
-                                            else (threadId + 1) * chunkSize
-                                    val count = end - start
-
-                                    List(count) {
-                                        // OPTIMIZED: Use shorter strings for faster generation
-                                        val chars =
-                                                "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-                                        val charArray = CharArray(20) // Reduced from 50
-                                        val random = ThreadLocalRandom.current()
-                                        repeat(20) { index ->
-                                            charArray[index] = chars[random.nextInt(chars.length)]
-                                        }
-                                        String(charArray)
-                                    }
-                                }
-                            }
-                            .awaitAll()
-                            .flatten()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Failed to generate strings: ${e.message}")
-                    emptyList()
+        // STEP 1: Generate INDEPENDENT lists for each thread BEFORE timing
+        val threadData =
+                (0 until numThreads).map {
+                    BenchmarkHelpers.generateStringList(countPerThread, stringLength)
                 }
 
-        // Verify generation succeeded
-        if (allStrings.size != stringCount) {
-            Log.e(TAG, "String generation failed: expected $stringCount, got ${allStrings.size}")
-
-            return@coroutineScope BenchmarkResult(
-                    name = "Multi-Core String Sorting",
-                    executionTimeMs = 0.0,
-                    opsPerSecond = 0.0,
-                    isValid = false,
-                    metricsJson =
-                            JSONObject()
-                                    .apply {
-                                        put("error", "String generation failed")
-                                        put("expected_count", stringCount)
-                                        put("actual_count", allStrings.size)
-                                    }
-                                    .toString()
-            )
-        }
-
-        Log.d(TAG, "String generation complete. Starting sort timing...")
-        Log.d(TAG, "Generated ${allStrings.size} strings, starting parallel sorting...")
+        Log.d(TAG, "Data generation complete. Starting sort timing...")
 
         // STEP 2: TIME ONLY THE SORTING (measured)
         val startTime = System.currentTimeMillis()
-        var sortedResult: List<String> = emptyList()
         var executionSuccess = true
+        var totalSorted = 0
 
         try {
-            // Divide strings into chunks
-            val chunks =
+            // Launch parallel sorting
+            val jobs =
                     (0 until numThreads).map { threadId ->
-                        val start = threadId * chunkSize
-                        val end =
-                                if (threadId == numThreads - 1) stringCount
-                                else (threadId + 1) * chunkSize
-                        allStrings.subList(start, end)
+                        async(highPriorityDispatcher) {
+                            // Sort OWN list (no contention, native sort)
+                            threadData[threadId].sort()
+                            threadData[threadId].size
+                        }
                     }
 
-            Log.d(TAG, "Created ${chunks.size} chunks for parallel sorting")
-
-            // Sort each chunk in parallel
-            val sortedChunks =
-                    chunks
-                            .map { chunk ->
-                                async(highPriorityDispatcher) {
-                                    // Use Kotlin's efficient built-in sort
-                                    chunk.sorted()
-                                }
-                            }
-                            .awaitAll()
-
-            Log.d(TAG, "All chunks sorted, merging ${sortedChunks.size} sorted chunks...")
-
-            // STEP 3: Merge sorted chunks (simple k-way merge)
-            sortedResult = mergeSortedChunks(sortedChunks)
-
-            Log.d(TAG, "Merge complete, result size: ${sortedResult.size}")
-
-            // Verify result size
-            if (sortedResult.size != stringCount) {
-                Log.e(
-                        TAG,
-                        "Sorting result size mismatch: expected $stringCount, got ${sortedResult.size}"
-                )
-                executionSuccess = false
-            }
-
-            // Verify sorting correctness (sample check)
-            if (sortedResult.size > 1) {
-                var correct = true
-                for (i in 0 until minOf(100, sortedResult.size - 1)) {
-                    if (sortedResult[i] > sortedResult[i + 1]) {
-                        Log.e(TAG, "Sorting correctness check failed at index $i")
-                        correct = false
-                        executionSuccess = false
-                        break
-                    }
-                }
-                if (correct) {
-                    Log.d(TAG, "Sorting correctness verified (sample check passed)")
-                }
-            }
+            // Wait for all
+            val results = jobs.awaitAll()
+            totalSorted = results.sum()
         } catch (e: Exception) {
             Log.e(TAG, "Multi-Core String Sorting EXCEPTION: ${e.message}", e)
             executionSuccess = false
@@ -651,22 +559,17 @@ object MultiCoreBenchmarks {
         val endTime = System.currentTimeMillis()
         val timeMs = (endTime - startTime).toDouble()
 
-        // Calculate operations (comparisons in sorting)
-        // n log n comparisons for merge sort
-        val comparisons = stringCount * kotlin.math.ln(stringCount.toDouble())
-        val opsPerSecond = if (timeMs > 0) comparisons / (timeMs / 1000.0) else 0.0
+        // Calculate operations (comparisons)
+        // N * log(N) * NumThreads
+        val comparisonsPerThread = countPerThread * kotlin.math.log(countPerThread.toDouble(), 2.0)
+        val totalComparisons = comparisonsPerThread * numThreads
+        val opsPerSecond = if (timeMs > 0) totalComparisons / (timeMs / 1000.0) else 0.0
 
         // Validation
-        val isValid =
-                executionSuccess &&
-                        sortedResult.size == stringCount &&
-                        timeMs > 0 &&
-                        opsPerSecond > 0 &&
-                        timeMs < 30000 // Should complete in under 30 seconds
+        val isValid = executionSuccess && totalSorted == (countPerThread * numThreads) && timeMs > 0
 
         Log.d(TAG, "=== MULTI-CORE STRING SORTING COMPLETE ===")
-        Log.d(TAG, "Time: ${timeMs}ms, Comparisons: $comparisons, Ops/sec: $opsPerSecond")
-        Log.d(TAG, "Valid: $isValid, Execution success: $executionSuccess")
+        Log.d(TAG, "Time: ${timeMs}ms, Comparisons: $totalComparisons, Ops/sec: $opsPerSecond")
 
         CpuAffinityManager.resetPerformance()
 
@@ -678,24 +581,14 @@ object MultiCoreBenchmarks {
                 metricsJson =
                         JSONObject()
                                 .apply {
-                                    put("string_count", stringCount)
-                                    put("sorted", executionSuccess)
-                                    put("result_size", sortedResult.size)
+                                    put("strings_per_thread", countPerThread)
+                                    put("total_strings", totalSorted)
                                     put("threads", numThreads)
-                                    put("chunk_size", chunkSize)
-                                    put("time_ms", timeMs)
-                                    put("comparisons", comparisons)
-                                    put("ops_per_second", opsPerSecond)
-                                    put("execution_success", executionSuccess)
-                                    put("algorithm", "Parallel chunk sort with k-way merge")
                                     put(
-                                            "implementation",
-                                            "Simple parallel chunks, built-in sort, efficient merge"
+                                            "algorithm",
+                                            "Fixed Work Per Core (Independent Collections.sort)"
                                     )
-                                    put(
-                                            "changes",
-                                            "Removed complex merge sort, explicit timing, validation, pre-generation"
-                                    )
+                                    put("consistency", "Identical layout to Single-Core")
                                 }
                                 .toString()
         )

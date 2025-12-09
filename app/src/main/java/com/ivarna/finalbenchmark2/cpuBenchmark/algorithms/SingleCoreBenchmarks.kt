@@ -4,7 +4,6 @@ import android.util.Log
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
 import com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
 import com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.sqrt
 import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
@@ -272,31 +271,18 @@ object SingleCoreBenchmarks {
                 )
                 CpuAffinityManager.setMaxPerformance()
 
-                // OPTIMIZED: Reduced string count and shorter length for faster startup
+                // OPTIMIZED: Use stringSortCount parameter
                 val stringCount = params.stringCount
-                val stringLength = 20 // Reduced from 50 for faster generation
+                val stringLength = 20
+
+                // Generate strings BEFORE measurement
+                val data = BenchmarkHelpers.generateStringList(stringCount, stringLength)
 
                 val (sorted, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                            // OPTIMIZED: Generate strings using efficient character array approach
-                            val allStrings = mutableListOf<String>()
-                            val chars =
-                                    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-                            val random = java.util.concurrent.ThreadLocalRandom.current()
-
-                            // OPTIMIZED: Batch string generation to reduce allocation overhead
-                            repeat(stringCount) {
-                                val charArray = CharArray(stringLength)
-                                repeat(stringLength) { index ->
-                                    charArray[index] = chars[random.nextInt(chars.length)]
-                                }
-                                allStrings.add(String(charArray))
-                            }
-
-                            // OPTIMIZED: Use built-in sort for better performance than custom merge
-                            // sort
-                            allStrings.sort()
-                            allStrings
+                            // Standard Collection.sort() (TimSort)
+                            data.sort()
+                            data
                         }
 
                 val comparisons =
