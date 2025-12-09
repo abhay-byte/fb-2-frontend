@@ -4,7 +4,6 @@ import android.util.Log
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
 import com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
 import com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams
-import java.security.MessageDigest
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.sqrt
 import kotlin.random.Random
@@ -199,33 +198,32 @@ object SingleCoreBenchmarks {
             }
 
     /**
-     * Test 4: Hash Computing (SHA-256) OPTIMIZED: Use 4KB buffer (cache-friendly) with 300K
-     * iterations for ~2-3 seconds execution Complexity: O(n) Tests: Cryptographic operations, pure
-     * hashing speed
+     * Test 4: Hash Computing (SHA-256) - FIXED WORK PER CORE
+     *
+     * FIXED WORK PER CORE APPROACH:
+     * - Uses centralized performHashComputing function from BenchmarkHelpers
+     * - Fixed workload: params.hashIterations per core (ensures core-independent stability)
+     * - Uses 4KB buffer (cache-friendly)
+     * - Same algorithm as Multi-Core version for fair comparison
+     *
+     * PERFORMANCE: ~0.2 Mops/s baseline for single-core devices
      */
     suspend fun hashComputing(params: WorkloadParams): BenchmarkResult =
             withContext(Dispatchers.Default) {
-                Log.d(TAG, "Starting Hash Computing (OPTIMIZED: 4KB buffer, 300K iterations)")
+                Log.d(TAG, "Starting Single-Core Hash Computing - FIXED WORK PER CORE")
                 CpuAffinityManager.setMaxPerformance()
 
-                // OPTIMIZED PARAMETERS: Small buffer fits in CPU cache, testing pure hashing speed
+                // FIXED WORK PER CORE: Use params.hashIterations with 4KB buffer
                 val bufferSize = 4 * 1024 // 4KB (cache-friendly)
-                val iterations = 300_000 // Tuned for ~2-3 seconds execution
+                val iterations = params.hashIterations // Use configurable workload per core
 
                 val (totalBytes, timeMs) =
                         BenchmarkHelpers.measureBenchmarkSuspend {
-                            val data = ByteArray(bufferSize) { 0xAA.toByte() }
-                            val digest = MessageDigest.getInstance("SHA-256")
-
-                            for (i in 0 until iterations) {
-                                digest.update(data)
-                                digest.digest()
-                                if (i % 1000 == 0) yield() // Prevent UI freeze
-                            }
-                            (bufferSize.toLong() * iterations)
+                            // Call centralized hash computing function
+                            BenchmarkHelpers.performHashComputing(bufferSize, iterations)
                         }
 
-                // Calculate throughput in MB/s
+                // Calculate throughput in MB/s and ops per second
                 val throughputMBps = (totalBytes.toDouble() / (1024 * 1024)) / (timeMs / 1000.0)
                 val opsPerSecond = iterations.toDouble() / (timeMs / 1000.0)
 
@@ -240,10 +238,23 @@ object SingleCoreBenchmarks {
                                 JSONObject()
                                         .apply {
                                             put("buffer_size_kb", bufferSize / 1024)
-                                            put("iterations", iterations)
+                                            put("hash_iterations", iterations)
                                             put("total_bytes_hashed", totalBytes)
                                             put("throughput_mbps", throughputMBps)
                                             put("hashes_per_sec", opsPerSecond)
+                                            put(
+                                                    "implementation",
+                                                    "Centralized with Fixed Work Per Core"
+                                            )
+                                            put("workload_type", "Fixed per core")
+                                            put(
+                                                    "description",
+                                                    "Core-independent CPU hashing test with shared algorithm"
+                                            )
+                                            put(
+                                                    "expected_performance",
+                                                    "~0.2 Mops/s baseline for single-core devices"
+                                            )
                                         }
                                         .toString()
                 )

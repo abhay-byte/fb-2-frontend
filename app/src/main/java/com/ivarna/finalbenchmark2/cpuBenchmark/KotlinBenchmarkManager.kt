@@ -549,6 +549,9 @@ class KotlinBenchmarkManager {
                                                 50, // CACHE-RESIDENT: Low iterations for slow
                                         // devices
                                         hashDataSizeMb = 1,
+                                        hashIterations =
+                                                200_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                        // seconds
                                         stringCount = 8_000,
                                         rayTracingResolution = Pair(128, 128),
                                         rayTracingDepth = 2,
@@ -567,6 +570,9 @@ class KotlinBenchmarkManager {
                                                 200, // CACHE-RESIDENT: Medium iterations for mid
                                         // devices
                                         hashDataSizeMb = 2,
+                                        hashIterations =
+                                                500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                        // seconds
                                         stringCount = 12_000,
                                         rayTracingResolution = Pair(160, 160),
                                         rayTracingDepth = 3,
@@ -587,9 +593,12 @@ class KotlinBenchmarkManager {
                                                 128, // CACHE-RESIDENT: Fixed small size for cache
                                         // efficiency
                                         matrixIterations =
-                                                2000, // CACHE-RESIDENT: High iterations for
+                                                500, // CACHE-RESIDENT: High iterations for
                                         // flagship devices
                                         hashDataSizeMb = 8,
+                                        hashIterations =
+                                                1_000_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                        // seconds
                                         stringCount = 300_000,
                                         rayTracingResolution = Pair(192, 192),
                                         rayTracingDepth = 5,

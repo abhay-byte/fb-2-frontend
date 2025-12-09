@@ -1,5 +1,6 @@
 package com.ivarna.finalbenchmark2.cpuBenchmark.algorithms
 
+import java.security.MessageDigest
 import java.util.concurrent.ThreadLocalRandom
 
 object BenchmarkHelpers {
@@ -132,5 +133,32 @@ object BenchmarkHelpers {
 
         // This should never be reached, but Kotlin requires a return statement
         return 0L
+    }
+
+    /**
+     * FIXED WORK PER CORE: Hash Computing with SHA-256
+     *
+     * Performs fixed number of hash iterations using 4KB buffer (cache-friendly). Returns total
+     * bytes processed for throughput calculation.
+     *
+     * @param bufferSize Size of the data buffer in bytes (4KB recommended)
+     * @param iterations Number of hash iterations to perform
+     * @return Total bytes processed (bufferSize * iterations)
+     */
+    fun performHashComputing(bufferSize: Int, iterations: Int): Long {
+        // Create a ByteArray of bufferSize (fill with dummy data)
+        val data = ByteArray(bufferSize) { 0xAA.toByte() }
+
+        // Get MessageDigest instance for SHA-256
+        val digest = MessageDigest.getInstance("SHA-256")
+
+        // Loop iterations times: digest.update(data) -> digest.digest()
+        repeat(iterations) {
+            digest.update(data)
+            digest.digest()
+        }
+
+        // Return the total bytes processed (bufferSize * iterations)
+        return bufferSize.toLong() * iterations
     }
 }
