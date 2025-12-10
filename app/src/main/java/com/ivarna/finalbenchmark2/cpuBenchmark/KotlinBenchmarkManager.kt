@@ -613,11 +613,12 @@ class KotlinBenchmarkManager {
                                         // seconds
 
                                         stringSortIterations =
-                                                5_000, // CACHE-RESIDENT: Explicit control - target
+                                                1_000, // CACHE-RESIDENT: Explicit control - target
                                         // ~1.0-2.0s
                                         rayTracingIterations =
-                                                150, // FIXED: High iterations for flagship devices
-                                        // (target ~2s)
+                                                300, // INCREASED: Double the workload for better
+                                        // core saturation
+                                        // (target ~3-4s)
                                         rayTracingResolution = Pair(192, 192),
                                         rayTracingDepth = 5,
                                         compressionDataSizeMb = 2,

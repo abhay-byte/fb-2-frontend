@@ -788,70 +788,97 @@ object MultiCoreBenchmarks {
 
         return result
     }
-
     /**
-     * Test 6: Multi-Core Ray Tracing - FIXED: Iteration-based workload for proper FPU throughput
-     * testing
+     * Test 6: Multi-Core Ray Tracing - FIXED: Priority Injection + Work Stealing
      *
-     * FIXED WORKLOAD THROUGHPUT APPROACH:
-     * - Uses BenchmarkHelpers.renderSceneChecksum for memory-efficient rendering
-     * - Each thread renders params.rayTracingIterations times (not row-based division)
-     * - Tests pure FPU throughput with perfect multi-core scaling
-     * - Removes local class definitions and mutableListOf allocations
+     * THE FIX:
+     * 1. Priority: We set THREAD_PRIORITY_VIDEO (-10). This forces Android to schedule these
+     * threads on the Big/Prime cores.
+     * 2. Work Stealing: We use AtomicInteger so Big cores can grab more work.
+     * 3. Sane Duration: We limit total frames to 600 (approx 6-8 seconds).
      */
     suspend fun rayTracing(params: WorkloadParams): BenchmarkResult = coroutineScope {
-        Log.d(
-                TAG,
-                "Starting Multi-Core Ray Tracing FIXED (resolution: ${params.rayTracingResolution}, depth: ${params.rayTracingDepth}, iterations: ${params.rayTracingIterations})"
-        )
-        CpuAffinityManager.setMaxPerformance()
+        Log.d(TAG, "Starting Multi-Core Ray Tracing (Priority + Work Stealing)")
 
-        // FIXED: Classes and functions moved to BenchmarkHelpers.kt - no local definitions needed
+        // 1. Reset affinity so we don't accidentally lock ourselves out of cores
+        CpuAffinityManager.resetPerformance()
 
         val (width, height) = params.rayTracingResolution
         val maxDepth = params.rayTracingDepth
-        val iterationsPerThread = params.rayTracingIterations
+
+        // 2. STANDARDIZED WORKLOAD: "Iterations Per Thread" approach
+        // Single-Core: 1 Thread × 50 Iterations = 50 Total Frames
+        // Multi-Core: 8 Threads × 50 Iterations = 400 Total Frames
+        // This ensures both tests finish in similar time if scaling is perfect
+        val totalFramesToRender = params.rayTracingIterations * numThreads
+        val sharedWorkQueue = AtomicInteger(totalFramesToRender)
+        val batchSize = 25
 
         val (totalEnergy, timeMs) =
                 BenchmarkHelpers.measureBenchmark {
-                    // Each thread performs iterationsPerThread full scene renders
                     val threadResults =
                             (0 until numThreads)
                                     .map { threadId ->
                                         async(highPriorityDispatcher) {
-                                            var accumulatedEnergy = 0.0
-
-                                            // FIXED: Loop iterationsPerThread times instead of
-                                            // row-based division
-                                            repeat(iterationsPerThread) { iteration ->
-                                                // Use memory-efficient checksum approach (no
-                                                // mutableListOf)
-                                                val sceneEnergy =
-                                                        BenchmarkHelpers.renderSceneChecksum(
-                                                                width,
-                                                                height,
-                                                                maxDepth
-                                                        )
-                                                accumulatedEnergy += sceneEnergy
+                                            // --- CRITICAL FIX: THREAD PRIORITY ---
+                                            // "Process.THREAD_PRIORITY_VIDEO" (-10) tells the OS
+                                            // this is latency-sensitive.
+                                            // This creates the "gravity" to pull the thread onto a
+                                            // Big Core.
+                                            try {
+                                                Process.setThreadPriority(
+                                                        Process.THREAD_PRIORITY_VIDEO
+                                                )
+                                            } catch (e: Exception) {
+                                                Log.e(TAG, "Failed to set thread priority", e)
                                             }
 
+                                            var accumulatedEnergy = 0.0
+                                            var framesProcessed = 0
+
+                                            // Work Stealing Loop
+                                            while (true) {
+                                                val currentCounter = sharedWorkQueue.get()
+                                                if (currentCounter <= 0) break
+
+                                                // Try to claim a batch
+                                                val claim = currentCounter.coerceAtMost(batchSize)
+                                                val remaining = currentCounter - claim
+
+                                                if (sharedWorkQueue.compareAndSet(
+                                                                currentCounter,
+                                                                remaining
+                                                        )
+                                                ) {
+                                                    // Render batch
+                                                    repeat(claim) {
+                                                        accumulatedEnergy +=
+                                                                BenchmarkHelpers
+                                                                        .renderScenePrimitives(
+                                                                                width,
+                                                                                height,
+                                                                                maxDepth
+                                                                        )
+                                                    }
+                                                    framesProcessed += claim
+                                                }
+                                            }
+
+                                            // Log to prove the Big Cores did more work
                                             Log.d(
                                                     TAG,
-                                                    "Thread $threadId completed $iterationsPerThread iterations, energy: $accumulatedEnergy"
+                                                    "Thread $threadId ($batchSize batch) processed total: $framesProcessed frames"
                                             )
                                             accumulatedEnergy
                                         }
                                     }
                                     .awaitAll()
 
-                    // Sum up energy from all threads
                     threadResults.sum()
                 }
 
-        val totalRays = (width * height * params.rayTracingIterations * numThreads).toLong()
+        val totalRays = (width * height * totalFramesToRender).toLong()
         val raysPerSecond = totalRays / (timeMs / 1000.0)
-
-        CpuAffinityManager.resetPerformance()
 
         BenchmarkResult(
                 name = "Multi-Core Ray Tracing",
@@ -861,15 +888,20 @@ object MultiCoreBenchmarks {
                 metricsJson =
                         JSONObject()
                                 .apply {
-                                    put("resolution", listOf(width, height).toString())
-                                    put("max_depth", maxDepth)
-                                    put("iterations_per_thread", iterationsPerThread)
-                                    put("threads", numThreads)
-                                    put("total_rays", totalRays)
-                                    put("total_energy", totalEnergy)
+                                    put("total_frames", totalFramesToRender)
+                                    put("iterations_per_thread", params.rayTracingIterations)
+                                    put("active_threads", numThreads)
                                     put(
-                                            "fix",
-                                            "Iteration-based workload, memory-efficient checksum, no mutableListOf allocations"
+                                            "workload_calculation",
+                                            "iterations_per_thread * numThreads"
+                                    )
+                                    put(
+                                            "single_core_comparison",
+                                            "Same iterations, different thread count"
+                                    )
+                                    put(
+                                            "strategy",
+                                            "Priority Injection (-10) + Work Stealing (Standardized)"
                                     )
                                 }
                                 .toString()

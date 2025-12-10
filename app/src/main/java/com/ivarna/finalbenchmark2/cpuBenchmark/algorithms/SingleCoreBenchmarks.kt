@@ -428,7 +428,7 @@ object SingleCoreBenchmarks {
             withContext(Dispatchers.Default) {
                 Log.d(
                         TAG,
-                        "Starting Ray Tracing FIXED (resolution: ${params.rayTracingResolution}, depth: ${params.rayTracingDepth}, iterations: ${params.rayTracingIterations})"
+                        "Starting Single-Core Ray Tracing (Standardized: ${params.rayTracingIterations} iterations, ${params.rayTracingResolution} resolution, depth ${params.rayTracingDepth})"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
@@ -447,7 +447,7 @@ object SingleCoreBenchmarks {
                             repeat(iterations) { iteration ->
                                 // Use memory-efficient checksum approach (no mutableListOf)
                                 val sceneEnergy =
-                                        BenchmarkHelpers.renderSceneChecksum(
+                                        BenchmarkHelpers.renderScenePrimitives(
                                                 width,
                                                 height,
                                                 maxDepth
@@ -476,9 +476,15 @@ object SingleCoreBenchmarks {
                                             put("iterations", iterations)
                                             put("total_rays", totalRays)
                                             put("total_energy", totalEnergy)
+                                            put("workload_type", "Standardized per thread")
+                                            put("algorithm", "Primitives (Zero Alloc)")
+                                            put(
+                                                    "description",
+                                                    "Single-Core baseline: 1 thread × ${iterations} iterations = ${iterations} total frames"
+                                            )
                                             put(
                                                     "fix",
-                                                    "Iteration-based workload, memory-efficient checksum, no mutableListOf allocations"
+                                                    "Standardized workload for consistent multi-core comparison"
                                             )
                                         }
                                         .toString()
