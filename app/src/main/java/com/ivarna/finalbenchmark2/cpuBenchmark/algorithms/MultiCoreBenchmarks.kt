@@ -789,153 +789,66 @@ object MultiCoreBenchmarks {
         return result
     }
 
-    /** Test 6: Parallel Ray Tracing */
+    /**
+     * Test 6: Multi-Core Ray Tracing - FIXED: Iteration-based workload for proper FPU throughput
+     * testing
+     *
+     * FIXED WORKLOAD THROUGHPUT APPROACH:
+     * - Uses BenchmarkHelpers.renderSceneChecksum for memory-efficient rendering
+     * - Each thread renders params.rayTracingIterations times (not row-based division)
+     * - Tests pure FPU throughput with perfect multi-core scaling
+     * - Removes local class definitions and mutableListOf allocations
+     */
     suspend fun rayTracing(params: WorkloadParams): BenchmarkResult = coroutineScope {
         Log.d(
                 TAG,
-                "Starting Multi-Core Ray Tracing (resolution: ${params.rayTracingResolution}, depth: ${params.rayTracingDepth})"
+                "Starting Multi-Core Ray Tracing FIXED (resolution: ${params.rayTracingResolution}, depth: ${params.rayTracingDepth}, iterations: ${params.rayTracingIterations})"
         )
         CpuAffinityManager.setMaxPerformance()
 
-        // Define 3D vector class
-        data class Vec3(val x: Double, val y: Double, val z: Double) {
-            fun dot(other: Vec3): Double = x * other.x + y * other.y + z * other.z
-            fun length(): Double = kotlin.math.sqrt(dot(this))
-            fun normalize(): Vec3 {
-                val len = length()
-                return if (len > 0.0) Vec3(x / len, y / len, z / len) else Vec3(0.0, 0.0, 0.0)
-            }
-            operator fun plus(other: Vec3): Vec3 = Vec3(x + other.x, y + other.y, z + other.z)
-            operator fun minus(other: Vec3): Vec3 = Vec3(x - other.x, y - other.y, z - other.z)
-            operator fun times(scalar: Double): Vec3 = Vec3(x * scalar, y * scalar, z * scalar)
-        }
-
-        // Define Ray class
-        data class Ray(val origin: Vec3, val direction: Vec3)
-
-        // Define Sphere class
-        data class Sphere(val center: Vec3, val radius: Double) {
-            fun intersect(ray: Ray): DoubleArray? {
-                val oc = ray.origin - center
-                val a = ray.direction.dot(ray.direction)
-                val b = 2.0 * oc.dot(ray.direction)
-                val c = oc.dot(oc) - radius * radius
-                val discriminant = b * b - 4.0 * a * c
-
-                return if (discriminant < 0.0) {
-                    null
-                } else {
-                    val t1 = (-b - kotlin.math.sqrt(discriminant)) / (2.0 * a)
-                    val t2 = (-b + kotlin.math.sqrt(discriminant)) / (2.0 * a)
-
-                    when {
-                        t1 > 0.0 -> doubleArrayOf(t1)
-                        t2 > 0.0 -> doubleArrayOf(t2)
-                        else -> null
-                    }
-                }
-            }
-        }
-
-        // Ray tracing function with recursion
-        fun traceRay(ray: Ray, spheres: List<Sphere>, depth: Int): Vec3 {
-            if (depth == 0) return Vec3(0.0, 0.0, 0.0)
-
-            var closestT = Double.MAX_VALUE
-            var hitSphere: Sphere? = null
-
-            for (sphere in spheres) {
-                val intersection = sphere.intersect(ray)
-                if (intersection != null && intersection[0] < closestT) {
-                    closestT = intersection[0]
-                    hitSphere = sphere
-                }
-            }
-
-            return if (hitSphere != null) {
-                val hitPoint = ray.origin + ray.direction * closestT
-                val normal = (hitPoint - hitSphere.center).normalize()
-
-                // Simple shading with reflection
-                val reflectedDir = ray.direction - normal * (2.0 * ray.direction.dot(normal))
-                val reflectedRay = Ray(hitPoint + normal * 0.01, reflectedDir.normalize())
-
-                val reflectedColor = traceRay(reflectedRay, spheres, depth - 1)
-
-                // Return a color based on normal and reflection
-                Vec3(
-                        (normal.x + 1.0) * 0.5 + reflectedColor.x * 0.3,
-                        (normal.y + 1.0) * 0.5 + reflectedColor.y * 0.3,
-                        (normal.z + 1.0) * 0.5 + reflectedColor.z * 0.3
-                )
-            } else {
-                // Background color (simple gradient)
-                Vec3(0.5, 0.7, 1.0) // Sky blue
-            }
-        }
+        // FIXED: Classes and functions moved to BenchmarkHelpers.kt - no local definitions needed
 
         val (width, height) = params.rayTracingResolution
         val maxDepth = params.rayTracingDepth
-        val rowsPerThread = height / numThreads
+        val iterationsPerThread = params.rayTracingIterations
 
-        val (result, timeMs) =
+        val (totalEnergy, timeMs) =
                 BenchmarkHelpers.measureBenchmark {
-                    // Create a simple scene with spheres
-                    val spheres =
-                            listOf(
-                                    Sphere(Vec3(0.0, 0.0, -1.0), 0.5),
-                                    Sphere(Vec3(1.0, 0.0, -1.5), 0.3),
-                                    Sphere(Vec3(-1.0, -0.5, -1.2), 0.4)
-                            )
-
-                    // Render the image in parallel by rows using high-priority dispatcher
-                    val rowResults =
+                    // Each thread performs iterationsPerThread full scene renders
+                    val threadResults =
                             (0 until numThreads)
-                                    .map { i ->
+                                    .map { threadId ->
                                         async(highPriorityDispatcher) {
-                                            val startRow = i * rowsPerThread
-                                            val endRow =
-                                                    if (i == numThreads - 1) height
-                                                    else (i + 1) * rowsPerThread
-                                            val threadPixels = mutableListOf<Vec3>()
+                                            var accumulatedEnergy = 0.0
 
-                                            for (y in startRow until endRow) {
-                                                for (x in 0 until width) {
-                                                    // Create a ray from camera through pixel
-                                                    val ray =
-                                                            Ray(
-                                                                    Vec3(0.0, 0.0, 0.0),
-                                                                    Vec3(
-                                                                                    (x.toDouble() -
-                                                                                            width /
-                                                                                                    2.0) /
-                                                                                            (width /
-                                                                                                    2.0),
-                                                                                    (y.toDouble() -
-                                                                                            height /
-                                                                                                    2.0) /
-                                                                                            (height /
-                                                                                                    2.0),
-                                                                                    -1.0
-                                                                            )
-                                                                            .normalize()
-                                                            )
-
-                                                    val color = traceRay(ray, spheres, maxDepth)
-                                                    threadPixels.add(color)
-                                                }
+                                            // FIXED: Loop iterationsPerThread times instead of
+                                            // row-based division
+                                            repeat(iterationsPerThread) { iteration ->
+                                                // Use memory-efficient checksum approach (no
+                                                // mutableListOf)
+                                                val sceneEnergy =
+                                                        BenchmarkHelpers.renderSceneChecksum(
+                                                                width,
+                                                                height,
+                                                                maxDepth
+                                                        )
+                                                accumulatedEnergy += sceneEnergy
                                             }
 
-                                            threadPixels
+                                            Log.d(
+                                                    TAG,
+                                                    "Thread $threadId completed $iterationsPerThread iterations, energy: $accumulatedEnergy"
+                                            )
+                                            accumulatedEnergy
                                         }
                                     }
                                     .awaitAll()
-                                    .flatten() // Combine all pixel results
 
-                    rowResults.size
+                    // Sum up energy from all threads
+                    threadResults.sum()
                 }
 
-        val totalRays = (width * height).toLong()
+        val totalRays = (width * height * params.rayTracingIterations * numThreads).toLong()
         val raysPerSecond = totalRays / (timeMs / 1000.0)
 
         CpuAffinityManager.resetPerformance()
@@ -944,15 +857,20 @@ object MultiCoreBenchmarks {
                 name = "Multi-Core Ray Tracing",
                 executionTimeMs = timeMs.toDouble(),
                 opsPerSecond = raysPerSecond,
-                isValid = result > 0,
+                isValid = totalEnergy > 0.0,
                 metricsJson =
                         JSONObject()
                                 .apply {
                                     put("resolution", listOf(width, height).toString())
                                     put("max_depth", maxDepth)
-                                    put("ray_count", totalRays)
-                                    put("pixels_rendered", result)
+                                    put("iterations_per_thread", iterationsPerThread)
                                     put("threads", numThreads)
+                                    put("total_rays", totalRays)
+                                    put("total_energy", totalEnergy)
+                                    put(
+                                            "fix",
+                                            "Iteration-based workload, memory-efficient checksum, no mutableListOf allocations"
+                                    )
                                 }
                                 .toString()
         )

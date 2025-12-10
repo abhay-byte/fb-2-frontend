@@ -50,6 +50,8 @@ data class WorkloadParams(
         val stringSortCount: Int = 50_000, // LEGACY: Kept for backward compatibility
         val stringSortIterations: Int =
                 2_500, // CACHE-RESIDENT: Explicit iterations for string sorting
+        val rayTracingIterations: Int =
+                40, // FIXED: Iteration-based workload for proper FPU throughput testing
         val rayTracingResolution: Pair<Int, Int> = Pair(192, 192),
         val rayTracingDepth: Int = 3,
         val compressionDataSizeMb: Int = 2,

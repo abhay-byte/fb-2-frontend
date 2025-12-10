@@ -557,6 +557,8 @@ class KotlinBenchmarkManager {
                                         hashIterations =
                                                 200_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
+                                        rayTracingIterations =
+                                                10, // FIXED: Low iterations for slow devices
                                         rayTracingResolution = Pair(128, 128),
                                         rayTracingDepth = 2,
                                         compressionDataSizeMb = 1,
@@ -582,6 +584,8 @@ class KotlinBenchmarkManager {
                                         hashIterations =
                                                 500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
+                                        rayTracingIterations =
+                                                40, // FIXED: Medium iterations for mid devices
                                         rayTracingResolution = Pair(160, 160),
                                         rayTracingDepth = 3,
                                         compressionDataSizeMb = 2,
@@ -594,24 +598,26 @@ class KotlinBenchmarkManager {
                                         // CACHE-RESIDENT STRATEGY: Small matrices with high
                                         // iterations
 
-                                        primeRange = 50_000_000,
+                                        primeRange = 5_000_000,
                                         fibonacciNRange = Pair(92, 92), // Use fixed max safe value
-                                        fibonacciIterations = 125_000_000,
+                                        fibonacciIterations = 5_000_000,
                                         matrixSize =
                                                 128, // CACHE-RESIDENT: Fixed small size for cache
                                         // efficiency
                                         matrixIterations =
-                                                1500, // CACHE-RESIDENT: High iterations for
+                                                500, // CACHE-RESIDENT: High iterations for
                                         // flagship devices
                                         hashDataSizeMb = 8,
                                         hashIterations =
-                                                2_500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                                500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
-                                        stringSortCount =
-                                                40_000_000, // LEGACY: Kept for compatibility
+
                                         stringSortIterations =
-                                                10_000, // CACHE-RESIDENT: Explicit control - target
+                                                5_000, // CACHE-RESIDENT: Explicit control - target
                                         // ~1.0-2.0s
+                                        rayTracingIterations =
+                                                150, // FIXED: High iterations for flagship devices
+                                        // (target ~2s)
                                         rayTracingResolution = Pair(192, 192),
                                         rayTracingDepth = 5,
                                         compressionDataSizeMb = 2,
