@@ -588,15 +588,9 @@ object MultiCoreBenchmarks {
             totalChecksum = threadResults.sum()
 
             // Verify no thread failed
-            if (threadResults.any { it <= 0 }) {
-                Log.e(
-                        TAG,
-                        "Multi-Core String Sorting: One or more threads returned invalid results"
-                )
-                executionSuccess = false
-            } else {
-                Log.d(TAG, "All ${threadResults.size} threads completed successfully")
-            }
+            // REMOVED: No need to validate checksum values - hash codes can be negative
+            // legitimately
+            Log.d(TAG, "All ${threadResults.size} threads completed successfully")
         } catch (e: Exception) {
             Log.e(TAG, "Multi-Core String Sorting EXCEPTION: ${e.message}", e)
             executionSuccess = false
@@ -613,8 +607,8 @@ object MultiCoreBenchmarks {
         val totalComparisons = numThreads * (iterationsPerThread * comparisonsPerSort)
         val opsPerSecond = if (timeMs > 0) totalComparisons / (timeMs / 1000.0) else 0.0
 
-        // REMOVED timeMs limit check for testing purposes
-        val isValid = executionSuccess && totalChecksum > 0 && timeMs > 0 && opsPerSecond > 0
+        // REMOVED: Negative checksum validation - hash codes can be legitimately negative
+        val isValid = executionSuccess && timeMs > 0 && opsPerSecond > 0
 
         Log.d(TAG, "=== MULTI-CORE STRING SORTING COMPLETE ===")
         Log.d(
