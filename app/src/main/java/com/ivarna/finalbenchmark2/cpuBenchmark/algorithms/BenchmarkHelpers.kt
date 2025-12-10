@@ -185,4 +185,30 @@ object BenchmarkHelpers {
         }
         return list
     }
+
+    /**
+     * Cache-Resident String Sorting Workload
+     *
+     * CACHE-RESIDENT STRATEGY:
+     * - Uses small fixed-size list (4,096 strings) that fits in CPU cache
+     * - Performs multiple iterations to maintain CPU utilization and achieve meaningful benchmark
+     * times
+     * - Prevents memory bandwidth bottlenecks by keeping data in cache
+     * - Ensures true CPU throughput measurement
+     *
+     * @param sourceList The source list of strings to sort (cached-resident size: 4,096)
+     * @param iterations Number of times to repeat the sorting operation
+     * @return Checksum to prevent compiler optimization
+     */
+    fun runStringSortWorkload(sourceList: List<String>, iterations: Int): Int {
+        var checkSum = 0
+        // Reuse specific small size to keep data in L2 CPU Cache
+        repeat(iterations) {
+            // Create copy to ensure we are actually sorting (O(N) copy + O(N log N) sort)
+            val workingList = ArrayList(sourceList)
+            workingList.sort()
+            if (workingList.isNotEmpty()) checkSum += workingList.last().hashCode()
+        }
+        return checkSum
+    }
 }

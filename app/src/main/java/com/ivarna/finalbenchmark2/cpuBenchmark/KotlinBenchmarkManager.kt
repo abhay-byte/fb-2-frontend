@@ -543,8 +543,10 @@ class KotlinBenchmarkManager {
                                 WorkloadParams(
                                         primeRange = 100_000,
                                         stringSortCount =
-                                                10_000, // FIXED: Reduced for Memory Bandwidth
-                                        // optimization
+                                                2_000_000, // LEGACY: Kept for compatibility
+                                        stringSortIterations =
+                                                500, // CACHE-RESIDENT: Explicit control - target
+                                        // ~1.0-2.0s
                                         fibonacciNRange = Pair(25, 27),
                                         fibonacciIterations = 2_000_000,
                                         matrixSize = 128, // CACHE-RESIDENT: Fixed small size
@@ -566,8 +568,10 @@ class KotlinBenchmarkManager {
                                 WorkloadParams(
                                         primeRange = 200_000,
                                         stringSortCount =
-                                                25_000, // FIXED: Reduced for Memory Bandwidth
-                                        // optimization
+                                                10_000_000, // LEGACY: Kept for compatibility
+                                        stringSortIterations =
+                                                2_500, // CACHE-RESIDENT: Explicit control - target
+                                        // ~1.0-2.0s
                                         fibonacciNRange = Pair(28, 30),
                                         fibonacciIterations = 10_000_000,
                                         matrixSize = 128, // CACHE-RESIDENT: Fixed small size
@@ -588,24 +592,26 @@ class KotlinBenchmarkManager {
                         "flagship" ->
                                 WorkloadParams(
                                         // CACHE-RESIDENT STRATEGY: Small matrices with high
-                                        stringSortCount =
-                                                50_000, // FIXED: Reduced for Memory Bandwidth
-                                        // optimization
                                         // iterations
-                                        // Prevents OOM crashes and enables true 8x scaling
-                                        primeRange = 5_000_000,
+
+                                        primeRange = 50_000_000,
                                         fibonacciNRange = Pair(92, 92), // Use fixed max safe value
-                                        fibonacciIterations = 10_000_000,
+                                        fibonacciIterations = 125_000_000,
                                         matrixSize =
                                                 128, // CACHE-RESIDENT: Fixed small size for cache
                                         // efficiency
                                         matrixIterations =
-                                                500, // CACHE-RESIDENT: High iterations for
+                                                1500, // CACHE-RESIDENT: High iterations for
                                         // flagship devices
                                         hashDataSizeMb = 8,
                                         hashIterations =
-                                                1_000_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                                2_500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
+                                        stringSortCount =
+                                                40_000_000, // LEGACY: Kept for compatibility
+                                        stringSortIterations =
+                                                10_000, // CACHE-RESIDENT: Explicit control - target
+                                        // ~1.0-2.0s
                                         rayTracingResolution = Pair(192, 192),
                                         rayTracingDepth = 5,
                                         compressionDataSizeMb = 2,

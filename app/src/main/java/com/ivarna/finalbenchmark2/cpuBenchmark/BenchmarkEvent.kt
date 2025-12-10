@@ -47,7 +47,9 @@ data class WorkloadParams(
         val matrixIterations: Int = 200, // FIXED: Number of repetitions for cache-resident strategy
         val hashDataSizeMb: Int = 2,
         val hashIterations: Int = 200_000, // FIXED WORK PER CORE: Target ~1.5-2.0 seconds execution
-        val stringSortCount: Int = 50_000, // FIXED WORK PER CORE: String sorting workload
+        val stringSortCount: Int = 50_000, // LEGACY: Kept for backward compatibility
+        val stringSortIterations: Int =
+                2_500, // CACHE-RESIDENT: Explicit iterations for string sorting
         val rayTracingResolution: Pair<Int, Int> = Pair(192, 192),
         val rayTracingDepth: Int = 3,
         val compressionDataSizeMb: Int = 2,

@@ -134,6 +134,7 @@ This document provides comprehensive technical details for the optimized CPU ben
 - **Expected Flagship Score:** ~1,050 points single, ~1,200 points multi-core
 - **Expected Performance:** ~50k comparisons/second single, ~65k comparisons/second multi-core
 - **CRITICAL FIX:** Pre-generate all strings BEFORE starting timer, measure ONLY sorting time
+- **TIME LIMIT VALIDATION REMOVED:** Removed `timeMs < 30000` check from isValid logic for extended testing
 - **Optimization:** Parallel string generation in multi-core version
 
 #### Compression/Decompression (RLE) - **MAJOR FIX**
