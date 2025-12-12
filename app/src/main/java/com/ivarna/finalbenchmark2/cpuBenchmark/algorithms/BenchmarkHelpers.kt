@@ -217,6 +217,66 @@ object BenchmarkHelpers {
     }
 
     /**
+     * Centralized RLE Compression for Fixed Work Per Core benchmarking
+     *
+     * FIXED WORK PER CORE APPROACH:
+     * - Generates data ONCE outside the compression loop
+     * - Performs fixed number of compression iterations
+     * - Uses cache-friendly 2MB buffer size
+     * - Zero allocation in hot path (reuses output buffer)
+     *
+     * @param bufferSize Size of data buffer in bytes (2MB recommended)
+     * @param iterations Number of compression iterations to perform
+     * @return Total bytes processed (bufferSize * iterations)
+     */
+    fun performCompression(bufferSize: Int, iterations: Int): Long {
+        // Generate data ONCE outside the compression loop
+        val data = ByteArray(bufferSize) { (it % 256).toByte() }
+        val outputBuffer = ByteArray(bufferSize * 2) // Output buffer for compression
+
+        var totalCompressedSize = 0L
+
+        // Perform compression iterations
+        repeat(iterations) {
+            val compressedSize = compressRLE(data, outputBuffer)
+            totalCompressedSize += compressedSize
+        }
+
+        return bufferSize.toLong() * iterations
+    }
+
+    /**
+     * Simple RLE (Run-Length Encoding) compression algorithm Zero allocation in hot path - uses
+     * pre-allocated output buffer
+     *
+     * @param input Input data to compress
+     * @param output Pre-allocated output buffer (must be at least 2x input size)
+     * @return Number of bytes written to output buffer
+     */
+    private fun compressRLE(input: ByteArray, output: ByteArray): Int {
+        var i = 0
+        var outputIndex = 0
+
+        while (i < input.size) {
+            val currentByte = input[i]
+            var count = 1
+
+            // Count consecutive identical bytes (up to 255 for simplicity)
+            while (i + count < input.size && input[i + count] == currentByte && count < 255) {
+                count++
+            }
+
+            // Output (count, byte) pair
+            output[outputIndex++] = count.toByte()
+            output[outputIndex++] = currentByte
+
+            i += count
+        }
+
+        return outputIndex
+    }
+
+    /**
      * ULTRA-OPTIMIZED KERNEL: "Register-Cached" Ray Tracing
      * * Optimizations:
      * 1. CPU Cache/Registers: Sphere data is hardcoded locals, forcing them into registers.

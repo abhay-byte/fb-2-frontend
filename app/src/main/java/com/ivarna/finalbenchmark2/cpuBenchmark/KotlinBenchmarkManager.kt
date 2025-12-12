@@ -562,6 +562,8 @@ class KotlinBenchmarkManager {
                                         rayTracingResolution = Pair(128, 128),
                                         rayTracingDepth = 2,
                                         compressionDataSizeMb = 1,
+                                        compressionIterations =
+                                                20, // FIXED WORK PER CORE: Target ~1.5-2.0s
                                         monteCarloSamples = 200_000,
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 8
@@ -589,6 +591,8 @@ class KotlinBenchmarkManager {
                                         rayTracingResolution = Pair(160, 160),
                                         rayTracingDepth = 3,
                                         compressionDataSizeMb = 2,
+                                        compressionIterations =
+                                                50, // FIXED WORK PER CORE: Target ~1.5-2.0s
                                         monteCarloSamples = 500_000,
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 9
@@ -616,12 +620,20 @@ class KotlinBenchmarkManager {
                                                 1_000, // CACHE-RESIDENT: Explicit control - target
                                         // ~1.0-2.0s
                                         rayTracingIterations =
-                                                2000, // FIXED: Increased to 2000 to reach ~5s
+                                                400, // FIXED: Increased to 2000 to reach ~5s
                                         // target
                                         // duration for better thermal testing
-                                        rayTracingResolution = Pair(100, 100),
+                                        rayTracingResolution =
+                                                Pair(
+                                                        100, // REVERTED: 256×256 caused thermal
+                                                        // throttling
+                                                        100
+                                                ), // OPTIMIZED: Increased from 100×100 to 256×256
+                                        // for better multi-core scaling
                                         rayTracingDepth = 5,
                                         compressionDataSizeMb = 2,
+                                        compressionIterations =
+                                                100, // FIXED WORK PER CORE: Target ~1.5-2.0s
                                         monteCarloSamples = 15_000_000,
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 10
