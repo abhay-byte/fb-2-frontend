@@ -23,19 +23,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
-import com.ivarna.finalbenchmark2.data.database.AppDatabase
-import com.ivarna.finalbenchmark2.data.repository.HistoryRepository
 import com.ivarna.finalbenchmark2.ui.theme.FinalBenchmark2Theme
 import com.ivarna.finalbenchmark2.ui.theme.GruvboxDarkAccent
 import com.ivarna.finalbenchmark2.ui.viewmodels.RankingItem
-import com.ivarna.finalbenchmark2.ui.viewmodels.RankingViewModel
-import com.ivarna.finalbenchmark2.ui.viewmodels.RankingViewModelFactory
 import com.ivarna.finalbenchmark2.utils.DeviceInfoCollector
+import com.ivarna.finalbenchmark2.utils.GpuInfoUtils
+import com.ivarna.finalbenchmark2.utils.GpuInfoState
 import com.ivarna.finalbenchmark2.utils.formatBytes
-import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.json.JSONObject
 
 data class BenchmarkSummary(
@@ -105,6 +103,29 @@ fun ResultScreen(
                                 "Unknown"
                             }
 
+                    // Get GPU info using GpuInfoUtils
+                    val gpuInfoUtils = GpuInfoUtils(context)
+                    val gpuInfoState = runBlocking { gpuInfoUtils.getGpuInfo() }
+                    
+                    var gpuName = "Unknown"
+                    var gpuVendor = "Unknown"
+                    var gpuDriver = "Unknown"
+                    var vulkanSupported = false
+                    var vulkanVersion: String? = null
+                    
+                    if (gpuInfoState is GpuInfoState.Success) {
+                        val gpuInfo = gpuInfoState.gpuInfo
+                        gpuName = gpuInfo.basicInfo.name
+                        gpuVendor = gpuInfo.basicInfo.vendor
+                        gpuDriver = gpuInfo.basicInfo.openGLVersion
+                        vulkanSupported = gpuInfo.vulkanInfo?.supported ?: false
+                        vulkanVersion = if (vulkanSupported) {
+                            gpuInfo.vulkanInfo?.apiVersion ?: gpuInfo.basicInfo.vulkanVersion
+                        } else {
+                            null
+                        }
+                    }
+
                     val deviceSummary =
                             BenchmarkDeviceSummary(
                                     deviceName =
@@ -116,9 +137,11 @@ fun ResultScreen(
                                     cpuCores = deviceInfo.totalCores,
                                     cpuArchitecture = deviceInfo.cpuArchitecture,
                                     cpuGovernor = cpuGovernor,
-                                    gpuName = deviceInfo.gpuModel,
-                                    gpuVendor = deviceInfo.gpuVendor,
-                                    gpuDriver = "OpenGL ES",
+                                    gpuName = gpuName,
+                                    gpuVendor = gpuVendor,
+                                    gpuDriver = gpuDriver,
+                                    vulkanSupported = vulkanSupported,
+                                    vulkanVersion = vulkanVersion,
                                     batteryLevel = deviceInfo.batteryCapacity,
                                     batteryTemp = deviceInfo.batteryTemperature,
                                     totalRam = deviceInfo.totalRam,

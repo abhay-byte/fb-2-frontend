@@ -12,6 +12,8 @@ data class BenchmarkDeviceSummary(
         val gpuName: String,
         val gpuVendor: String,
         val gpuDriver: String,
+        val vulkanSupported: Boolean = false,
+        val vulkanVersion: String? = null,
         val batteryLevel: Float?,
         val batteryTemp: Float?,
         val totalRam: Long,
