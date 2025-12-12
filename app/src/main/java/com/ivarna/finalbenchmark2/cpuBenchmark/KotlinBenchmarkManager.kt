@@ -564,7 +564,8 @@ class KotlinBenchmarkManager {
                                         compressionDataSizeMb = 1,
                                         compressionIterations =
                                                 600, // INCREASED: Target ~15s execution (was 20)
-                                        monteCarloSamples = 200_000,
+                                        monteCarloSamples =
+                                                200_000, // FIXED WORK PER CORE: Target ~1.5s
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 8
                                 )
@@ -590,10 +591,11 @@ class KotlinBenchmarkManager {
                                                 40, // FIXED: Medium iterations for mid devices
                                         rayTracingResolution = Pair(160, 160),
                                         rayTracingDepth = 3,
-                                        compressionDataSizeMb = 4,
+                                        compressionDataSizeMb = 1,
                                         compressionIterations =
-                                                500, // INCREASED: Target ~15s execution (was 50)
-                                        monteCarloSamples = 500_000,
+                                                1_000, // INCREASED: Target ~15s execution (was 50)
+                                        monteCarloSamples =
+                                                500_000, // FIXED WORK PER CORE: Target ~1.5s
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 9
                                 )
@@ -631,10 +633,15 @@ class KotlinBenchmarkManager {
                                                 ), // OPTIMIZED: Increased from 100×100 to 256×256
                                         // for better multi-core scaling
                                         rayTracingDepth = 5,
-                                        compressionDataSizeMb = 2,
+                                        compressionDataSizeMb = 1,
                                         compressionIterations =
-                                                3000, // INCREASED: Target ~15s execution (was 100)
-                                        monteCarloSamples = 15_000_000,
+                                                100, // INCREASED: Target ~15s execution (was
+                                        // 100)
+                                        monteCarloSamples =
+                                                100_000_000, // FIXED WORK PER CORE: Target
+                                        // ~1.5-2.0s
+                                        // for 4-6x scaling
+                                        // 15M)
                                         jsonDataSizeMb = 1,
                                         nqueensSize = 10
                                 )

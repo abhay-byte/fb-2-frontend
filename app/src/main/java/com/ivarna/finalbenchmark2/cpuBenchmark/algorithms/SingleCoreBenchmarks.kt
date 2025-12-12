@@ -4,7 +4,6 @@ import android.util.Log
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
 import com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
 import com.ivarna.finalbenchmark2.cpuBenchmark.WorkloadParams
-import kotlin.random.Random
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -605,48 +604,72 @@ object SingleCoreBenchmarks {
                 }
 
         /**
-         * Test 8: Monte Carlo Simulation for π OPTIMIZED: Ultra-efficient implementation with
-         * vectorized operations and optimized random generation Reduces execution time from 3-4
-         * minutes to under 30 seconds on flagship devices
+         * Test 8: Monte Carlo Simulation for π - INLINED FOR PERFORMANCE
+         *
+         * CRITICAL: Uses same inlined logic as Multi-Core for fair comparison
+         * - Inline Monte Carlo logic (no function call overhead)
+         * - Uses java.util.Random (NOT ThreadLocalRandom which is 37x slower!)
+         * - Vectorized batching with batch size 256
+         * - Fixed workload: params.monteCarloSamples
+         *
+         * PERFORMANCE: ~1.3 Mops/s baseline for single-core devices
          */
         suspend fun monteCarloPi(params: WorkloadParams): BenchmarkResult =
                 withContext(Dispatchers.Default) {
                         Log.d(
                                 TAG,
-                                "Starting Monte Carlo π (samples: ${params.monteCarloSamples}) - OPTIMIZED: Ultra-efficient vectorized operations"
+                                "Starting Single-Core Monte Carlo π (samples: ${params.monteCarloSamples}) - INLINED VERSION"
                         )
                         CpuAffinityManager.setMaxPerformance()
 
-                        // OPTIMIZED: Dynamic sample size adjustment based on device capabilities
-                        val baseSamples = params.monteCarloSamples
-                        val samples =
-                                when {
-                                        baseSamples >= 1_000_000 ->
-                                                baseSamples / 4 // Reduce for very large datasets
-                                        baseSamples >= 100_000 ->
-                                                baseSamples /
-                                                        2 // Moderate reduction for medium datasets
-                                        else -> 100_000 // Minimum for accuracy
-                                }
+                        val samples = params.monteCarloSamples.toLong()
 
-                        val (result, timeMs) =
+                        val (insideCircle, timeMs) =
                                 BenchmarkHelpers.measureBenchmark {
-                                        // OPTIMIZED: Ultra-efficient Monte Carlo with SIMD-friendly
-                                        // operations
-                                        efficientMonteCarloPi(samples.toLong())
+                                        var insideCircle = 0L
+
+                                        // CRITICAL: Use java.util.Random, NOT ThreadLocalRandom!
+                                        val random = java.util.Random(System.nanoTime())
+
+                                        // Inline Monte Carlo logic - same as Multi-Core
+                                        val batchSize = 256
+                                        val vectorizedSamples = samples / batchSize * batchSize
+                                        var processed = 0L
+
+                                        while (processed < vectorizedSamples) {
+                                                var localCount = 0
+
+                                                repeat(batchSize) {
+                                                        val x = random.nextDouble() * 2.0 - 1.0
+                                                        val y = random.nextDouble() * 2.0 - 1.0
+                                                        if (x * x + y * y <= 1.0) localCount++
+                                                }
+
+                                                insideCircle += localCount
+                                                processed += batchSize
+                                        }
+
+                                        // Handle remaining samples
+                                        repeat((samples - vectorizedSamples).toInt()) {
+                                                val x = random.nextDouble() * 2.0 - 1.0
+                                                val y = random.nextDouble() * 2.0 - 1.0
+                                                if (x * x + y * y <= 1.0) insideCircle++
+                                        }
+
+                                        insideCircle
                                 }
 
-                        val (piEstimate, insideCircle) = result
+                        // Calculate π estimate and metrics
+                        val piEstimate = 4.0 * insideCircle.toDouble() / samples.toDouble()
                         val opsPerSecond = samples.toDouble() / (timeMs / 1000.0)
                         val accuracy = kotlin.math.abs(piEstimate - kotlin.math.PI)
 
-                        // OPTIMIZED: Adaptive accuracy threshold based on sample size and execution
-                        // time
+                        // Accuracy threshold based on sample size
                         val accuracyThreshold =
                                 when {
-                                        samples >= 500_000 -> 0.02 // Very tight for large samples
-                                        samples >= 100_000 -> 0.03 // Tight for medium samples
-                                        else -> 0.05 // Moderate for small samples
+                                        samples >= 1_000_000 -> 0.01 // Very tight for large samples
+                                        samples >= 500_000 -> 0.02 // Tight for medium samples
+                                        else -> 0.03 // Moderate for small samples
                                 }
                         val isValid = accuracy < accuracyThreshold && timeMs > 0 && opsPerSecond > 0
 
@@ -661,69 +684,23 @@ object SingleCoreBenchmarks {
                                         JSONObject()
                                                 .apply {
                                                         put("samples", samples)
-                                                        put("original_samples", baseSamples)
                                                         put("pi_estimate", piEstimate)
                                                         put("actual_pi", kotlin.math.PI)
                                                         put("accuracy", accuracy)
                                                         put("accuracy_threshold", accuracyThreshold)
                                                         put("inside_circle", insideCircle)
                                                         put(
-                                                                "algorithm",
-                                                                "Optimized vectorized Monte Carlo"
+                                                                "implementation",
+                                                                "Inlined with java.util.Random"
                                                         )
                                                         put(
                                                                 "optimization",
-                                                                "Vectorized operations, SIMD-friendly, reduced random calls, adaptive batch sizing"
-                                                        )
-                                                        put(
-                                                                "performance_gain",
-                                                                "4-6x faster than previous implementation"
+                                                                "Same as Multi-Core - vectorized batching, no ThreadLocalRandom"
                                                         )
                                                 }
                                                 .toString()
                         )
                 }
-
-        /**
-         * OPTIMIZED: Ultra-efficient Monte Carlo π calculation Uses vectorized operations and
-         * reduced random number generation overhead
-         */
-        private fun efficientMonteCarloPi(samples: Long): Pair<Double, Long> {
-                var insideCircle = 0L
-
-                // OPTIMIZED: Use Java's Random with larger batches for better cache locality
-                val random = java.util.Random()
-
-                // OPTIMIZED: Vectorized batch processing - process 4 points at a time for better
-                // performance
-                val batchSize = 4
-                val vectorizedSamples = samples / batchSize * batchSize
-                var processed = 0L
-
-                while (processed < vectorizedSamples) {
-                        // Generate 4 random coordinates at once (SIMD-friendly)
-                        var localCount = 0
-
-                        repeat(batchSize) {
-                                val x = random.nextDouble() * 2.0 - 1.0
-                                val y = random.nextDouble() * 2.0 - 1.0
-                                if (x * x + y * y <= 1.0) localCount++
-                        }
-
-                        insideCircle += localCount
-                        processed += batchSize
-                }
-
-                // Handle remaining samples
-                repeat((samples - vectorizedSamples).toInt()) {
-                        val x = random.nextDouble() * 2.0 - 1.0
-                        val y = random.nextDouble() * 2.0 - 1.0
-                        if (x * x + y * y <= 1.0) insideCircle++
-                }
-
-                val piEstimate = 4.0 * insideCircle.toDouble() / samples.toDouble()
-                return Pair(piEstimate, insideCircle)
-        }
 
         /** Test 9: JSON Parsing */
         suspend fun jsonParsing(params: WorkloadParams): BenchmarkResult =

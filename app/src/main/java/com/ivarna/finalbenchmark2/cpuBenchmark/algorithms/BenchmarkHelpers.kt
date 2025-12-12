@@ -277,6 +277,57 @@ object BenchmarkHelpers {
     }
 
     /**
+     * Centralized Monte Carlo π Simulation - FIXED WORK PER CORE
+     *
+     * FIXED WORK PER CORE APPROACH:
+     * - Uses efficient vectorized operations for better performance
+     * - Configurable batch size for cache optimization (default: 256)
+     * - Thread-safe using ThreadLocalRandom
+     * - Same algorithm for both Single-Core and Multi-Core tests
+     * - Blocking function (like performHashComputing, performCompression)
+     *
+     * PERFORMANCE: Optimized for ~1.5-2.0s execution time per core
+     *
+     * @param samples Number of Monte Carlo samples to process
+     * @return Count of points that fall inside the unit circle
+     */
+    fun performMonteCarlo(samples: Long): Long {
+        var insideCircle = 0L
+
+        // OPTIMIZED: Use ThreadLocalRandom for thread-safe random generation
+        val random = ThreadLocalRandom.current()
+
+        // OPTIMIZED: Vectorized batch processing for better cache locality
+        // Batch size of 256 balances cache efficiency and loop overhead
+        val batchSize = 256
+        val vectorizedSamples = samples / batchSize * batchSize
+        var processed = 0L
+
+        while (processed < vectorizedSamples) {
+            // Process batch of points for better cache utilization
+            var localCount = 0
+
+            repeat(batchSize) {
+                val x = random.nextDouble() * 2.0 - 1.0
+                val y = random.nextDouble() * 2.0 - 1.0
+                if (x * x + y * y <= 1.0) localCount++
+            }
+
+            insideCircle += localCount
+            processed += batchSize
+        }
+
+        // Handle remaining samples
+        repeat((samples - vectorizedSamples).toInt()) {
+            val x = random.nextDouble() * 2.0 - 1.0
+            val y = random.nextDouble() * 2.0 - 1.0
+            if (x * x + y * y <= 1.0) insideCircle++
+        }
+
+        return insideCircle
+    }
+
+    /**
      * ULTRA-OPTIMIZED KERNEL: "Register-Cached" Ray Tracing
      * * Optimizations:
      * 1. CPU Cache/Registers: Sphere data is hardcoded locals, forcing them into registers.
