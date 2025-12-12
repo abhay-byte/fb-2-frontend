@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ivarna.finalbenchmark2.cpuBenchmark.BenchmarkResult
@@ -400,11 +401,11 @@ fun SummaryTab(summary: BenchmarkSummary) {
                         )
                         SummaryInfoRow("Name", device.gpuName)
                         SummaryInfoRow("Vendor", device.gpuVendor)
-                        LongSummaryInfoRow("OpenGL ES", device.gpuDriver)
+                        SummaryInfoRow("OpenGL ES", device.gpuDriver)
                         if (device.vulkanSupported) {
-                            LongSummaryInfoRow("Vulkan", device.vulkanVersion ?: "Supported")
+                            SummaryInfoRow("Vulkan Version", device.vulkanVersion ?: "Supported")
                         } else {
-                            SummaryInfoRow("Vulkan", "Not Supported")
+                            SummaryInfoRow("Vulkan Version", "Not Supported")
                         }
                         Divider(modifier = Modifier.padding(vertical = 12.dp))
 
@@ -458,7 +459,8 @@ fun SummaryInfoRow(label: String, value: String) {
                 text = value,
                 fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.End
         )
     }
 }
