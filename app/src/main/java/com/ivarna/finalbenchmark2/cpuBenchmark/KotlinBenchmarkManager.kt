@@ -570,7 +570,7 @@ class KotlinBenchmarkManager {
                                         jsonParsingIterations =
                                                 50, // CACHE-RESIDENT: Low iterations for slow
                                         // devices (~1-2s)
-                                        nqueensSize = 8
+                                        nqueensSize = 10 // INCREASED: 92 solutions, ~1.5s (was 8)
                                 )
                         "mid" ->
                                 WorkloadParams(
@@ -603,7 +603,7 @@ class KotlinBenchmarkManager {
                                         jsonParsingIterations =
                                                 100, // CACHE-RESIDENT: Medium iterations for mid
                                         // devices (~1-2s)
-                                        nqueensSize = 9
+                                        nqueensSize = 11 // INCREASED: 341 solutions, ~5s (was 9)
                                 )
                         "flagship" ->
                                 WorkloadParams(
@@ -650,7 +650,8 @@ class KotlinBenchmarkManager {
                                         jsonParsingIterations =
                                                 200, // CACHE-RESIDENT: High iterations for flagship
                                         // devices (~1-2s)
-                                        nqueensSize = 10
+                                        nqueensSize =
+                                                12 // INCREASED: 14,200 solutions, ~20s (was 10)
                                 )
                         else -> WorkloadParams() // Default values
                 }

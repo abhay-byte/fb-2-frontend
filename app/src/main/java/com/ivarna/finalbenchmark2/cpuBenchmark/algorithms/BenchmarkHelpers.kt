@@ -562,4 +562,72 @@ object BenchmarkHelpers {
 
         return totalElementCount
     }
+
+    /**
+     * Centralized N-Queens Solver with Iteration Tracking
+     *
+     * FIXED WORK PER CORE APPROACH:
+     * - Uses optimized backtracking algorithm
+     * - Tracks both solutions found and iterations performed
+     * - Returns iterations as the primary metric (solutions count is constant for given N)
+     * - Same algorithm for both Single-Core and Multi-Core tests
+     *
+     * OPTIMIZATIONS:
+     * - Bitwise operations for diagonal tracking (faster than boolean arrays)
+     * - Early pruning when no valid positions available
+     * - Minimal memory allocations
+     *
+     * @param size Board size (N×N)
+     * @return Pair<solutionCount, iterationCount> where iterationCount is the performance metric
+     */
+    fun solveNQueens(size: Int): Pair<Int, Long> {
+        var solutionCount = 0
+        var iterationCount = 0L
+
+        // Use integer bitmasks for faster diagonal tracking
+        // cols: column occupancy (bit i = 1 if column i has a queen)
+        // diag1: diagonal \ occupancy (bit i = 1 if diagonal i has a queen)
+        // diag2: diagonal / occupancy (bit i = 1 if diagonal i has a queen)
+        fun backtrack(row: Int, cols: Int, diag1: Int, diag2: Int) {
+            iterationCount++
+
+            if (row == size) {
+                solutionCount++
+                return
+            }
+
+            // Calculate available positions (bitwise NOT of occupied positions)
+            // A position is available if it's not in any occupied column or diagonal
+            var availablePositions =
+                    ((1 shl size) - 1) and cols.inv() and diag1.inv() and diag2.inv()
+
+            // Try each available position
+            while (availablePositions != 0) {
+                // Get the rightmost available position
+                val position = availablePositions and -availablePositions
+
+                // Remove this position from available positions
+                availablePositions = availablePositions xor position
+
+                // Calculate column index from position bitmask
+                val col = Integer.numberOfTrailingZeros(position)
+
+                // Recurse with updated occupancy masks
+                // cols | position: mark column as occupied
+                // (diag1 | position) << 1: mark \ diagonal as occupied and shift for next row
+                // (diag2 | position) >> 1: mark / diagonal as occupied and shift for next row
+                backtrack(
+                        row + 1,
+                        cols or position,
+                        (diag1 or position) shl 1,
+                        (diag2 or position) shr 1
+                )
+            }
+        }
+
+        // Start backtracking from row 0 with no occupied positions
+        backtrack(0, 0, 0, 0)
+
+        return Pair(solutionCount, iterationCount)
+    }
 }

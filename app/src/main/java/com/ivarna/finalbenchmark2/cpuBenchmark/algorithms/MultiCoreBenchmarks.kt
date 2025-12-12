@@ -1266,102 +1266,123 @@ object MultiCoreBenchmarks {
         )
     }
 
-    /** Test 10: Parallel N-Queens Problem */
+    /**
+     * Test 10: Multi-Core N-Queens Problem - FIXED WORK PER CORE
+     *
+     * FIXED WORK PER CORE APPROACH:
+     * - Uses centralized solveNQueens function from BenchmarkHelpers
+     * - Each thread solves the SAME N-Queens problem independently
+     * - Total work scales with cores: iterations × numThreads
+     * - Tracks iterations (board evaluations) as the primary metric
+     * - Same algorithm as Single-Core version for fair comparison
+     *
+     * PERFORMANCE: Scales linearly with cores (8 cores = 8× iterations in same time)
+     */
     suspend fun nqueens(params: WorkloadParams): BenchmarkResult = coroutineScope {
-        Log.d(TAG, "Starting Multi-Core N-Queens (size: ${params.nqueensSize})")
+        Log.d(TAG, "=== STARTING MULTI-CORE N-QUEENS - FIXED WORK PER CORE ===")
+        Log.d(TAG, "Threads available: $numThreads")
+        Log.d(TAG, "Board size: ${params.nqueensSize}")
         CpuAffinityManager.setMaxPerformance()
 
-        val n = params.nqueensSize
+        val boardSize = params.nqueensSize
 
-        val (result, timeMs) =
-                BenchmarkHelpers.measureBenchmark {
-                    // For N-Queens, we'll use a work-stealing approach where we divide the initial
-                    // search space
-                    // Each thread starts with a different column in the first row
-                    val initialTasks = (0 until minOf(n, numThreads)).toList()
+        // EXPLICIT timing with try-catch for debugging
+        val startTime = System.currentTimeMillis()
+        var totalSolutions = 0
+        var totalIterations = 0L
+        var executionSuccess = true
 
-                    // Process tasks in parallel using high-priority dispatcher
-                    val solutions =
-                            (0 until initialTasks.size)
-                                    .map { i ->
-                                        async(highPriorityDispatcher) {
-                                            val firstCol = initialTasks[i]
+        try {
+            Log.d(TAG, "Starting parallel execution with $numThreads threads")
+            Log.d(TAG, "Each thread will solve N-Queens for board size $boardSize")
 
-                                            // Solve N-Queens with the first queen placed at (0,
-                                            // firstCol)
-                                            val board = Array(n) { IntArray(n) { 0 } }
-                                            val cols = BooleanArray(n) { false }
-                                            val diag1 =
-                                                    BooleanArray(2 * n - 1) {
-                                                        false
-                                                    } // For diagonal \
-                                            val diag2 =
-                                                    BooleanArray(2 * n - 1) {
-                                                        false
-                                                    } // For diagonal /
+            // FIXED WORK PER CORE: Each thread solves the same problem independently
+            val threadResults =
+                    (0 until numThreads).map { threadId ->
+                        async(highPriorityDispatcher) {
+                            Log.d(TAG, "Thread $threadId starting N-Queens solver")
 
-                                            // Place the first queen
-                                            board[0][firstCol] = 1
-                                            cols[firstCol] = true
-                                            diag1[firstCol] = true
-                                            diag2[n - 1 + firstCol] = true
+                            // Each thread calls the centralized solver
+                            val (solutions, iterations) = BenchmarkHelpers.solveNQueens(boardSize)
 
-                                            fun backtrack(row: Int): Int {
-                                                if (row == n) return 1 // Found a solution
+                            Log.d(
+                                    TAG,
+                                    "Thread $threadId completed: $solutions solutions, $iterations iterations"
+                            )
+                            Pair(solutions, iterations)
+                        }
+                    }
 
-                                                var solutions = 0
-                                                for (col in 0 until n) {
-                                                    val d1Idx = row + col
-                                                    val d2Idx = n - 1 + col - row
+            // Await all results
+            val results = threadResults.awaitAll()
+            Log.d(TAG, "All threads completed: ${results.size} results")
 
-                                                    if (!cols[col] && !diag1[d1Idx] && !diag2[d2Idx]
-                                                    ) {
-                                                        // Place queen
-                                                        board[row][col] = 1
-                                                        cols[col] = true
-                                                        diag1[d1Idx] = true
-                                                        diag2[d2Idx] = true
+            // Sum up solutions and iterations from all threads
+            totalSolutions = results.sumOf { it.first }
+            totalIterations = results.sumOf { it.second }
 
-                                                        solutions += backtrack(row + 1)
+            // Verify no thread failed
+            if (results.any { it.second <= 0 }) {
+                Log.e(TAG, "Multi-Core N-Queens: One or more threads returned invalid results")
+                executionSuccess = false
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Multi-Core N-Queens EXCEPTION: ${e.message}", e)
+            executionSuccess = false
+        }
 
-                                                        // Remove queen (backtrack)
-                                                        board[row][col] = 0
-                                                        cols[col] = false
-                                                        diag1[d1Idx] = false
-                                                        diag2[d2Idx] = false
-                                                    }
-                                                }
+        val endTime = System.currentTimeMillis()
+        val timeMs = (endTime - startTime).toDouble()
 
-                                                return solutions
-                                            }
+        // Calculate operations per second (total iterations across all threads)
+        val opsPerSecond = if (timeMs > 0) totalIterations.toDouble() / (timeMs / 1000.0) else 0.0
 
-                                            backtrack(
-                                                    1
-                                            ) // Start from row 1 since row 0 is already set
-                                        }
-                                    }
-                                    .awaitAll()
-                                    .sum()
+        // Validation
+        val isValid =
+                executionSuccess &&
+                        totalSolutions > 0 &&
+                        totalIterations > 0 &&
+                        timeMs > 0 &&
+                        opsPerSecond > 0 &&
+                        timeMs < 30000 // Should complete in under 30 seconds
 
-                    solutions
-                }
-
-        val solutionCount = result
-        val opsPerSecond = solutionCount.toDouble() / (timeMs / 1000.0)
+        Log.d(TAG, "=== MULTI-CORE N-QUEENS COMPLETE ===")
+        Log.d(
+                TAG,
+                "Time: ${timeMs}ms, Total Solutions: $totalSolutions, Total Iterations: $totalIterations, Ops/sec: $opsPerSecond"
+        )
+        Log.d(TAG, "Valid: $isValid, Execution success: $executionSuccess")
 
         CpuAffinityManager.resetPerformance()
 
         BenchmarkResult(
                 name = "Multi-Core N-Queens",
-                executionTimeMs = timeMs.toDouble(),
+                executionTimeMs = timeMs,
                 opsPerSecond = opsPerSecond,
-                isValid = solutionCount >= 0, // N-Queens can have 0 solutions for small n
+                isValid = isValid,
                 metricsJson =
                         JSONObject()
                                 .apply {
-                                    put("board_size", params.nqueensSize)
-                                    put("solution_count", solutionCount)
+                                    put("board_size", boardSize)
+                                    put("solution_count", totalSolutions)
+                                    put("iteration_count", totalIterations)
+                                    put("iterations_per_sec", opsPerSecond)
                                     put("threads", numThreads)
+                                    put("time_ms", timeMs)
+                                    put("execution_success", executionSuccess)
+                                    put(
+                                            "implementation",
+                                            "Centralized Bitwise Backtracking with Fixed Work Per Core"
+                                    )
+                                    put(
+                                            "workload_approach",
+                                            "Fixed Work Per Core - each thread solves same problem independently"
+                                    )
+                                    put("metric", "Iterations (board evaluations) per second")
+                                    put(
+                                            "expected_performance",
+                                            "Linear scaling: 8 cores = 8× iterations in same time"
+                                    )
                                 }
                                 .toString()
         )

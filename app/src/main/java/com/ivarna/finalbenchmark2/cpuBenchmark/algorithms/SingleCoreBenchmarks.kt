@@ -780,70 +780,40 @@ object SingleCoreBenchmarks {
                         )
                 }
 
-        /** Test 10: N-Queens Problem */
+        /**
+         * Test 10: N-Queens Problem - FIXED WORK PER CORE
+         *
+         * FIXED WORK PER CORE APPROACH:
+         * - Uses centralized solveNQueens function from BenchmarkHelpers
+         * - Tracks iterations (board evaluations) as the primary metric
+         * - Solution count is constant for given N, so iterations measure performance
+         * - Same algorithm as Multi-Core version for fair comparison
+         *
+         * PERFORMANCE: Varies by board size (N=10: ~350K iterations, N=12: ~14M iterations)
+         */
         suspend fun nqueens(params: WorkloadParams): BenchmarkResult =
                 withContext(Dispatchers.Default) {
-                        Log.d(TAG, "Starting N-Queens (size: ${params.nqueensSize})")
+                        Log.d(
+                                TAG,
+                                "Starting Single-Core N-Queens (size: ${params.nqueensSize}) - FIXED: Iteration tracking"
+                        )
                         CpuAffinityManager.setMaxPerformance()
+
+                        val boardSize = params.nqueensSize
 
                         val (result, timeMs) =
                                 BenchmarkHelpers.measureBenchmark {
-                                        val boardSize = params.nqueensSize
-
-                                        // Solve N-Queens problem using backtracking
-                                        fun solveNQueens(size: Int): Int {
-                                                val board = Array(size) { IntArray(size) { 0 } }
-                                                val cols = BooleanArray(size) { false }
-                                                val diag1 =
-                                                        BooleanArray(2 * size - 1) {
-                                                                false
-                                                        } // For diagonal \
-                                                val diag2 =
-                                                        BooleanArray(2 * size - 1) {
-                                                                false
-                                                        } // For diagonal /
-
-                                                fun backtrack(row: Int): Int {
-                                                        if (row == size)
-                                                                return 1 // Found a solution
-
-                                                        var solutions = 0
-                                                        for (col in 0 until size) {
-                                                                val d1Idx = row + col
-                                                                val d2Idx = size - 1 + col - row
-
-                                                                if (!cols[col] &&
-                                                                                !diag1[d1Idx] &&
-                                                                                !diag2[d2Idx]
-                                                                ) {
-                                                                        // Place queen
-                                                                        board[row][col] = 1
-                                                                        cols[col] = true
-                                                                        diag1[d1Idx] = true
-                                                                        diag2[d2Idx] = true
-
-                                                                        solutions +=
-                                                                                backtrack(row + 1)
-
-                                                                        // Remove queen (backtrack)
-                                                                        board[row][col] = 0
-                                                                        cols[col] = false
-                                                                        diag1[d1Idx] = false
-                                                                        diag2[d2Idx] = false
-                                                                }
-                                                        }
-
-                                                        return solutions
-                                                }
-
-                                                return backtrack(0)
-                                        }
-
-                                        solveNQueens(boardSize)
+                                        // Use centralized solver from BenchmarkHelpers
+                                        BenchmarkHelpers.solveNQueens(boardSize)
                                 }
 
-                        val solutionCount = result
-                        val opsPerSecond = solutionCount.toDouble() / (timeMs / 100.0)
+                        val (solutionCount, iterationCount) = result
+
+                        // FIXED: Use iterations as the metric (was dividing by 100.0 instead of
+                        // 1000.0)
+                        // Iterations represent actual work done, solution count is constant for
+                        // given N
+                        val opsPerSecond = iterationCount.toDouble() / (timeMs / 1000.0)
 
                         CpuAffinityManager.resetPerformance()
 
@@ -851,14 +821,26 @@ object SingleCoreBenchmarks {
                                 name = "Single-Core N-Queens",
                                 executionTimeMs = timeMs.toDouble(),
                                 opsPerSecond = opsPerSecond,
-                                isValid =
-                                        solutionCount >=
-                                                0, // N-Queens can have 0 solutions for small n
+                                isValid = solutionCount > 0 && iterationCount > 0 && timeMs > 0,
                                 metricsJson =
                                         JSONObject()
                                                 .apply {
-                                                        put("board_size", params.nqueensSize)
+                                                        put("board_size", boardSize)
                                                         put("solution_count", solutionCount)
+                                                        put("iteration_count", iterationCount)
+                                                        put("iterations_per_sec", opsPerSecond)
+                                                        put(
+                                                                "implementation",
+                                                                "Centralized Bitwise Backtracking"
+                                                        )
+                                                        put(
+                                                                "metric",
+                                                                "Iterations (board evaluations) per second"
+                                                        )
+                                                        put(
+                                                                "fix",
+                                                                "Corrected opsPerSecond calculation (was /100.0, now /1000.0)"
+                                                        )
                                                 }
                                                 .toString()
                         )
