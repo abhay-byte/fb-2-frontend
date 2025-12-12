@@ -106,45 +106,16 @@ fun HomeScreen(onStartBenchmark: (String) -> Unit, onNavigateToSettings: () -> U
         }
 
         FinalBenchmark2Theme {
-                Scaffold(
-                        topBar = {
-                                CenterAlignedTopAppBar(
-                                        title = {
-                                                Text(
-                                                        "FinalBenchmark2",
-                                                        style =
-                                                                MaterialTheme.typography
-                                                                        .headlineSmall,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                )
-                                        },
-                                        actions = {
-                                                IconButton(onClick = onNavigateToSettings) {
-                                                        Icon(
-                                                                imageVector =
-                                                                        Icons.Rounded.Settings,
-                                                                contentDescription = "Settings",
-                                                                tint =
-                                                                        MaterialTheme.colorScheme
-                                                                                .onSurfaceVariant
-                                                        )
-                                                }
-                                        },
-                                        colors =
-                                                TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                                        containerColor =
-                                                                MaterialTheme.colorScheme.surface
-                                                )
-                                )
-                        }
-                ) { innerPadding ->
+                Box(modifier = Modifier.fillMaxSize()) {
                         // Main scrollable content
                         Column(
                                 modifier =
                                         Modifier.fillMaxSize()
                                                 .verticalScroll(rememberScrollState())
-                                                .padding(innerPadding)
-                                                .padding(24.dp),
+                                                .padding(24.dp)
+                                                .padding(
+                                                        top = 60.dp
+                                                ), // Add top padding for floating button
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                         ) {
@@ -757,6 +728,27 @@ fun HomeScreen(onStartBenchmark: (String) -> Unit, onNavigateToSettings: () -> U
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(top = 8.dp)
+                                )
+                        }
+
+                        // Floating Settings Icon in Top Right Corner
+                        IconButton(
+                                onClick = onNavigateToSettings,
+                                modifier =
+                                        Modifier.align(Alignment.TopEnd)
+                                                .padding(16.dp)
+                                                .background(
+                                                        color =
+                                                                MaterialTheme.colorScheme
+                                                                        .surfaceVariant,
+                                                        shape = CircleShape
+                                                )
+                                                .padding(4.dp)
+                        ) {
+                                Icon(
+                                        imageVector = Icons.Rounded.Settings,
+                                        contentDescription = "Settings",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                         }
                 }
