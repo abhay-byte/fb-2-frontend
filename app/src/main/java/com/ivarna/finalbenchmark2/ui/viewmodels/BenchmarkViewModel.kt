@@ -231,7 +231,7 @@ class BenchmarkViewModel(
                                 val testNames =
                                         listOf(
                                                 "Single-Core Prime Generation",
-                                                "Single-Core Fibonacci Recursive",
+                                                "Single-Core Fibonacci Iterative",
                                                 "Single-Core Matrix Multiplication",
                                                 "Single-Core Hash Computing",
                                                 "Single-Core String Sorting",
@@ -241,7 +241,7 @@ class BenchmarkViewModel(
                                                 "Single-Core JSON Parsing",
                                                 "Single-Core N-Queens",
                                                 "Multi-Core Prime Generation",
-                                                "Multi-Core Fibonacci Recursive",
+                                                "Multi-Core Fibonacci Iterative",
                                                 "Multi-Core Matrix Multiplication",
                                                 "Multi-Core Hash Computing",
                                                 "Multi-Core String Sorting",
