@@ -83,8 +83,8 @@ fun HomeScreen(onStartBenchmark: (String) -> Unit, onNavigateToSettings: () -> U
         var isDataInitialized by remember { mutableStateOf(false) }
 
         // Workload Selection State
-        val workloadOptions = listOf("Low", "Mid", "Flagship")
-        var selectedWorkload by remember { mutableStateOf("Flagship") }
+        val workloadOptions = listOf("Low Accuracy - Fastest", "Mid Accuracy - Fast", "High Accuracy - Slow")
+        var selectedWorkload by remember { mutableStateOf("High Accuracy - Slow") }
         var isDropdownExpanded by remember { mutableStateOf(false) }
 
         // Single LaunchedEffect to manage data polling loops
@@ -694,9 +694,9 @@ fun HomeScreen(onStartBenchmark: (String) -> Unit, onNavigateToSettings: () -> U
                                                 // Map UI workload to backend device tier
                                                 val deviceTier =
                                                         when (selectedWorkload) {
-                                                                "Low" -> "slow"
-                                                                "Mid" -> "mid"
-                                                                "Flagship" -> "flagship"
+                                                                "Low Accuracy - Fastest" -> "slow"
+                                                                "Mid Accuracy - Fast" -> "mid"
+                                                                "High Accuracy - Slow" -> "flagship"
                                                                 else -> "flagship" // fallback
                                                         }
 
