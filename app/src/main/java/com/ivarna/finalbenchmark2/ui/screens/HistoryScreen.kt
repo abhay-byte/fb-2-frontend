@@ -176,6 +176,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                                                     gson.toJson(result.detailedResults)
 
                                             // Construct summary JSON for ResultScreen
+                                            // Include performance_metrics for graphs display
                                             val summaryJson =
                                                     """
                                             {
@@ -183,6 +184,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                                                 "multi_core_score": ${result.multiCoreScore},
                                                 "final_score": ${result.finalScore},
                                                 "normalized_score": ${result.normalizedScore},
+                                                "performance_metrics": ${if (result.performanceMetricsJson.isNotEmpty()) result.performanceMetricsJson else "{}"},
                                                 "detailed_results": $detailedResultsJson
                                             }
                                         """.trimIndent()
