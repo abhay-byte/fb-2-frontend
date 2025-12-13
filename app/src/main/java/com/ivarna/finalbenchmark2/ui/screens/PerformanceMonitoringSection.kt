@@ -19,8 +19,8 @@ import com.ivarna.finalbenchmark2.ui.components.BatteryTemperatureGraph
 import com.ivarna.finalbenchmark2.ui.components.CpuDataPoint
 import com.ivarna.finalbenchmark2.ui.components.CpuTemperatureGraph
 import com.ivarna.finalbenchmark2.ui.components.PowerDataPoint
-import com.ivarna.finalbenchmark2.ui.components.PowerConsumptionGraph
-import com.ivarna.finalbenchmark2.ui.components.CpuUtilizationGraph
+import com.ivarna.finalbenchmark2.ui.components.ResultCpuGraph
+import com.ivarna.finalbenchmark2.ui.components.ResultPowerGraph
 import com.ivarna.finalbenchmark2.ui.components.TemperatureDataPoint
 import org.json.JSONObject
 
@@ -217,16 +217,20 @@ fun PerformanceMonitoringSection(performanceMetricsJson: String) {
 
                 // Power Consumption Graph
                 if (powerData.isNotEmpty()) {
-                    PowerConsumptionGraph(
+                    val totalDurationMs = (totalRuntimeSeconds * 1000).toLong()
+                    ResultPowerGraph(
                             dataPoints = powerData,
+                            totalDurationMs = totalDurationMs,
                             modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
 
                 // CPU Usage Graph
                 if (cpuUsageData.isNotEmpty()) {
-                    CpuUtilizationGraph(
+                    val totalDurationMs = (totalRuntimeSeconds * 1000).toLong()
+                    ResultCpuGraph(
                             dataPoints = cpuUsageData,
+                            totalDurationMs = totalDurationMs,
                             modifier = Modifier.padding(bottom = 16.dp)
                     )
                 }
