@@ -27,7 +27,7 @@ class KotlinBenchmarkManager {
                 private val SINGLE_CORE_FACTORS =
                         mapOf(
                                 "Prime Generation" to 4.61e-6, // 20 / 2.17e6 ops/s
-                                "Fibonacci Recursive" to 0.58e-6, // 20 / 17.23e6 ops/s
+                                "Fibonacci Iterative" to 0.58e-6, // 20 / 17.23e6 ops/s
                                 "Matrix Multiplication" to 1.965e-8, // 20 / 508.85e6 ops/s
                                 "Hash Computing" to 3.57e-5, // 20 / 0.28e6 ops/s
                                 "String Sorting" to 2.52e-7, // 20 / 39.65e6 ops/s
@@ -42,7 +42,7 @@ class KotlinBenchmarkManager {
                 private val MULTI_CORE_FACTORS =
                         mapOf(
                                 "Prime Generation" to 4.88e-6, // 80 / 8.20e6 ops/s
-                                "Fibonacci Recursive" to 4.5e-7, // 80 / 88.64e6 ops/s
+                                "Fibonacci Iterative" to 4.5e-7, // 80 / 88.64e6 ops/s
                                 "Matrix Multiplication" to 1.045e-8, // 80 / 3826.63e6 ops/s
                                 "Hash Computing" to 1.99e-5, // 80 / 2.04e6 ops/s
                                 "String Sorting" to 2.87e-7, // 80 / 139.33e6 ops/s
