@@ -16,6 +16,7 @@ local.properties
 .idea
 .gradle
 *.apk
+*.aab
 
 # Rust
 target/
