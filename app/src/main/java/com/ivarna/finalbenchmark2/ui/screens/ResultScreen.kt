@@ -774,7 +774,7 @@ private fun RankingsTab(finalScore: Double, singleCoreScore: Double, multiCoreSc
                         }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Create rankings with current score
                 val hardcodedReferenceDevices =
@@ -1255,6 +1255,15 @@ private fun RankingsTab(finalScore: Double, singleCoreScore: Double, multiCoreSc
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
+
+                // Ranks Title
+                Text(
+                        text = "Ranks",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                )
 
                 // Rankings Content
                 LazyColumn(
