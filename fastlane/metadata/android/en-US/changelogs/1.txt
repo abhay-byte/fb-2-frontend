@@ -1,11 +1,18 @@
-• Initial release of Finalbenchmark 2
-• Multi-core CPU benchmarking with stress testing
-• Single-core performance benchmarks
-• Real-time temperature and frequency monitoring
-• Material Design 3 interface with dark/light themes
-• Historical benchmark tracking and comparison
-• Export results to CSV and JSON formats
-• Native C++ implementation for maximum performance
-• Support for ARM64, ARM, and x86 architectures
-• Completely offline operation with no tracking
-• Free and open source
+• Fixed benchmark completion timestamp to show actual completion time
+• Fixed duplicate navigation issue causing missing performance graphs
+• Improved Monte Carlo benchmark name handling with π symbol support
+• Updated Fibonacci benchmark names from Recursive to Iterative
+• Refactored to use type-safe BenchmarkName enum throughout codebase
+• Added individual benchmark scores to detailed results section
+• Fixed Ray Tracing benchmark with inlined logic and thread-safe operations
+• Optimized theme selection navigation with reduced delay
+• Revamped BenchmarkScreen with separated Single-Core and Multi-Core sections
+• Updated workload dropdown to show accuracy-based labels
+• Made rankings section scrollable and improved graph titles
+• Redesigned comparison cards with modern bar graphs
+• Added performance metrics graphs to history view
+• Implemented rankings comparison with beats percentage and SOC comparison
+• Modernized onboarding screens with swipe navigation
+• Fixed GPU info display to show actual device details
+• Enhanced version display with elegant formatting (v0.{commit} • {date})
+• Improved UI spacing and layout throughout the app

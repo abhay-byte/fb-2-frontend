@@ -23,6 +23,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Prime Generation (range: ${params.primeRange}) - FIXED: Trial Division (CPU-bound)"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val (result, timeMs) =
@@ -90,6 +91,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core Fibonacci - Core-independent fixed workload (10M iterations)"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val (results, timeMs) =
@@ -154,6 +156,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core Matrix Multiplication (size: ${params.matrixSize}, iterations: ${params.matrixIterations}) - Cache-Resident Strategy"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val size = params.matrixSize
@@ -223,6 +226,7 @@ object SingleCoreBenchmarks {
         suspend fun hashComputing(params: WorkloadParams): BenchmarkResult =
                 withContext(Dispatchers.Default) {
                         Log.d(TAG, "Starting Single-Core Hash Computing - FIXED WORK PER CORE")
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         // FIXED WORK PER CORE: Use params.hashIterations with 4KB buffer
@@ -293,6 +297,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core String Sorting - CACHE-RESIDENT: ${params.stringSortCount} total strings"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         // CACHE-RESIDENT: Generate small source list (4,096 strings) that fits in
@@ -464,6 +469,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core Ray Tracing - CACHE-RESIDENT: ${params.rayTracingIterations} iterations"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val (width, height) = params.rayTracingResolution
@@ -526,6 +532,7 @@ object SingleCoreBenchmarks {
         suspend fun compression(params: WorkloadParams): BenchmarkResult =
                 withContext(Dispatchers.Default) {
                         Log.d(TAG, "Starting Single-Core Compression - FIXED WORK PER CORE")
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         // FIXED WORK PER CORE: Use params.compressionIterations with 2MB buffer
@@ -600,6 +607,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core Monte Carlo π (samples: ${params.monteCarloSamples}) - INLINED VERSION"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val samples = params.monteCarloSamples.toLong()
@@ -700,6 +708,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core JSON Parsing - CACHE-RESIDENT: ${params.jsonDataSizeMb}MB, ${params.jsonParsingIterations} iterations"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val dataSize = params.jsonDataSizeMb * 1024 * 1024
@@ -765,6 +774,7 @@ object SingleCoreBenchmarks {
                                 TAG,
                                 "Starting Single-Core N-Queens (size: ${params.nqueensSize}) - FIXED: Iteration tracking"
                         )
+                        CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
                         val boardSize = params.nqueensSize

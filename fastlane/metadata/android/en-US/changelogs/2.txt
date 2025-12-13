@@ -1,0 +1,4 @@
+- Added CPU affinity to pin single-core benchmarks to the last (largest) CPU core
+- All 10 single-core benchmarks now target the highest-performance core (typically CPU7 on 8-core devices)
+- Improved single-core benchmark consistency and performance
+- Added setLastCoreAffinity() method to CpuAffinityManager for core targeting

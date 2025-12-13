@@ -8,10 +8,8 @@ plugins {
 
 android {
     namespace = "com.ivarna.finalbenchmark2"
-    compileSdk {
-        version = release(36)
-    }
-    
+    compileSdk { version = release(36) }
+
     ndkVersion = "25.2.9519653"
 
     defaultConfig {
@@ -22,34 +20,31 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-        }
-        
+
+        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64") }
+
         // C++ Optimization Flags for maximum performance
         externalNativeBuild {
             cmake {
-                cppFlags += listOf(
-                    "-O3",                    // Maximum optimization
-                    "-ffast-math",            // Fast floating-point math
-                    "-funroll-loops",         // Unroll loops for speed
-                    "-fomit-frame-pointer",   // Don't keep frame pointers
-                    "-ffunction-sections",    // Separate functions for linker optimization
-                    "-fdata-sections",        // Separate data for linker optimization
-                    "-fvisibility=hidden"     // Hide symbols by default
-                    // Note: -flto removed because NDK 25 uses gold linker which doesn't support LTO on arm64
-                )
-                cFlags += listOf(
-                    "-O3",
-                    "-ffast-math",
-                    "-funroll-loops"
-                )
-                arguments += listOf(
-                    "-DANDROID_STL=c++_shared",
-                    "-DANDROID_PLATFORM=android-24",
-                    "-DCMAKE_BUILD_TYPE=Release"
-                )
+                cppFlags +=
+                        listOf(
+                                "-O3", // Maximum optimization
+                                "-ffast-math", // Fast floating-point math
+                                "-funroll-loops", // Unroll loops for speed
+                                "-fomit-frame-pointer", // Don't keep frame pointers
+                                "-ffunction-sections", // Separate functions for linker optimization
+                                "-fdata-sections", // Separate data for linker optimization
+                                "-fvisibility=hidden" // Hide symbols by default
+                                // Note: -flto removed because NDK 25 uses gold linker which doesn't
+                                // support LTO on arm64
+                                )
+                cFlags += listOf("-O3", "-ffast-math", "-funroll-loops")
+                arguments +=
+                        listOf(
+                                "-DANDROID_STL=c++_shared",
+                                "-DANDROID_PLATFORM=android-24",
+                                "-DCMAKE_BUILD_TYPE=Release"
+                        )
             }
         }
     }
@@ -65,57 +60,39 @@ android {
         debug {
             isDebuggable = true
             isJniDebuggable = false
-            packaging {
-                resources.excludes.add("META-INF/**")
-            }
-            packagingOptions {
-                doNotStrip += listOf("**/*.so")
-            }
+            packaging { resources.excludes.add("META-INF/**") }
+            packagingOptions { doNotStrip += listOf("**/*.so") }
         }
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
             )
-            packaging {
-                resources.excludes.add("META-INF/**")
-            }
-            packagingOptions {
-                doNotStrip += listOf("**/*.so")
-            }
+            packaging { resources.excludes.add("META-INF/**") }
+            packagingOptions { doNotStrip += listOf("**/*.so") }
         }
-        
+
         // Signing configuration for release builds
         signingConfigs {
-            create("release") {
-                storeFile = file("../keystore/my-release-key.keystore")
-            }
+            create("release") { storeFile = file("../keystore/my-release-key.keystore") }
         }
-        
+
         buildTypes {
             debug {
                 isDebuggable = true
                 isJniDebuggable = false
-                packaging {
-                    resources.excludes.add("META-INF/**")
-                }
-                packagingOptions {
-                    doNotStrip += listOf("**/*.so")
-                }
+                packaging { resources.excludes.add("META-INF/**") }
+                packagingOptions { doNotStrip += listOf("**/*.so") }
             }
             release {
                 isMinifyEnabled = false
                 proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
+                        getDefaultProguardFile("proguard-android-optimize.txt"),
+                        "proguard-rules.pro"
                 )
-                packaging {
-                    resources.excludes.add("META-INF/**")
-                }
-                packagingOptions {
-                    doNotStrip += listOf("**/*.so")
-                }
+                packaging { resources.excludes.add("META-INF/**") }
+                packagingOptions { doNotStrip += listOf("**/*.so") }
                 signingConfig = signingConfigs.getByName("release")
             }
         }
@@ -124,18 +101,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-    buildFeatures {
-        compose = true
-    }
-    
-    packaging {
-        jniLibs {
-            useLegacyPackaging = true
-        }
-    }
+    kotlinOptions { jvmTarget = "11" }
+    buildFeatures { compose = true }
+
+    packaging { jniLibs { useLegacyPackaging = true } }
 }
 
 dependencies {
@@ -156,7 +125,9 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation("dev.chrisbanes.haze:haze:1.0.0") // Compatible with Kotlin 2.0.x
     implementation("dev.chrisbanes.haze:haze-materials:1.0.0") // Compatible with Kotlin 2.0.x
-    implementation("androidx.compose.material:material-icons-extended:1.7.5") // Add icons extended directly
+    implementation(
+            "androidx.compose.material:material-icons-extended:1.7.5"
+    ) // Add icons extended directly
     implementation("com.github.topjohnwu.libsu:core:6.0.0")
     implementation("com.google.code.gson:gson:2.10.1")
     testImplementation(libs.junit)
