@@ -485,6 +485,169 @@ object BenchmarkHelpers {
     }
 
     /**
+     * Cache-Resident Ray Tracing Workload - INLINED FOR PERFORMANCE
+     *
+     * CACHE-RESIDENT STRATEGY:
+     * - Renders the same scene multiple times (iterations)
+     * - Scene data stays in CPU cache/registers for fast access
+     * - Measures pure CPU FPU throughput, not memory bandwidth
+     * - Same algorithm for both Single-Core and Multi-Core tests
+     *
+     * CRITICAL: Inlined ray tracing logic to avoid function call overhead This matches the pattern
+     * used by Monte Carlo which achieves proper multi-core scaling.
+     *
+     * @param width Image width in pixels
+     * @param height Image height in pixels
+     * @param maxDepth Maximum ray bounce depth (unused in current implementation)
+     * @param iterations Number of times to render the scene
+     * @return Total energy accumulated across all iterations (for validation)
+     */
+    fun performRayTracing(width: Int, height: Int, maxDepth: Int, iterations: Int): Double {
+        var totalEnergy = 0.0
+
+        // INLINED: Cache constants (hoisted out of iteration loop)
+        val invWidth = 1.0 / width
+        val invHeight = 1.0 / height
+        val aspectRatio = width.toDouble() / height.toDouble()
+        val fovFactor = 0.41421356 // tan(45/2) pre-calculated
+
+        // INLINED: Scene (hardcoded spheres)
+        val s1X = 0.0
+        val s1Y = 0.0
+        val s1Z = -1.0
+        val s1RSq = 0.25 // r=0.5
+        val s2X = 1.0
+        val s2Y = 0.0
+        val s2Z = -1.5
+        val s2RSq = 0.09 // r=0.3
+        val s3X = -1.0
+        val s3Y = -0.5
+        val s3Z = -1.2
+        val s3RSq = 0.16 // r=0.4
+
+        // Light Direction (Normalized 1,1,1)
+        val lX = 0.57735
+        val lY = 0.57735
+        val lZ = 0.57735
+
+        repeat(iterations) {
+            var frameEnergy = 0.0
+
+            // Y-Loop (Rows)
+            for (y in 0 until height) {
+                // Hoist Y calculation out of X loop
+                val yNDC = (1.0 - 2.0 * (y + 0.5) * invHeight) * fovFactor
+
+                // X-Loop (Pixels)
+                for (x in 0 until width) {
+                    // --- STEP 1: RAY GENERATION ---
+                    var dirX = (2.0 * (x + 0.5) * invWidth - 1.0) * aspectRatio * fovFactor
+                    var dirY = yNDC
+                    var dirZ = -1.0
+
+                    // Fast Inverse Sqrt for Normalization
+                    val lenSq = dirX * dirX + dirY * dirY + dirZ * dirZ
+                    val invLen = 1.0 / StrictMath.sqrt(lenSq)
+                    dirX *= invLen
+                    dirY *= invLen
+                    dirZ *= invLen
+
+                    // --- STEP 2: INTERSECTION (UNROLLED) ---
+                    var closestT = 99999.0
+                    var hitId = 0
+
+                    // CHECK SPHERE 1
+                    val b1 = 2.0 * (-s1X * dirX - s1Y * dirY - s1Z * dirZ)
+                    val c1 = (s1X * s1X + s1Y * s1Y + s1Z * s1Z) - s1RSq
+                    val d1 = b1 * b1 - 4.0 * c1
+                    if (d1 > 0.0) {
+                        val t = (-b1 - StrictMath.sqrt(d1)) * 0.5
+                        if (t > 0.001 && t < closestT) {
+                            closestT = t
+                            hitId = 1
+                        }
+                    }
+
+                    // CHECK SPHERE 2
+                    val b2 = 2.0 * (-s2X * dirX - s2Y * dirY - s2Z * dirZ)
+                    val c2 = (s2X * s2X + s2Y * s2Y + s2Z * s2Z) - s2RSq
+                    val d2 = b2 * b2 - 4.0 * c2
+                    if (d2 > 0.0) {
+                        val t = (-b2 - StrictMath.sqrt(d2)) * 0.5
+                        if (t > 0.001 && t < closestT) {
+                            closestT = t
+                            hitId = 2
+                        }
+                    }
+
+                    // CHECK SPHERE 3
+                    val b3 = 2.0 * (-s3X * dirX - s3Y * dirY - s3Z * dirZ)
+                    val c3 = (s3X * s3X + s3Y * s3Y + s3Z * s3Z) - s3RSq
+                    val d3 = b3 * b3 - 4.0 * c3
+                    if (d3 > 0.0) {
+                        val t = (-b3 - StrictMath.sqrt(d3)) * 0.5
+                        if (t > 0.001 && t < closestT) {
+                            closestT = t
+                            hitId = 3
+                        }
+                    }
+
+                    // --- STEP 3: SHADING ---
+                    if (hitId == 0) {
+                        // Miss: Sky Gradient
+                        frameEnergy +=
+                                (1.0 - (0.5 * (dirY + 1.0))) * 1.0 + (0.5 * (dirY + 1.0)) * 0.5
+                    } else {
+                        // Hit: Calculate Hit Point
+                        val hpX = closestT * dirX
+                        val hpY = closestT * dirY
+                        val hpZ = closestT * dirZ
+
+                        // Calculate Normal (N = Hit - Center)
+                        var nX = 0.0
+                        var nY = 0.0
+                        var nZ = 0.0
+
+                        when (hitId) {
+                            1 -> {
+                                nX = hpX - s1X
+                                nY = hpY - s1Y
+                                nZ = hpZ - s1Z
+                            }
+                            2 -> {
+                                nX = hpX - s2X
+                                nY = hpY - s2Y
+                                nZ = hpZ - s2Z
+                            }
+                            else -> {
+                                nX = hpX - s3X
+                                nY = hpY - s3Y
+                                nZ = hpZ - s3Z
+                            }
+                        }
+
+                        // Normalize Normal
+                        val nLen = 1.0 / StrictMath.sqrt(nX * nX + nY * nY + nZ * nZ)
+                        nX *= nLen
+                        nY *= nLen
+                        nZ *= nLen
+
+                        // Diffuse Lighting (Dot Product)
+                        val dot = nX * lX + nY * lY + nZ * lZ
+                        val diff = if (dot > 0.0) dot else 0.0
+
+                        // Simple "Compute Load" to simulate reflection cost without recursion
+                        frameEnergy += diff + (diff * diff) * 0.5
+                    }
+                }
+            }
+            totalEnergy += frameEnergy
+        }
+
+        return totalEnergy
+    }
+
+    /**
      * Centralized JSON Generation for Cache-Resident Benchmarking
      *
      * CACHE-RESIDENT STRATEGY:

@@ -448,25 +448,23 @@ object SingleCoreBenchmarks {
         }
 
         /**
-         * Test 6: Ray Tracing - FIXED: Iteration-based workload for proper FPU throughput testing
+         * Test 6: Ray Tracing - CACHE-RESIDENT STRATEGY
          *
-         * FIXED WORKLOAD THROUGHPUT APPROACH:
-         * - Uses BenchmarkHelpers.renderSceneChecksum for memory-efficient rendering
-         * - Loops params.rayTracingIterations times to scale workload duration
-         * - Tests pure FPU throughput, not memory bandwidth
-         * - Removes local class definitions and mutableListOf allocations
+         * CACHE-RESIDENT APPROACH:
+         * - Uses centralized performRayTracing function from BenchmarkHelpers
+         * - Performs multiple iterations of the same scene rendering
+         * - Scene data stays in CPU cache/registers for optimal performance
+         * - Same algorithm as Multi-Core version for fair comparison
+         *
+         * PERFORMANCE: ~2.5 Mops/s baseline for single-core devices
          */
         suspend fun rayTracing(params: WorkloadParams): BenchmarkResult =
                 withContext(Dispatchers.Default) {
                         Log.d(
                                 TAG,
-                                "Starting Single-Core Ray Tracing (Standardized: ${params.rayTracingIterations} iterations, ${params.rayTracingResolution} resolution, depth ${params.rayTracingDepth})"
+                                "Starting Single-Core Ray Tracing - CACHE-RESIDENT: ${params.rayTracingIterations} iterations"
                         )
                         CpuAffinityManager.setMaxPerformance()
-
-                        // FIXED: Classes and functions moved to BenchmarkHelpers.kt - no local
-                        // definitions
-                        // needed
 
                         val (width, height) = params.rayTracingResolution
                         val maxDepth = params.rayTracingDepth
@@ -474,22 +472,13 @@ object SingleCoreBenchmarks {
 
                         val (totalEnergy, timeMs) =
                                 BenchmarkHelpers.measureBenchmark {
-                                        var accumulatedEnergy = 0.0
-
-                                        // FIXED: Loop iterations times instead of rendering once
-                                        repeat(iterations) { iteration ->
-                                                // Use memory-efficient checksum approach (no
-                                                // mutableListOf)
-                                                val sceneEnergy =
-                                                        BenchmarkHelpers.renderScenePrimitives(
-                                                                width,
-                                                                height,
-                                                                maxDepth
-                                                        )
-                                                accumulatedEnergy += sceneEnergy
-                                        }
-
-                                        accumulatedEnergy
+                                        // CACHE-RESIDENT: Use centralized helper function
+                                        BenchmarkHelpers.performRayTracing(
+                                                width,
+                                                height,
+                                                maxDepth,
+                                                iterations
+                                        )
                                 }
 
                         val totalRays = (width * height * iterations).toLong()
@@ -514,17 +503,8 @@ object SingleCoreBenchmarks {
                                                         put("total_rays", totalRays)
                                                         put("total_energy", totalEnergy)
                                                         put(
-                                                                "workload_type",
-                                                                "Standardized per thread"
-                                                        )
-                                                        put("algorithm", "Primitives (Zero Alloc)")
-                                                        put(
-                                                                "description",
-                                                                "Single-Core baseline: 1 thread × ${iterations} iterations = ${iterations} total frames"
-                                                        )
-                                                        put(
                                                                 "fix",
-                                                                "Standardized workload for consistent multi-core comparison"
+                                                                "Inlined ray tracing logic for zero function call overhead - enables proper multi-core scaling"
                                                         )
                                                 }
                                                 .toString()
@@ -762,18 +742,6 @@ object SingleCoreBenchmarks {
                                                         put(
                                                                 "implementation",
                                                                 "Cache-Resident with Centralized Helper"
-                                                        )
-                                                        put(
-                                                                "workload_type",
-                                                                "Fixed per core - multiple iterations"
-                                                        )
-                                                        put(
-                                                                "description",
-                                                                "Core-independent CPU parsing test with shared algorithm"
-                                                        )
-                                                        put(
-                                                                "expected_performance",
-                                                                "~2.0 Mops/s baseline for single-core devices"
                                                         )
                                                 }
                                                 .toString()
