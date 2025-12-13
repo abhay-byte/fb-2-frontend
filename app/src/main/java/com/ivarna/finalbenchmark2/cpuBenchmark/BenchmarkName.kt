@@ -46,7 +46,14 @@ enum class BenchmarkName {
         fun fromString(name: String): BenchmarkName? {
             val cleanName = name.replace("Single-Core ", "").replace("Multi-Core ", "").trim()
 
-            return values().find { it.displayName() == cleanName }
+            // Special handling for Monte Carlo - normalize variations
+            val normalizedName =
+                    when {
+                        cleanName.startsWith("Monte Carlo") -> "Monte Carlo π"
+                        else -> cleanName
+                    }
+
+            return values().find { it.displayName() == normalizedName }
         }
     }
 }
