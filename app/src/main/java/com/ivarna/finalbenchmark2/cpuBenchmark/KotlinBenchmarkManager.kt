@@ -81,15 +81,15 @@ class KotlinBenchmarkManager {
                         singlePrimeResult.opsPerSecond
                 )
 
-                // Fibonacci Recursive
-                emitBenchmarkStart("Single-Core Fibonacci Recursive", "SINGLE")
+                // Fibonacci Iterative
+                emitBenchmarkStart("Single-Core Fibonacci Iterative", "SINGLE")
                 val singleFibResult =
-                        safeBenchmarkRun("Single-Core Fibonacci Recursive") {
+                        safeBenchmarkRun("Single-Core Fibonacci Iterative") {
                                 SingleCoreBenchmarks.fibonacciRecursive(params)
                         }
                 singleResults.add(singleFibResult)
                 emitBenchmarkComplete(
-                        "Single-Core Fibonacci Recursive",
+                        "Single-Core Fibonacci Iterative",
                         "SINGLE",
                         singleFibResult.executionTimeMs.toLong(),
                         singleFibResult.opsPerSecond
@@ -224,15 +224,15 @@ class KotlinBenchmarkManager {
                         multiPrimeResult.opsPerSecond
                 )
 
-                // Fibonacci Recursive
-                emitBenchmarkStart("Multi-Core Fibonacci Recursive", "MULTI")
+                // Fibonacci Iterative
+                emitBenchmarkStart("Multi-Core Fibonacci Iterative", "MULTI")
                 val multiFibResult =
-                        safeBenchmarkRun("Multi-Core Fibonacci Recursive") {
+                        safeBenchmarkRun("Multi-Core Fibonacci Iterative") {
                                 MultiCoreBenchmarks.fibonacciRecursive(params)
                         }
                 multiResults.add(multiFibResult)
                 emitBenchmarkComplete(
-                        "Multi-Core Fibonacci Recursive",
+                        "Multi-Core Fibonacci Iterative",
                         "MULTI",
                         multiFibResult.executionTimeMs.toLong(),
                         multiFibResult.opsPerSecond
