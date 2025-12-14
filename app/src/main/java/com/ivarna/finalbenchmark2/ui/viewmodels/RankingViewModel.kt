@@ -37,23 +37,23 @@ class RankingViewModel(private val repository: HistoryRepository) : ViewModel() 
             listOf(
                     RankingItem(
                             name = "Snapdragon 8 Gen 3",
-                            normalizedScore = 820,
-                            singleCore = 200,
-                            multiCore = 1154,
+                            normalizedScore = 1110,
+                            singleCore = 335,
+                            multiCore = 1530,
                             isCurrentUser = false
                     ),
                     RankingItem(
                             name = "Dimensity 8300",
-                            normalizedScore = 641,
-                            singleCore = 160,
-                            multiCore = 900,
+                            normalizedScore = 950,
+                            singleCore = 265,
+                            multiCore = 1325,
                             isCurrentUser = false
                     ),
                     RankingItem(
                             name = "Snapdragon 845",
-                            normalizedScore = 197,
-                            singleCore = 52,
-                            multiCore = 275,
+                            normalizedScore = 270,
+                            singleCore = 80,
+                            multiCore = 370,
                             isCurrentUser = false
                     )
             )

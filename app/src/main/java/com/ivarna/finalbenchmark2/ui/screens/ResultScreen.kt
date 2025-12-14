@@ -58,19 +58,19 @@ data class BenchmarkSummary(
 // These must match the factors in KotlinBenchmarkManager.kt
 // Single-core factors: Target 20 points per benchmark for total ~200
 private val SCORING_FACTORS =
-    mapOf(
-        // Target 20 / Performance (Mops/s)
-BenchmarkName.PRIME_GENERATION to 3.597e-6,        // 20 / 2.90e6 ops/s        
-BenchmarkName.FIBONACCI_ITERATIVE to 8.730e-7,     // 20 / 22.91 Mops/s
-        BenchmarkName.MATRIX_MULTIPLICATION to 3.1293e-8,  // 20 / 639.13 Mops/s
-        BenchmarkName.HASH_COMPUTING to 5.556e-5,          // 20 / 0.36 Mops/s
-        BenchmarkName.STRING_SORTING to 3.204e-7,          // 20 / 62.42 Mops/s
-        BenchmarkName.RAY_TRACING to 9.804e-6,             // 20 / 2.04 Mops/s
-        BenchmarkName.COMPRESSION to 3.0486e-8,            // 20 / 656.04 Mops/s
-        BenchmarkName.MONTE_CARLO to 1.225e-6,             // 20 / 16.32 Mops/s
-        BenchmarkName.JSON_PARSING to 3.120e-6,            // 20 / 6.41 Mops/s
-BenchmarkName.N_QUEENS to 4.022e-7                 // 20 / 66.18e6 ops/s
-    )
+        mapOf(
+                // Target 20 / Performance (Mops/s)
+                BenchmarkName.PRIME_GENERATION to 3.597e-6, // 20 / 2.90e6 ops/s
+                BenchmarkName.FIBONACCI_ITERATIVE to 8.730e-7, // 20 / 22.91 Mops/s
+                BenchmarkName.MATRIX_MULTIPLICATION to 3.1293e-8, // 20 / 639.13 Mops/s
+                BenchmarkName.HASH_COMPUTING to 5.556e-5, // 20 / 0.36 Mops/s
+                BenchmarkName.STRING_SORTING to 3.204e-7, // 20 / 62.42 Mops/s
+                BenchmarkName.RAY_TRACING to 9.804e-6, // 20 / 2.04 Mops/s
+                BenchmarkName.COMPRESSION to 3.0486e-8, // 20 / 656.04 Mops/s
+                BenchmarkName.MONTE_CARLO to 1.225e-6, // 20 / 16.32 Mops/s
+                BenchmarkName.JSON_PARSING to 3.120e-6, // 20 / 6.41 Mops/s
+                BenchmarkName.N_QUEENS to 4.022e-7 // 20 / 66.18e6 ops/s
+        )
 private val SINGLE_CORE_FACTORS =
         mapOf(
                 // Target 20 / Performance (Mops/s)
@@ -1029,23 +1029,23 @@ private fun RankingsTab(finalScore: Double, singleCoreScore: Double, multiCoreSc
                         listOf(
                                 RankingItem(
                                         name = "Snapdragon 8 Gen 3",
-                                        normalizedScore = 820,
-                                        singleCore = 200,
-                                        multiCore = 1154,
+                                        normalizedScore = 1110,
+                                        singleCore = 335,
+                                        multiCore = 1530,
                                         isCurrentUser = false
                                 ),
                                 RankingItem(
                                         name = "Dimensity 8300",
-                                        normalizedScore = 641,
-                                        singleCore = 160,
-                                        multiCore = 900,
+                                        normalizedScore = 950,
+                                        singleCore = 265,
+                                        multiCore = 1325,
                                         isCurrentUser = false
                                 ),
                                 RankingItem(
                                         name = "Snapdragon 845",
-                                        normalizedScore = 197,
-                                        singleCore = 52,
-                                        multiCore = 275,
+                                        normalizedScore = 270,
+                                        singleCore = 80,
+                                        multiCore = 370,
                                         isCurrentUser = false
                                 )
                         )

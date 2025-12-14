@@ -17,7 +17,7 @@ android {
         minSdk = 24
         targetSdk = 36
         versionCode = 2
-        versionName = "0.a78e1a4.1411225"
+        versionName = "0.ab10215.1411225"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -61,7 +61,6 @@ android {
             isDebuggable = true
             isJniDebuggable = false
             packaging { resources.excludes.add("META-INF/**") }
-            packagingOptions { doNotStrip += listOf("**/*.so") }
         }
         release {
             isMinifyEnabled = false
@@ -70,7 +69,6 @@ android {
                     "proguard-rules.pro"
             )
             packaging { resources.excludes.add("META-INF/**") }
-            packagingOptions { doNotStrip += listOf("**/*.so") }
         }
 
         // Signing configuration for release builds
@@ -83,7 +81,6 @@ android {
                 isDebuggable = true
                 isJniDebuggable = false
                 packaging { resources.excludes.add("META-INF/**") }
-                packagingOptions { doNotStrip += listOf("**/*.so") }
             }
             release {
                 isMinifyEnabled = false
@@ -92,7 +89,6 @@ android {
                         "proguard-rules.pro"
                 )
                 packaging { resources.excludes.add("META-INF/**") }
-                packagingOptions { doNotStrip += listOf("**/*.so") }
                 signingConfig = signingConfigs.getByName("release")
             }
         }
