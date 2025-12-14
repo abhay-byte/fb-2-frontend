@@ -719,13 +719,7 @@ fun AboutSection() {
                                         verticalAlignment = Alignment.CenterVertically
                                 ) {
                                         Text(
-                                                text = "v0.",
-                                                fontSize = 16.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                textAlign = TextAlign.Center
-                                        )
-                                        Text(
-                                                text = "629e68b",
+                                                text = "v0.2.25",
                                                 fontSize = 16.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 color = MaterialTheme.colorScheme.primary,
