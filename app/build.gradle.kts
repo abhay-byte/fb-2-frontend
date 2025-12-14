@@ -1,5 +1,3 @@
-import org.gradle.api.tasks.bundling.AbstractArchiveTask
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -55,15 +53,6 @@ android {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
             version = "3.22.1"
-        }
-    }
-
-    // Disable PNG crunching for reproducible builds
-    androidResources {
-        noCompress += listOf("tflite", "lite")
-        @Suppress("UnstableApiUsage")
-        aaptOptions {
-            cruncherEnabled = false
         }
     }
 
