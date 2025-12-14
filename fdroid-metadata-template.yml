@@ -6,13 +6,15 @@ AuthorWebSite: https://github.com/abhay-byte
 SourceCode: https://github.com/abhay-byte/finalbenchmark-platform
 IssueTracker: https://github.com/abhay-byte/finalbenchmark-platform/issues
 
+AutoName: Final Benchmark 2
+
 RepoType: git
 Repo: https://github.com/abhay-byte/finalbenchmark-platform
 
 Builds:
-  - versionName: '0.2.25'
+  - versionName: 0.2.25
     versionCode: 3
-    commit: adfd6367f61b96884205153751c27ebd7f9c8fd4
+    commit: 8fea9d038ed0a27c708d05e664e744bb96b5b364
     subdir: app
     sudo:
       - apt-get update
@@ -24,5 +26,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '0.2.25'
+CurrentVersion: 0.2.25
 CurrentVersionCode: 3
