@@ -11,5 +11,5 @@
 - Removed screen orientation restriction to support foldables and tablets (Android 16+)
 - Added explicit 16KB page size CMake flag for better Android 15+ device compatibility
 - Updated NDK to version 29 for native 16KB page size alignment
-- Updated NDK to version 29 for native 16KB page size alignment
-- Updated NDK to version 29 for native 16KB page size alignment
+
+
