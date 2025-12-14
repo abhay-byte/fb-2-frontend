@@ -759,71 +759,7 @@ fun AboutSection() {
                         }
                 }
 
-                // Card 2: Play Store Review Card
-                Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                        onClick = {
-                                openUrl(
-                                        context,
-                                        "https://play.google.com/store/apps/details?id=com.ivarna.finalbenchmark2"
-                                )
-                        }
-                ) {
-                        Row(
-                                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                        ) {
-                                Icon(
-                                        painter = painterResource(id = R.drawable.playstore_icon),
-                                        contentDescription = "Play Store",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(32.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(16.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                                text = "Review on Play Store",
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        // Five stars
-                                        Row {
-                                                repeat(5) { index ->
-                                                        Icon(
-                                                                imageVector = Icons.Rounded.Star,
-                                                                contentDescription =
-                                                                        "Star ${index + 1}",
-                                                                tint =
-                                                                        MaterialTheme.colorScheme
-                                                                                .primary,
-                                                                modifier = Modifier.size(16.dp)
-                                                        )
-                                                        if (index < 4) {
-                                                                Spacer(
-                                                                        modifier =
-                                                                                Modifier.width(2.dp)
-                                                                )
-                                                        }
-                                                }
-                                        }
-                                        Text(
-                                                text =
-                                                        "Share your feedback and help others discover Final Benchmark 2",
-                                                fontSize = 14.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                modifier = Modifier.padding(top = 8.dp),
-                                                lineHeight = 18.sp
-                                        )
-                                }
-                        }
-                }
-
-                // Card 3: Special Thanks
+                // Card 2: Special Thanks
                 Card(
                         modifier = Modifier.fillMaxWidth(),
                         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
@@ -993,12 +929,6 @@ fun AboutSection() {
                                                         "https://abhayraj-porfolio.web.app/",
                                                         R.drawable.ic_portfolio,
                                                         "Check out my work"
-                                                ),
-                                                SocialLink(
-                                                        "Play Store",
-                                                        "https://play.google.com/store/apps/dev?id=8004929841101888920",
-                                                        R.drawable.playstore_icon,
-                                                        "Download my apps"
                                                 ),
                                                 SocialLink(
                                                         "Instagram",
