@@ -1,4 +1,4 @@
-Change log for version 0.ab10215.1411225:
+Change log for version v0.2.25:
 - Massive APK size optimization: Reduced from 78MB to 21.8MB (72% reduction)
 - Converted all PNG images to WebP format for 95% image size reduction
 - Enabled R8 minification and resource shrinking for all builds

@@ -1,0 +1,28 @@
+Categories:
+  - System
+License: Apache-2.0
+AuthorName: Abhay Raj
+AuthorWebSite: https://github.com/abhay-byte
+SourceCode: https://github.com/abhay-byte/finalbenchmark-platform
+IssueTracker: https://github.com/abhay-byte/finalbenchmark-platform/issues
+
+RepoType: git
+Repo: https://github.com/abhay-byte/finalbenchmark-platform
+
+Builds:
+  - versionName: '0.2.25'
+    versionCode: 3
+    commit: v0.2.25
+    subdir: app
+    sudo:
+      - apt-get update
+      - apt-get install -y cmake
+      - update-alternatives --auto java
+    gradle:
+      - yes
+    ndk: r27c
+
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: '0.2.25'
+CurrentVersionCode: 3

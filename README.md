@@ -5,6 +5,7 @@
 # FinalBenchmark 2
 
 [![Get it on Google Play](https://img.shields.io/badge/Get%20it%20on-Google%20Play-blue?style=for-the-badge&logo=google-play)](https://play.google.com/store/apps/details?id=com.ivarna.finalbenchmark2)
+[![Get it on F-Droid](https://img.shields.io/badge/Get%20it%20on-F--Droid-1976d2?style=for-the-badge&logo=f-droid)](https://f-droid.org/packages/com.ivarna.finalbenchmark2)
 [![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-green?style=for-the-badge&logo=android)](https://github.com/abhay-byte/finalbenchmark-platform/releases/latest)
 
 [![GitHub Downloads](https://img.shields.io/github/downloads/abhay-byte/finalbenchmark-platform/total?style=flat-square&logo=github)](https://github.com/abhay-byte/finalbenchmark-platform/releases)
