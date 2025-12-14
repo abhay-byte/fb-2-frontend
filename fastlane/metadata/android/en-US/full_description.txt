@@ -4,9 +4,6 @@ Finalbenchmark 2 is a comprehensive CPU benchmarking tool designed to measure yo
 • Multi-threaded CPU stress testing with real-time monitoring
 • Single-core and multi-core performance benchmarks
 • Temperature tracking during intensive tests
-• Historical performance tracking and comparison
-• Detailed results export (CSV, JSON formats)
-• Material Design 3 interface with dark/light themes
 • No internet connection required
 • Completely free with no ads or tracking
 
@@ -15,20 +12,6 @@ Understanding your device's CPU performance helps you make informed decisions ab
 
 <b>How It Works:</b>
 The app runs a series of mathematical calculations, cryptographic operations, and multi-threaded workloads to push your CPU to its limits. Tests include floating-point calculations, integer operations, compression algorithms, and stress testing to measure both peak performance and sustained throughput under load.
-
-<b>Perfect For:</b>
-• App developers testing performance optimization
-• Tech enthusiasts comparing device specifications
-• Users experiencing performance issues
-• Anyone interested in Android device capabilities
-• Benchmarking before and after system modifications
-
-<b>Technical Highlights:</b>
-• Native C++ and Kotlin implementations for maximum performance
-• Real-time temperature and frequency monitoring
-• Accurate single-core and multi-core testing
-• Support for various CPU architectures (ARM64, ARM, x86)
-• Thermal throttling detection and reporting
 
 <b>Privacy & Security:</b>
 Finalbenchmark 2 runs completely offline - no data is sent to external servers. All benchmark results are stored locally on your device, ensuring complete privacy and security of your performance data.
