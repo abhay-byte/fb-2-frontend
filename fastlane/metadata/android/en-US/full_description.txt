@@ -1,9 +1,7 @@
-Finalbenchmark 2 is a comprehensive CPU benchmarking tool designed to measure your Android device's processing performance with precision and accuracy.
+Finalbenchmark 2 is a comprehensive CPU benchmarking tool designed to measure your Android device's processing performance.
 
 <b>Key Features:</b>
 • Multi-threaded CPU stress testing with real-time monitoring
 • Single-core and multi-core performance benchmarks
 • Temperature tracking during intensive tests
-• No internet connection required
-• Completely free with no ads or tracking
 

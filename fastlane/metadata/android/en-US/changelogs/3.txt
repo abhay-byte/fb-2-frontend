@@ -1,16 +1,10 @@
 Change log for version v0.2.25:
-- Massive APK size optimization: Reduced from 78MB to 21.8MB (72% reduction)
-- Converted all PNG images to WebP format for 95% image size reduction
-- Enabled R8 minification and resource shrinking for all builds
-- Added 16 KB page size alignment support for newer Android devices
 - Updated theme dropdown labels to "Light Monet" and "Dark Monet"
 - Updated rankings with real benchmark data: Snapdragon 8 Gen 3 (1110), Dimensity 8300 (950), Snapdragon 845 (270)
 - Fixed permission request cards centering alignment
 - Improved Hardware section card styling to match OS section
-- Enable ABI splitting to generate separate APKs per architecture
 - Unified Score Scaling for single and multi core scores
 - Removed screen orientation restriction to support foldables and tablets (Android 16+)
-- Added explicit 16KB page size CMake flag for better Android 15+ device compatibility
-- Updated NDK to version 29 for native 16KB page size alignment
+
 
 
