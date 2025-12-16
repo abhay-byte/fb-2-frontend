@@ -258,17 +258,57 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
                     isLastItem = false
                 )
             }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Big Cores", deviceInfo.bigCores.toString()),
-                    isLastItem = false
-                )
+            
+            // Get CPU topology from CpuAffinityManager
+            val cpuAffinityManager = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
+            val cpuCores = cpuAffinityManager.detectCpuTopology()
+            val bigCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.BIG }
+            val midCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.MID }
+            val littleCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.LITTLE }
+            
+            // BIG cores
+            if (bigCores.isNotEmpty()) {
+                item {
+                    val maxFreq = bigCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                    val coreIds = bigCores.map { it.id }.joinToString(", ")
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                            "BIG Cores", 
+                            "${bigCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                        ),
+                        isLastItem = false
+                    )
+                }
             }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Small Cores", deviceInfo.smallCores.toString()),
-                    isLastItem = false
-                )
+            
+            // Mid cores (if available)
+            if (midCores.isNotEmpty()) {
+                item {
+                    val maxFreq = midCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                    val coreIds = midCores.map { it.id }.joinToString(", ")
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                            "Mid Cores", 
+                            "${midCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                        ),
+                        isLastItem = false
+                    )
+                }
+            }
+            
+            // LITTLE cores
+            if (littleCores.isNotEmpty()) {
+                item {
+                    val maxFreq = littleCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                    val coreIds = littleCores.map { it.id }.joinToString(", ")
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                            "LITTLE Cores", 
+                            "${littleCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                        ),
+                        isLastItem = false
+                    )
+                }
             }
             // GPU Information Section Header
             item {
@@ -479,23 +519,90 @@ fun CpuTab(
                     isLastItem = false
                 )
             }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Big Cores", deviceInfo.bigCores.toString()),
-                    isLastItem = false
-                )
+            
+            // Get CPU topology from CpuAffinityManager
+            val cpuAffinityManager = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
+            val cpuCores = cpuAffinityManager.detectCpuTopology()
+            val bigCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.BIG }
+            val midCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.MID }
+            val littleCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.LITTLE }
+            
+            // BIG cores
+            if (bigCores.isNotEmpty()) {
+                item {
+                    val maxFreq = bigCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                    val coreIds = bigCores.map { it.id }.joinToString(", ")
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                            "BIG Cores", 
+                            "${bigCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                        ),
+                        isLastItem = false
+                    )
+                }
             }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Small Cores", deviceInfo.smallCores.toString()),
-                    isLastItem = false
-                )
+            
+            // Mid cores (if available)
+            if (midCores.isNotEmpty()) {
+                item {
+                    val maxFreq = midCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                    val coreIds = midCores.map { it.id }.joinToString(", ")
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                            "Mid Cores", 
+                            "${midCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                        ),
+                        isLastItem = false
+                    )
+                }
             }
+            
+            // LITTLE cores
+            if (littleCores.isNotEmpty()) {
+                item {
+                    val maxFreq = littleCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                    val coreIds = littleCores.map { it.id }.joinToString(", ")
+                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                            "LITTLE Cores", 
+                            "${littleCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                        ),
+                        isLastItem = false
+                    )
+                }
+            }
+            
+            // Cluster Topology - custom display with multi-line text on right
             item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Cluster Topology", deviceInfo.clusterTopology),
-                    isLastItem = false
-                )
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "Cluster Topology",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.weight(0.4f)
+                        )
+                        Text(
+                            text = deviceInfo.clusterTopology,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier
+                                .weight(0.6f)
+                                .padding(start = 16.dp),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                            softWrap = true
+                        )
+                    }
+                    Divider(
+                        modifier = Modifier.padding(top = 8.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant
+                    )
+                }
             }
             
             // CPU Frequencies Section Header
