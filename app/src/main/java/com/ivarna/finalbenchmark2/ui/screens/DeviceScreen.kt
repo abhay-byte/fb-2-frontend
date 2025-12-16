@@ -1010,12 +1010,30 @@ fun OpenGLInfoCard(openGLInfo: com.ivarna.finalbenchmark2.utils.OpenGLInfo?) {
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "OpenGL Extensions (${openGLInfo.extensions.size}):",
-                            fontWeight = FontWeight.Medium
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "OpenGL Extensions:",
+                                fontWeight = FontWeight.Medium
+                            )
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer
+                            ) {
+                                Text(
+                                    text = "${openGLInfo.extensions.size}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                         IconButton(onClick = { extensionsExpanded = !extensionsExpanded }) {
                             Icon(
                                 imageVector = if (extensionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -1029,6 +1047,7 @@ fun OpenGLInfoCard(openGLInfo: com.ivarna.finalbenchmark2.utils.OpenGLInfo?) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(max = 200.dp)
+                                .verticalScroll(rememberScrollState())
                                 .background(
                                     color = MaterialTheme.colorScheme.surface,
                                     shape = MaterialTheme.shapes.small
@@ -1116,12 +1135,30 @@ fun VulkanInfoCard(vulkanInfo: com.ivarna.finalbenchmark2.utils.VulkanInfo?) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Vulkan Extensions ($totalExtensions):",
-                                fontWeight = FontWeight.Medium
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Vulkan Extensions:",
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = "$totalExtensions",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                             IconButton(onClick = { extensionsExpanded = !extensionsExpanded }) {
                                 Icon(
                                     imageVector = if (extensionsExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -1135,6 +1172,7 @@ fun VulkanInfoCard(vulkanInfo: com.ivarna.finalbenchmark2.utils.VulkanInfo?) {
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .heightIn(max = 200.dp)
+                                    .verticalScroll(rememberScrollState())
                                     .background(
                                         color = MaterialTheme.colorScheme.surface,
                                         shape = MaterialTheme.shapes.small
@@ -1190,16 +1228,72 @@ fun VulkanInfoCard(vulkanInfo: com.ivarna.finalbenchmark2.utils.VulkanInfo?) {
                     
                     // Features (if available)
                     if (vulkanInfo.features != null) {
+                        // Calculate feature count
+                        val featuresList = listOf(
+                            vulkanInfo.features.alphaToOne, vulkanInfo.features.depthBiasClamp,
+                            vulkanInfo.features.depthBounds, vulkanInfo.features.depthClamp,
+                            vulkanInfo.features.drawIndirectFirstInstance, vulkanInfo.features.dualSrcBlend,
+                            vulkanInfo.features.fillModeNonSolid, vulkanInfo.features.fragmentStoresAndAtomics,
+                            vulkanInfo.features.fullDrawIndexUint32, vulkanInfo.features.geometryShader,
+                            vulkanInfo.features.imageCubeArray, vulkanInfo.features.independentBlend,
+                            vulkanInfo.features.inheritedQueries, vulkanInfo.features.largePoints,
+                            vulkanInfo.features.logicOp, vulkanInfo.features.multiDrawIndirect,
+                            vulkanInfo.features.multiViewport, vulkanInfo.features.occlusionQueryPrecise,
+                            vulkanInfo.features.pipelineStatisticsQuery, vulkanInfo.features.robustBufferAccess,
+                            vulkanInfo.features.sampleRateShading, vulkanInfo.features.samplerAnisotropy,
+                            vulkanInfo.features.shaderClipDistance, vulkanInfo.features.shaderCullDistance,
+                            vulkanInfo.features.shaderFloat64, vulkanInfo.features.shaderImageGatherExtended,
+                            vulkanInfo.features.shaderInt16, vulkanInfo.features.shaderInt64,
+                            vulkanInfo.features.shaderResourceMinLod, vulkanInfo.features.shaderResourceResidency,
+                            vulkanInfo.features.shaderSampledImageArrayDynamicIndexing,
+                            vulkanInfo.features.shaderStorageBufferArrayDynamicIndexing,
+                            vulkanInfo.features.shaderStorageImageArrayDynamicIndexing,
+                            vulkanInfo.features.shaderStorageImageExtendedFormats,
+                            vulkanInfo.features.shaderStorageImageMultisample,
+                            vulkanInfo.features.shaderStorageImageReadWithoutFormat,
+                            vulkanInfo.features.shaderStorageImageWriteWithoutFormat,
+                            vulkanInfo.features.shaderTessellationAndGeometryPointSize,
+                            vulkanInfo.features.shaderUniformBufferArrayDynamicIndexing,
+                            vulkanInfo.features.sparseBinding, vulkanInfo.features.sparseResidency2Samples,
+                            vulkanInfo.features.sparseResidency4Samples, vulkanInfo.features.sparseResidency8Samples,
+                            vulkanInfo.features.sparseResidency16Samples, vulkanInfo.features.sparseResidencyAliased,
+                            vulkanInfo.features.sparseResidencyBuffer, vulkanInfo.features.sparseResidencyImage2D,
+                            vulkanInfo.features.sparseResidencyImage3D, vulkanInfo.features.tessellationShader,
+                            vulkanInfo.features.textureCompressionASTC_LDR, vulkanInfo.features.textureCompressionBC,
+                            vulkanInfo.features.textureCompressionETC2, vulkanInfo.features.variableMultisampleRate,
+                            vulkanInfo.features.vertexPipelineStoresAndAtomics, vulkanInfo.features.wideLines
+                        )
+                        val supportedCount = featuresList.count { it }
+                        val totalCount = featuresList.size
+                        
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Vulkan Features:",
-                                fontWeight = FontWeight.Medium
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Vulkan Features:",
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Surface(
+                                    shape = MaterialTheme.shapes.small,
+                                    color = MaterialTheme.colorScheme.primaryContainer
+                                ) {
+                                    Text(
+                                        text = "$supportedCount / $totalCount",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            }
                             IconButton(onClick = { featuresExpanded = !featuresExpanded }) {
                                 Icon(
                                     imageVector = if (featuresExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -1999,49 +2093,76 @@ fun VulkanFeaturesGrid(features: com.ivarna.finalbenchmark2.utils.VulkanFeatures
             "Wide Lines" to features.wideLines
         ).sortedBy { it.first }
     }
+    
+    // Count supported features
+    val supportedCount = sortedFeatures.count { it.second }
+    val totalCount = sortedFeatures.size
 
-    Card(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            .padding(top = 8.dp)
     ) {
-        Column(Modifier.padding(12.dp)) {
-            Text(
-                "Vulkan Capabilities",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            // Single Column List Layout
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                sortedFeatures.forEach { featurePair ->
-                    val name = featurePair.component1()
-                    val isSupported = featurePair.component2()
+        Spacer(modifier = Modifier.height(4.dp))
+        
+        // Scrollable list container
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 400.dp)
+                .verticalScroll(rememberScrollState())
+                .background(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.medium
+                )
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            // Single column list
+            sortedFeatures.forEach { (name, isSupported) ->
+                // Feature chip
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.small,
+                    color = if (isSupported) 
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                    else 
+                        MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = 1.dp,
+                        color = if (isSupported)
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                        else
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.2f)
+                    )
+                ) {
                     Row(
                         modifier = Modifier
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
                     ) {
+                        // Status icon
                         Icon(
-                            painter = if (isSupported) painterResource(id = com.ivarna.finalbenchmark2.R.drawable.check_24)
-                                     else painterResource(id = com.ivarna.finalbenchmark2.R.drawable.close_24),
+                            painter = if (isSupported) 
+                                painterResource(id = com.ivarna.finalbenchmark2.R.drawable.check_24)
+                            else 
+                                painterResource(id = com.ivarna.finalbenchmark2.R.drawable.close_24),
                             contentDescription = if (isSupported) "Supported" else "Not Supported",
-                            tint = if (isSupported) Color(0xFF4CAF50) else Color(0xFFEF5350),
+                            tint = if (isSupported) 
+                                Color(0xFF4CAF50)
+                            else 
+                                Color(0xFFEF5350),
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
+                        // Feature name
                         Text(
                             text = name,
-                            style = MaterialTheme.typography.bodySmall,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
