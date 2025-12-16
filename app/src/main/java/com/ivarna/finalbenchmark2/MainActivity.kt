@@ -1048,8 +1048,16 @@ class MainActivity : ComponentActivity() {
             Log.e(TAG, "Failed to restore governor", e)
         }
         
+        // Check current governor state and update status accordingly
         if (mainViewModel != null) {
-            mainViewModel?.updateCpuGovernorHintsStatus(PerformanceOptimizationStatus.DISABLED)
+            val currentGovernor = getCurrentGovernor()
+            val governorStatus = if (currentGovernor == "performance") {
+                PerformanceOptimizationStatus.ENABLED
+            } else {
+                PerformanceOptimizationStatus.DISABLED
+            }
+            mainViewModel?.updateCpuGovernorHintsStatus(governorStatus)
+            Log.i(TAG, "Governor status after restore: $currentGovernor -> $governorStatus")
         }
     }
     
