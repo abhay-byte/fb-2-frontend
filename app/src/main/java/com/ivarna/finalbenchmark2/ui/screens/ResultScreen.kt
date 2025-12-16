@@ -652,20 +652,20 @@ fun SummaryTab(summary: BenchmarkSummary) {
                                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                         ) {
                                 Row(
-                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
                                 ) {
                                         Text(
                                                 text = "MP Ratio",
-                                                fontSize = 14.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.Medium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                        Spacer(modifier = Modifier.width(24.dp))
+                                        Spacer(modifier = Modifier.width(16.dp))
                                         Text(
                                                 text = String.format("%.2fx", mpRatio),
-                                                fontSize = 24.sp,
+                                                fontSize = 16.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.primary
                                         )
