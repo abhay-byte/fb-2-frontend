@@ -569,6 +569,13 @@ fun HomeScreen(onStartBenchmark: (String) -> Unit, onNavigateToSettings: () -> U
                                                 0
                                         }
 
+                                val midCoreCount =
+                                        if (activity != null) {
+                                                activity.getMidCoreCount()
+                                        } else {
+                                                0
+                                        }
+
                                 val littleCoreCount =
                                         if (activity != null) {
                                                 activity.getLittleCoreCount()
@@ -607,6 +614,7 @@ fun HomeScreen(onStartBenchmark: (String) -> Unit, onNavigateToSettings: () -> U
                                         performanceHintStatus = performanceHintStatus,
                                         cpuAffinityStatus = cpuAffinityStatus,
                                         bigCoreCount = bigCoreCount,
+                                        midCoreCount = midCoreCount,
                                         littleCoreCount = littleCoreCount,
                                         foregroundServiceStatus = foregroundServiceStatus,
                                         governorHintStatus = governorHintStatus,
@@ -787,6 +795,7 @@ fun PerformanceOptimizationsCard(
         performanceHintStatus: Boolean,
         cpuAffinityStatus: Boolean,
         bigCoreCount: Int,
+        midCoreCount: Int,
         littleCoreCount: Int,
         foregroundServiceStatus: Boolean = false,
         governorHintStatus: Boolean = false,
@@ -963,8 +972,10 @@ fun PerformanceOptimizationsCard(
                                         // NEW: CPU Affinity Control Detail
                                         OptimizationDetailRow(
                                                 title = "CPU Affinity Control",
-                                                description =
-                                                        "$bigCoreCount big cores, $littleCoreCount little cores detected",
+                                                description = when {
+                                                        midCoreCount > 0 -> "$bigCoreCount BIG, $midCoreCount Mid, $littleCoreCount LITTLE cores detected"
+                                                        else -> "$bigCoreCount BIG, $littleCoreCount LITTLE cores detected"
+                                                },
                                                 status =
                                                         if (cpuAffinityStatus) {
                                                                 PerformanceOptimizationStatus

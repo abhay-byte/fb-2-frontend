@@ -87,6 +87,7 @@ class MainActivity : ComponentActivity() {
     // NEW: CPU affinity tracking
     private var isCpuAffinityEnabled = false
     private var bigCoreCount = 0
+    private var midCoreCount = 0
     private var littleCoreCount = 0
     
     // NEW: Foreground service tracking
@@ -625,55 +626,26 @@ class MainActivity : ComponentActivity() {
     
     /**
      * Feature #6: Detect CPU core configuration
-     * Identifies big vs little cores for optimal affinity
+     * Uses CpuAffinityManager for accurate BIG/Mid/LITTLE classification
      */
     private fun detectCPUCoreConfiguration() {
         try {
-            val numCores = Runtime.getRuntime().availableProcessors()
-            Log.i(TAG, "Total CPU cores detected: $numCores")
+            // Use CpuAffinityManager's proper core classification
+            bigCoreCount = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.getBigCores().size
+            midCoreCount = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.getMidCores().size
+            littleCoreCount = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.getLittleCores().size
             
-            // Detect core types by reading CPU frequencies
-            val cpuFrequencies = mutableListOf<Pair<Int, Long>>()
+            val totalCores = bigCoreCount + midCoreCount + littleCoreCount
             
-            for (coreId in 0 until numCores) {
-                try {
-                    val maxFreqFile = File("/sys/devices/system/cpu/cpu$coreId/cpufreq/cpuinfo_max_freq")
-                    if (maxFreqFile.exists()) {
-                        val maxFreq = maxFreqFile.readText().trim().toLongOrNull() ?: 0L
-                        cpuFrequencies.add(Pair(coreId, maxFreq))
-                        Log.d(TAG, "Core $coreId max frequency: ${maxFreq / 1000} MHz")
-                    }
-                } catch (e: Exception) {
-                    Log.w(TAG, "Could not read frequency for core $coreId", e)
-                }
-            }
-            
-            if (cpuFrequencies.isNotEmpty()) {
-                // Sort by frequency
-                cpuFrequencies.sortBy { it.second }
-                
-                // Determine big vs little cores
-                // Typically, cores with higher max frequency are "big" cores
-                val medianFreq = cpuFrequencies[cpuFrequencies.size / 2].second
-                
-                littleCoreCount = cpuFrequencies.count { it.second <= medianFreq }
-                bigCoreCount = cpuFrequencies.count { it.second > medianFreq }
-                
-                Log.i(TAG, "CPU Configuration: $littleCoreCount little cores, $bigCoreCount big cores")
-                Log.i(TAG, "Big cores start at: ${cpuFrequencies[littleCoreCount].first}")
-                
+            if (totalCores > 0) {
                 isCpuAffinityEnabled = true
+                Log.i(TAG, "CPU Configuration: $bigCoreCount BIG, $midCoreCount Mid, $littleCoreCount LITTLE cores")
+                
+                // Log detailed topology
+                com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.logTopology()
             } else {
                 Log.w(TAG, "Could not detect CPU core configuration")
                 isCpuAffinityEnabled = false
-                
-                // Fallback: assume modern big.LITTLE with 4+4 configuration
-                if (numCores == 8) {
-                    littleCoreCount = 4
-                    bigCoreCount = 4
-                    Log.i(TAG, "Using fallback 4+4 configuration")
-                    isCpuAffinityEnabled = true
-                }
             }
             
         } catch (e: Exception) {
@@ -717,6 +689,13 @@ class MainActivity : ComponentActivity() {
      */
     fun getBigCoreCount(): Int {
         return bigCoreCount
+    }
+    
+    /**
+     * Get mid core count
+     */
+    fun getMidCoreCount(): Int {
+        return midCoreCount
     }
     
     /**
