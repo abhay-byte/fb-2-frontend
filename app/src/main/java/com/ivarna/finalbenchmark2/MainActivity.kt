@@ -883,10 +883,17 @@ class MainActivity : ComponentActivity() {
             Log.i(TAG, "ℹ Using other optimizations for performance")
         }
         
+        // IMPORTANT: Check actual governor state, not just whether we applied hints
+        // Governor might already be in performance mode from before
         if (mainViewModel != null) {
-            mainViewModel?.updateCpuGovernorHintsStatus(
-                if (isGovernorHintApplied) PerformanceOptimizationStatus.ENABLED else PerformanceOptimizationStatus.DISABLED
-            )
+            val currentGovernor = getCurrentGovernor()
+            val governorStatus = if (currentGovernor == "performance") {
+                PerformanceOptimizationStatus.ENABLED
+            } else {
+                PerformanceOptimizationStatus.DISABLED
+            }
+            mainViewModel?.updateCpuGovernorHintsStatus(governorStatus)
+            Log.i(TAG, "Governor status update: $currentGovernor -> $governorStatus")
         }
     }
     
