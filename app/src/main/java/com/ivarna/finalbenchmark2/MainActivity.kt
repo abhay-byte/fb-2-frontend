@@ -1014,11 +1014,24 @@ class MainActivity : ComponentActivity() {
      * Restore original governor when benchmark completes
      */
     private fun restoreGovernor() {
-        if (!isGovernorHintApplied || originalGovernor == null) {
-            return
-        }
-        
+        // Always check and update status, even if we don't need to restore
         try {
+            // If governor was never applied or no original governor saved, just update status
+            if (!isGovernorHintApplied || originalGovernor == null) {
+                // Still check current governor and update status accordingly
+                if (mainViewModel != null) {
+                    val currentGovernor = getCurrentGovernor()
+                    val governorStatus = if (currentGovernor == "performance") {
+                        PerformanceOptimizationStatus.ENABLED
+                    } else {
+                        PerformanceOptimizationStatus.DISABLED
+                    }
+                    mainViewModel?.updateCpuGovernorHintsStatus(governorStatus)
+                    Log.i(TAG, "Governor status updated (no restore needed): $currentGovernor -> $governorStatus")
+                }
+                return
+            }
+            
             val numCores = Runtime.getRuntime().availableProcessors()
             val targetGovernor = originalGovernor ?: "schedutil" // Default to schedutil if original is null
             
@@ -1048,7 +1061,7 @@ class MainActivity : ComponentActivity() {
             Log.e(TAG, "Failed to restore governor", e)
         }
         
-        // Check current governor state and update status accordingly
+        // Always check current governor state and update status accordingly
         if (mainViewModel != null) {
             val currentGovernor = getCurrentGovernor()
             val governorStatus = if (currentGovernor == "performance") {
