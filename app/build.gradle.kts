@@ -1,4 +1,10 @@
 import org.gradle.api.tasks.bundling.AbstractArchiveTask
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.TimeZone
+
+// F-Droid reproducible builds: disable baseline profiles
+tasks.whenTaskAdded { if (name.contains("ArtProfile")) { enabled = false } }
 
 plugins {
     alias(libs.plugins.android.application)
