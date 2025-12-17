@@ -1,4 +1,4 @@
-Version 0.4 - Matrix Multiplication Algorithm Overhaul
+Version 0.3 - Matrix Multiplication Algorithm Overhaul
 
 • Implemented Strassen's divide-and-conquer matrix multiplication algorithm
 • O(n^2.807) complexity for improved performance consistency
