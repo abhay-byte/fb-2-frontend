@@ -82,7 +82,12 @@ android {
                     getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro"
             )
-            packaging { resources.excludes.add("META-INF/**") }
+            // Disable baseline profiles for F-Droid reproducible builds
+            packaging {
+                resources.excludes.add("META-INF/**")
+                resources.excludes.add("**.prof")
+                resources.excludes.add("assets/dexopt/baseline.prof")
+            }
         }
 
         // Signing configuration for release builds
