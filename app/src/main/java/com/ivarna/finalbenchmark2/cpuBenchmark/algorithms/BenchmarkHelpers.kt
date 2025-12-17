@@ -819,28 +819,29 @@ object BenchmarkHelpers {
     }
 
     /**
-     * Cache-Resident JSON Parsing Workload
+     * JSON Parsing Workload - Fresh Data Per Iteration
      *
-     * CACHE-RESIDENT STRATEGY:
-     * - Parses the same JSON data multiple times (iterations)
-     * - JSON data stays in CPU cache for fast access
-     * - Measures pure CPU parsing throughput, not memory bandwidth
-     * - Same algorithm for both Single-Core and Multi-Core tests
+     * Parses JSON strings with fresh data generated for each iteration
+     * to prevent caching effects.
      *
-     * @param jsonData Pre-generated JSON string to parse
+     * @param jsonData Base JSON template (size reference)
      * @param iterations Number of times to parse the JSON data
      * @return Total element count across all iterations (for validation)
      */
     fun performJsonParsingWorkload(jsonData: String, iterations: Int): Int {
         var totalElementCount = 0
+        val baseSize = jsonData.length
 
-        repeat(iterations) {
+        repeat(iterations) { iter ->
+            // Generate fresh JSON data for each iteration with unique seed
+            val random = java.util.Random(System.nanoTime() + iter)
+            val freshJson = generateRandomJson(baseSize, random)
+            
             // Count elements in the JSON string as a simple way to "parse" it
-            // In a real implementation, we'd use a JSON library like org.json or Moshi
             var elementCount = 0
             var inString = false
 
-            for (char in jsonData) {
+            for (char in freshJson) {
                 if (char == '"') {
                     inString = !inString
                 } else if (!inString) {
@@ -856,6 +857,41 @@ object BenchmarkHelpers {
         }
 
         return totalElementCount
+    }
+    
+    /**
+     * Generate a random JSON string of approximately the given size
+     */
+    private fun generateRandomJson(targetSize: Int, random: java.util.Random): String {
+        val sb = StringBuilder()
+        sb.append("{\"data\":[")
+        
+        var currentSize = sb.length
+        var first = true
+        
+        while (currentSize < targetSize - 50) {
+            if (!first) sb.append(",")
+            first = false
+            
+            // Generate a random object
+            sb.append("{\"id\":")
+            sb.append(random.nextInt(1000000))
+            sb.append(",\"value\":\"")
+            // Add random string value
+            repeat(10 + random.nextInt(20)) {
+                sb.append(('a' + random.nextInt(26)))
+            }
+            sb.append("\",\"flag\":")
+            sb.append(random.nextBoolean())
+            sb.append(",\"num\":")
+            sb.append(random.nextDouble())
+            sb.append("}")
+            
+            currentSize = sb.length
+        }
+        
+        sb.append("]}")
+        return sb.toString()
     }
 
     /**
