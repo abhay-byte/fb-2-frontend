@@ -24,9 +24,9 @@ Builds:
       - yes
     ndk: r27c
 
-  - versionName: 0.3
+  - versionName: '0.3'
     versionCode: 4
-    commit: 963dab3882e4de4f86e3164da3f2ecd4be574673
+    commit: 0f3aedab1dcdc3cd381a842a0870c7d9aa62e44e
     subdir: app
     sudo:
       - apt-get update
