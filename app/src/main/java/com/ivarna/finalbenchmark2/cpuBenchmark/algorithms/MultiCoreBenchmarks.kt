@@ -1180,6 +1180,21 @@ object MultiCoreBenchmarks {
                 )
                 CpuAffinityManager.setMaxPerformance()
 
+                // CRITICAL FIX: Create fresh dispatcher for THIS run only (no caching)
+                // This ensures completely fresh state for every benchmark run
+                val freshDispatcher = run {
+                    val threadCount = numThreads
+                    val localThreadId = AtomicInteger(0)
+                    val threadFactory = ThreadFactory { runnable ->
+                        Thread(runnable).apply {
+                            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
+                            name = "MonteCarlo-${localThreadId.getAndIncrement()}"
+                        }
+                    }
+                    val executor = Executors.newFixedThreadPool(threadCount, threadFactory)
+                    executor.asCoroutineDispatcher()
+                }
+
                 // Configuration
                 val samplesPerThread = params.monteCarloSamples.toLong()
                 val totalSamples = samplesPerThread * numThreads
@@ -1190,7 +1205,7 @@ object MultiCoreBenchmarks {
                 // CRITICAL: Inline Monte Carlo logic with per-thread Random
                 val results =
                         (0 until numThreads).map { threadId ->
-                                async(highPriorityDispatcher) {
+                                async(freshDispatcher) {
                                         var insideCircle = 0L
 
                                         // CRITICAL: Each thread creates its OWN Random with unique seed
@@ -1271,6 +1286,9 @@ object MultiCoreBenchmarks {
                 Log.d(TAG, "π estimate: $piEstimate, Accuracy: $accuracy, Valid: $isValid")
 
                 CpuAffinityManager.resetPerformance()
+                
+                // Clean up the fresh dispatcher
+                (freshDispatcher as? ExecutorCoroutineDispatcher)?.close()
 
                 // Thermal stabilization delay (skip for test runs)
                 if (!isTestRun) {
