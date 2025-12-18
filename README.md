@@ -4,21 +4,45 @@
 
 # FinalBenchmark 2
 
-[![Get it on Google Play](https://img.shields.io/badge/Get%20it%20on-Google%20Play-blue?style=for-the-badge&logo=google-play)](https://play.google.com/store/apps/details?id=com.ivarna.finalbenchmark2)
-[![Get it on F-Droid](https://img.shields.io/badge/Get%20it%20on-F--Droid-1976d2?style=for-the-badge&logo=f-droid)](https://f-droid.org/packages/com.ivarna.finalbenchmark2)
-[![Download Latest Release](https://img.shields.io/badge/Download-Latest%20Release-green?style=for-the-badge&logo=android)](https://github.com/abhay-byte/finalbenchmark-platform/releases/latest)
+<p align="center">
+  <a href="https://play.google.com/store/apps/details?id=com.ivarna.finalbenchmark2">
+    <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="80"/>
+  </a>
+  <a href="https://f-droid.org/packages/com.ivarna.finalbenchmark2">
+    <img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" alt="Get it on F-Droid" height="80"/>
+  </a>
+  <a href="https://github.com/abhay-byte/finalbenchmark-platform/releases/latest">
+    <img src="https://img.shields.io/badge/Download-Latest%20Release-brightgreen?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest Release" height="80"/>
+  </a>
+</p>
 
-[![GitHub Downloads](https://img.shields.io/github/downloads/abhay-byte/finalbenchmark-platform/total?style=flat-square&logo=github)](https://github.com/abhay-byte/finalbenchmark-platform/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/abhay-byte/finalbenchmark-platform?style=flat-square&logo=github)](https://github.com/abhay-byte/finalbenchmark-platform/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/abhay-byte/finalbenchmark-platform?style=flat-square&logo=github)](https://github.com/abhay-byte/finalbenchmark-platform/network/members)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
-[![FOSS](https://img.shields.io/badge/FOSS-100%25-green?style=flat-square)](https://opensource.org/)
+<p align="center">
+  <a href="https://github.com/abhay-byte/finalbenchmark-platform/releases">
+    <img src="https://img.shields.io/github/downloads/abhay-byte/finalbenchmark-platform/total?style=flat-square&logo=github&label=downloads&color=11" alt="GitHub Downloads"/>
+  </a>
+  <a href="https://github.com/abhay-byte/finalbenchmark-platform/stargazers">
+    <img src="https://img.shields.io/github/stars/abhay-byte/finalbenchmark-platform?style=flat-square&logo=github&label=stars&color=0" alt="GitHub Stars"/>
+  </a>
+  <a href="https://github.com/abhay-byte/finalbenchmark-platform/network/members">
+    <img src="https://img.shields.io/github/forks/abhay-byte/finalbenchmark-platform?style=flat-square&logo=github&label=forks&color=0" alt="GitHub Forks"/>
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square" alt="License"/>
+  </a>
+  <a href="https://opensource.org/">
+    <img src="https://img.shields.io/badge/FOSS-100%25-green?style=flat-square" alt="FOSS"/>
+  </a>
+</p>
 
-![Play Store Downloads](https://playbadges.pavi2410.com/badge/downloads?id=com.ivarna.finalbenchmark2&pretty)
-![Play Store Rating](https://playbadges.pavi2410.com/badge/ratings?id=com.ivarna.finalbenchmark2&pretty)
-![Play Store Version](https://playbadges.pavi2410.com/badge/version?id=com.ivarna.finalbenchmark2)
+<p align="center">
+  <img src="https://playbadges.pavi2410.com/badge/downloads?id=com.ivarna.finalbenchmark2&pretty" alt="Play Store Downloads"/>
+  <img src="https://playbadges.pavi2410.com/badge/ratings?id=com.ivarna.finalbenchmark2&pretty" alt="Play Store Rating"/>
+  <img src="https://playbadges.pavi2410.com/badge/version?id=com.ivarna.finalbenchmark2" alt="Play Store Version"/>
+</p>
 
-A comprehensive Android CPU benchmarking application with detailed scoring and visualization. *(GPU, RAM, and Storage benchmarks coming soon)*
+**A comprehensive Android CPU benchmarking application with detailed scoring and visualization.**
+
+*GPU, RAM, and Storage benchmarks coming soon*
 
 </div>
 
