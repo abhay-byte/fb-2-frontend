@@ -98,6 +98,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Prime Generation",
                         executionTimeMs = timeMs.toDouble(),
@@ -234,6 +236,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Fibonacci Iterative",
                         executionTimeMs = timeMs,
@@ -378,6 +382,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Matrix Multiplication",
                         executionTimeMs = timeMs,
@@ -520,6 +526,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Hash Computing",
                         executionTimeMs = timeMs,
@@ -673,6 +681,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core String Sorting",
                         executionTimeMs = timeMs,
@@ -964,6 +974,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Ray Tracing",
                         executionTimeMs = timeMs,
@@ -1091,6 +1103,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Compression",
                         executionTimeMs = timeMs,
@@ -1234,6 +1248,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core Monte Carlo π",
                         executionTimeMs = timeMs,
@@ -1371,6 +1387,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core JSON Parsing",
                         executionTimeMs = timeMs,
@@ -1500,6 +1518,8 @@ object MultiCoreBenchmarks {
 
                 CpuAffinityManager.resetPerformance()
 
+                // Thermal stabilization delay
+                kotlinx.coroutines.delay(1500)
                 BenchmarkResult(
                         name = "Multi-Core N-Queens",
                         executionTimeMs = timeMs,

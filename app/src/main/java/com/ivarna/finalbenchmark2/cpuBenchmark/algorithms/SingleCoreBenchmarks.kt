@@ -54,6 +54,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Prime Generation",
                                 executionTimeMs = timeMs.toDouble(),
@@ -117,6 +119,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Fibonacci Iterative",
                                 executionTimeMs = timeMs.toDouble(),
@@ -182,6 +186,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Matrix Multiplication",
                                 executionTimeMs = timeMs.toDouble(),
@@ -253,6 +259,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Hash Computing",
                                 executionTimeMs = timeMs.toDouble(),
@@ -339,6 +347,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core String Sorting",
                                 executionTimeMs = timeMs.toDouble(),
@@ -498,6 +508,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Ray Tracing",
                                 executionTimeMs = timeMs.toDouble(),
@@ -561,6 +573,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Compression",
                                 executionTimeMs = timeMs.toDouble(),
@@ -671,6 +685,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core Monte Carlo π",
                                 executionTimeMs = timeMs.toDouble(),
@@ -743,6 +759,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core JSON Parsing",
                                 executionTimeMs = timeMs.toDouble(),
@@ -805,6 +823,8 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.resetPerformance()
                         CpuAffinityManager.resetCpuAffinity()
 
+                        // Thermal stabilization delay
+                        kotlinx.coroutines.delay(1500)
                         return@withContext BenchmarkResult(
                                 name = "Single-Core N-Queens",
                                 executionTimeMs = timeMs.toDouble(),

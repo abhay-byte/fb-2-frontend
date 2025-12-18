@@ -1,0 +1,9 @@
+v0.5
+
+Performance Improvements:
+- Optimized matrix multiplication for better multicore scaling (350% → 750% CPU utilization)
+- Added thermal stabilization delays between benchmarks to prevent throttling
+
+Bug Fixes:
+- Fixed memory allocation bottleneck in matrix multiplication algorithm
+- Adjusted JSON parsing iterations for consistent test duration across device tiers

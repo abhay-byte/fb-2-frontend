@@ -543,7 +543,7 @@ class KotlinBenchmarkManager {
                                                 10_000_000, // FIXED WORK PER CORE: Target ~1.5s
                                         jsonDataSizeMb = 1,
                                         jsonParsingIterations =
-                                                500, // CACHE-RESIDENT: Low iterations for slow
+                                                400, // CACHE-RESIDENT: Low iterations for slow
                                         // devices (~1-2s)
                                         nqueensSize = 12 // INCREASED: 92 solutions, ~1.5s (was 8)
                                 )
@@ -574,7 +574,7 @@ class KotlinBenchmarkManager {
                                                 20_000_000, // FIXED WORK PER CORE: Target ~1.5s
                                         jsonDataSizeMb = 1,
                                         jsonParsingIterations =
-                                                4_000, // CACHE-RESIDENT: Medium iterations for mid
+                                                600, // CACHE-RESIDENT: Medium iterations for mid
                                         // devices (~1-2s)
                                         nqueensSize = 13 // INCREASED: 341 solutions, ~5s (was 9)
                                 )
