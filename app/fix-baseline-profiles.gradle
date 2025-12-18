@@ -1,0 +1,10 @@
+// F-Droid reproducible builds workaround
+// See: https://gitlab.com/fdroid/fdroiddata/-/issues/2618
+// Disables ArtProfile compilation tasks to prevent non-deterministic baseline.prof{,m} files
+
+tasks.whenTaskAdded { task ->
+    if (task.name.contains("ArtProfile")) {
+        task.enabled = false
+        println "Disabled baseline profile task: ${task.name}"
+    }
+}
