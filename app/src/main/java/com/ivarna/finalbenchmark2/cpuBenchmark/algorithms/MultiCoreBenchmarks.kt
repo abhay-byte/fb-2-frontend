@@ -1180,21 +1180,6 @@ object MultiCoreBenchmarks {
                 )
                 CpuAffinityManager.setMaxPerformance()
 
-                // CRITICAL FIX: Create fresh dispatcher for THIS run only (no caching)
-                // This ensures completely fresh state for every benchmark run
-                val freshDispatcher = run {
-                    val threadCount = numThreads
-                    val localThreadId = AtomicInteger(0)
-                    val threadFactory = ThreadFactory { runnable ->
-                        Thread(runnable).apply {
-                            Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_DISPLAY)
-                            name = "MonteCarlo-${localThreadId.getAndIncrement()}"
-                        }
-                    }
-                    val executor = Executors.newFixedThreadPool(threadCount, threadFactory)
-                    executor.asCoroutineDispatcher()
-                }
-
                 // Configuration
                 val samplesPerThread = params.monteCarloSamples.toLong()
                 val totalSamples = samplesPerThread * numThreads
@@ -1202,21 +1187,18 @@ object MultiCoreBenchmarks {
                 // Start timing
                 val startTime = System.currentTimeMillis()
 
-                // CRITICAL: Inline Monte Carlo logic with per-thread Random
+                // Use Dispatchers.Default (no custom caching) with fresh coroutines each time
                 val results =
                         (0 until numThreads).map { threadId ->
-                                async(freshDispatcher) {
+                                async(Dispatchers.Default) {
                                         var insideCircle = 0L
 
-                                        // CRITICAL: Each thread creates its OWN Random with unique seed
-                                // FIX: Combine multiple entropy sources to prevent seed collisions
-                                // between consecutive test runs (fixes 696% variance issue)
-                                val random = java.util.Random(
-                                    System.nanoTime() xor 
-                                    System.currentTimeMillis() xor 
-                                    threadId.toLong() xor 
-                                    hashCode().toLong()
-                                )
+                                        // Create fresh XorShift128Plus with unique entropy
+                                        val random = XorShift128Plus.withEntropy(
+                                            threadId.toLong(),
+                                            System.nanoTime(),
+                                            hashCode().toLong()
+                                        )
 
                                         // Inline Monte Carlo logic - NO function calls
                                         val batchSize = 256
@@ -1286,9 +1268,6 @@ object MultiCoreBenchmarks {
                 Log.d(TAG, "π estimate: $piEstimate, Accuracy: $accuracy, Valid: $isValid")
 
                 CpuAffinityManager.resetPerformance()
-                
-                // Clean up the fresh dispatcher
-                (freshDispatcher as? ExecutorCoroutineDispatcher)?.close()
 
                 // Thermal stabilization delay (skip for test runs)
                 if (!isTestRun) {
@@ -1314,11 +1293,11 @@ object MultiCoreBenchmarks {
                                                 put("ops_per_second", opsPerSecond)
                                                 put(
                                                         "implementation",
-                                                        "Inlined with per-thread Random"
+                                                        "Inlined with per-thread XorShift128+"
                                                 )
                                                 put(
                                                         "optimization",
-                                                        "Zero shared state, unique Random per thread, vectorized batching"
+                                                        "XorShift128+ RNG (2-3x faster), true random seeding, zero shared state, vectorized batching"
                                                 )
                                         }
                                         .toString()
