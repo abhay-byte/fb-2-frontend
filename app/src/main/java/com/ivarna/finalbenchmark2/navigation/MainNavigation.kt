@@ -111,7 +111,36 @@ fun MainNavigation(
                     )
                 }
                 composable("device") { DeviceScreen() }
-                composable("rankings") { RankingsScreen() }
+                composable("rankings") {
+                    RankingsScreen(
+                        onDeviceClick = { selectedItem ->
+                            val encodedData = java.net.URLEncoder.encode(
+                                com.google.gson.Gson().toJson(selectedItem),
+                                "UTF-8"
+                            )
+                            navController.navigate("cpu-comparison/$encodedData")
+                        }
+                    )
+                }
+                composable("cpu-comparison/{deviceData}") { backStackEntry ->
+                    val encodedData = backStackEntry.arguments?.getString("deviceData") ?: "{}"
+                    val decodedData = try {
+                        java.net.URLDecoder.decode(encodedData, "UTF-8")
+                    } catch (e: Exception) {
+                        encodedData
+                    }
+                    val historyRepository =
+                            com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
+                                    com.ivarna.finalbenchmark2.data.database.AppDatabase
+                                            .getDatabase(context)
+                                            .benchmarkDao()
+                            )
+                    CpuComparisonScreen(
+                        selectedDeviceJson = decodedData,
+                        historyRepository = historyRepository,
+                        onBackClick = { navController.popBackStack() }
+                    )
+                }
                 composable("history") {
                     val historyViewModel =
                             com.ivarna.finalbenchmark2.di.DatabaseInitializer

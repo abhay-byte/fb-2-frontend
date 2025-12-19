@@ -16,7 +16,21 @@ data class RankingItem(
         val normalizedScore: Int,
         val singleCore: Int,
         val multiCore: Int,
-        val isCurrentUser: Boolean = false
+        val isCurrentUser: Boolean = false,
+        val benchmarkDetails: BenchmarkDetails? = null
+)
+
+data class BenchmarkDetails(
+        val primeNumberScore: Double = 0.0,
+        val fibonacciScore: Double = 0.0,
+        val matrixMultiplicationScore: Double = 0.0,
+        val hashComputingScore: Double = 0.0,
+        val stringSortingScore: Double = 0.0,
+        val rayTracingScore: Double = 0.0,
+        val compressionScore: Double = 0.0,
+        val monteCarloScore: Double = 0.0,
+        val jsonParsingScore: Double = 0.0,
+        val nQueensScore: Double = 0.0
 )
 
 sealed interface RankingScreenState {
@@ -71,6 +85,22 @@ class RankingViewModel(private val repository: HistoryRepository) : ViewModel() 
                                     .maxByOrNull { it.benchmarkResult.normalizedScore }
 
                     if (highestCpuScore != null) {
+                        // Extract benchmark details from CPU test detail if available
+                        val details = highestCpuScore.cpuTestDetail?.let { cpuDetail ->
+                            BenchmarkDetails(
+                                primeNumberScore = cpuDetail.primeNumberScore,
+                                fibonacciScore = cpuDetail.fibonacciScore,
+                                matrixMultiplicationScore = cpuDetail.matrixMultiplicationScore,
+                                hashComputingScore = cpuDetail.hashComputingScore,
+                                stringSortingScore = cpuDetail.stringSortingScore,
+                                rayTracingScore = cpuDetail.rayTracingScore,
+                                compressionScore = cpuDetail.compressionScore,
+                                monteCarloScore = cpuDetail.monteCarloScore,
+                                jsonParsingScore = cpuDetail.jsonParsingScore,
+                                nQueensScore = cpuDetail.nQueensScore
+                            )
+                        }
+                        
                         userScore =
                                 RankingItem(
                                         name = userDeviceName,
@@ -83,7 +113,8 @@ class RankingViewModel(private val repository: HistoryRepository) : ViewModel() 
                                         multiCore =
                                                 highestCpuScore.benchmarkResult.multiCoreScore
                                                         .toInt(),
-                                        isCurrentUser = true
+                                        isCurrentUser = true,
+                                        benchmarkDetails = details
                                 )
                     }
 

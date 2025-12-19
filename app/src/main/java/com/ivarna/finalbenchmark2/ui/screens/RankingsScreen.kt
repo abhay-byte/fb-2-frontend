@@ -2,6 +2,7 @@ package com.ivarna.finalbenchmark2.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -31,7 +32,8 @@ import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun RankingsScreen(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onDeviceClick: (RankingItem) -> Unit = {}
 ) {
     val context = LocalContext.current
     val historyRepository = remember {
@@ -87,7 +89,8 @@ fun RankingsScreen(
             is RankingScreenState.Success -> {
                 if (selectedCategory == "CPU") {
                     CpuRankingList(
-                        rankings = (screenState as RankingScreenState.Success).rankings
+                        rankings = (screenState as RankingScreenState.Success).rankings,
+                        onItemClick = onDeviceClick
                     )
                 } else {
                     ComingSoonContent(category = selectedCategory)
@@ -131,7 +134,8 @@ private fun RankingFilterBar(
 
 @Composable
 private fun CpuRankingList(
-    rankings: List<RankingItem>
+    rankings: List<RankingItem>,
+    onItemClick: (RankingItem) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier
@@ -141,14 +145,18 @@ private fun CpuRankingList(
         contentPadding = PaddingValues(vertical = 8.dp)
     ) {
         items(rankings) { item ->
-            RankingItemCard(item)
+            RankingItemCard(
+                item = item,
+                onClick = { onItemClick(item) }
+            )
         }
     }
 }
 
 @Composable
 private fun RankingItemCard(
-    item: RankingItem
+    item: RankingItem,
+    onClick: () -> Unit
 ) {
     val topScoreMax = 1200
     val scoreProgress = (item.normalizedScore.toFloat() / topScoreMax).coerceIn(0f, 1f)
@@ -183,7 +191,8 @@ private fun RankingItemCard(
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .then(borderModifier),
+            .then(borderModifier)
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
             containerColor = containerColor
