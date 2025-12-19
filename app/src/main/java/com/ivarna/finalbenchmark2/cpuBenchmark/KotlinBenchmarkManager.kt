@@ -673,7 +673,7 @@ class KotlinBenchmarkManager {
                                         // CACHE-RESIDENT STRATEGY: Small matrices with high
                                         // iterations
 
-                                        primeRange = 50_000_000,
+                                        primeRange = 900_000_000,
                                         fibonacciNRange = Pair(92, 92), // Use fixed max safe value
                                         fibonacciIterations = 125_000_000,
                                         matrixSize =

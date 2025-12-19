@@ -44,60 +44,29 @@ object MultiCoreBenchmarks {
         private val threadId = AtomicInteger(0)
 
         /**
-         * Test 1: Parallel Prime Generation FIXED: Use strided loop for perfect load balancing Each
-         * thread processes numbers with step = numThreads for equal work distribution
+         * Test 1: Parallel Prime Generation using Sieve of Eratosthenes
+         * Uses segmented sieve approach for optimal parallelization
+         * Complexity: O(N log log N) with near-linear multi-core speedup
+         * UNIFIED: Uses same algorithm as Single-Core for fair comparison
          */
         suspend fun primeGeneration(params: WorkloadParams, isTestRun: Boolean = false): BenchmarkResult = coroutineScope {
                 Log.d(
                         TAG,
-                        "Starting Multi-Core Prime Generation - FIXED: Strided loop for load balancing"
+                        "Starting Multi-Core Prime Generation - Sieve of Eratosthenes (Parallel Segmented)"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
                 val (primeCount, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                                val range = params.primeRange
-
-                                // FIXED: Use strided loop for perfect load balancing
-                                val results =
-                                        (0 until numThreads)
-                                                .map { threadId ->
-                                                        async(highPriorityDispatcher) {
-                                                                var count = 0
-
-                                                                // FIXED: Strided loop - each thread
-                                                                // processes every
-                                                                // numThreads-th number
-                                                                // Thread 0: 0, numThreads,
-                                                                // 2*numThreads, ...
-                                                                // Thread 1: 1, 1+numThreads,
-                                                                // 1+2*numThreads, ...
-                                                                // This ensures equal mix of easy
-                                                                // (small) and hard
-                                                                // (large) numbers
-                                                                var i = threadId
-                                                                while (i <= range) {
-                                                                        if (i > 1 &&
-                                                                                        BenchmarkHelpers
-                                                                                                .isPrime(
-                                                                                                        i.toLong()
-                                                                                                )
-                                                                        ) {
-                                                                                count++
-                                                                        }
-                                                                        i += numThreads
-                                                                }
-
-                                                                count
-                                                        }
-                                                }
-                                                .awaitAll()
-                                                .sum()
-
-                                results
+                                // Use parallel segmented Sieve of Eratosthenes
+                                BenchmarkHelpers.parallelSieveOfEratosthenes(
+                                        params.primeRange,
+                                        numThreads,
+                                        highPriorityDispatcher
+                                )
                         }
 
-                val ops = params.primeRange.toDouble() // Operations = numbers checked
+                val ops = params.primeRange.toDouble() // Operations = numbers processed
                 val opsPerSecond = ops / (timeMs / 1000.0)
 
                 CpuAffinityManager.resetPerformance()
@@ -117,14 +86,16 @@ object MultiCoreBenchmarks {
                                                 put("prime_count", primeCount)
                                                 put("range", params.primeRange)
                                                 put("threads", numThreads)
-                                                put("algorithm", "Strided Trial Division")
+                                                put("algorithm", "Sieve of Eratosthenes")
+                                                put("complexity", "O(N log log N)")
+                                                put("implementation", "Parallel Segmented Sieve")
                                                 put(
-                                                        "load_balancing",
-                                                        "Perfect - each thread gets equal mix of easy/hard numbers"
+                                                        "parallelization",
+                                                        "Base primes computed single-threaded, segments processed in parallel"
                                                 )
                                                 put(
-                                                        "fix",
-                                                        "Replaced range-based chunking with strided loop"
+                                                        "description",
+                                                        "Segmented sieve: base primes up to √N, then parallel segment sieving"
                                                 )
                                         }
                                         .toString()

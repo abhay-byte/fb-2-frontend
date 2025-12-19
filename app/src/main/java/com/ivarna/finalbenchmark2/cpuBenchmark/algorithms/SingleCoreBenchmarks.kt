@@ -13,42 +13,27 @@ object SingleCoreBenchmarks {
         private const val TAG = "SingleCoreBenchmarks"
 
         /**
-         * Test 1: Prime Number Generation using Trial Division Complexity: O(N√N) - CPU bound
-         * algorithm Tests: Pure CPU arithmetic operations (division, modulo) FIXED: Use same
-         * algorithm as Multi-Core for fair comparison
+         * Test 1: Prime Number Generation using Sieve of Eratosthenes
+         * Complexity: O(N log log N) - Much faster than trial division
+         * Tests: Memory access patterns, cache efficiency, and CPU arithmetic
+         * UNIFIED: Uses same algorithm as Multi-Core for fair comparison
          */
         suspend fun primeGeneration(params: WorkloadParams, isTestRun: Boolean = false): BenchmarkResult =
                 withContext(Dispatchers.Default) {
                         Log.d(
                                 TAG,
-                                "Starting Prime Generation (range: ${params.primeRange}) - FIXED: Trial Division (CPU-bound)"
+                                "Starting Prime Generation (range: ${params.primeRange}) - Sieve of Eratosthenes (Single-threaded)"
                         )
                         CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
-                        val (result, timeMs) =
+                        val (primeCount, timeMs) =
                                 BenchmarkHelpers.measureBenchmark {
-                                        val n = params.primeRange
-                                        var primeCount = 0
-
-                                        // FIXED: Use Trial Division (same as Multi-Core) for fair
-                                        // comparison
-                                        for (i in 1..n) {
-                                                if (BenchmarkHelpers.isPrime(i.toLong())) {
-                                                        primeCount++
-                                                }
-                                                // FIXED: Only yield every 5,000 iterations to
-                                                // prevent UI freeze
-                                                if (i % 5000 == 0) {
-                                                        kotlinx.coroutines.yield()
-                                                }
-                                        }
-
-                                        primeCount
+                                        // Use single-threaded Sieve of Eratosthenes
+                                        BenchmarkHelpers.sieveOfEratosthenes(params.primeRange)
                                 }
 
-                        val primeCount = result
-                        val ops = params.primeRange.toDouble() // Operations = numbers checked
+                        val ops = params.primeRange.toDouble() // Operations = numbers processed
                         val opsPerSecond = ops / (timeMs / 1000.0)
 
                         CpuAffinityManager.resetPerformance()
@@ -68,11 +53,12 @@ object SingleCoreBenchmarks {
                                                 .apply {
                                                         put("prime_count", primeCount)
                                                         put("range", params.primeRange)
-                                                        put("algorithm", "Trial Division")
-                                                        put("complexity", "O(N√N)")
+                                                        put("algorithm", "Sieve of Eratosthenes")
+                                                        put("complexity", "O(N log log N)")
+                                                        put("implementation", "Single-threaded")
                                                         put(
-                                                                "fix",
-                                                                "Switched from Sieve to Trial Division for CPU-bound comparison"
+                                                                "description",
+                                                                "Classic sieve algorithm - marks composites, counts primes"
                                                         )
                                                 }
                                                 .toString()

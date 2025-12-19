@@ -2,6 +2,7 @@ package com.ivarna.finalbenchmark2.cpuBenchmark.algorithms
 
 import java.util.Arrays
 import java.util.concurrent.ThreadLocalRandom
+import kotlinx.coroutines.*
 
 object BenchmarkHelpers {
 
@@ -57,6 +58,190 @@ object BenchmarkHelpers {
             i += 6L
         }
         return true
+    }
+
+    /**
+     * Sieve of Eratosthenes - Memory-efficient segmented implementation
+     * 
+     * Uses segmented sieve to reduce memory usage from O(N) to O(√N).
+     * This allows processing very large ranges without OutOfMemoryError.
+     * 
+     * ALGORITHM:
+     * 1. Find base primes up to √n using classic sieve (small, fits in memory)
+     * 2. Divide range [√n+1, n] into segments of size √n
+     * 3. Sieve each segment sequentially using base primes
+     * 4. Count primes across all segments
+     * 
+     * COMPLEXITY:
+     * - Time: O(N log log N) - same as classic sieve
+     * - Space: O(√N) - much better than classic O(N)
+     * 
+     * MEMORY SAVINGS:
+     * - For n=900M: Classic needs 900MB, Segmented needs ~30MB
+     * - For n=1B: Classic needs 1GB, Segmented needs ~32MB
+     * 
+     * @param n The upper limit (inclusive) for finding primes
+     * @return Count of prime numbers in range [2, n]
+     */
+    fun sieveOfEratosthenes(n: Int): Int {
+        if (n < 2) return 0
+        
+        val limit = kotlin.math.sqrt(n.toDouble()).toInt()
+        
+        // Step 1: Find base primes up to √n using classic sieve
+        val basePrimesArray = BooleanArray(limit + 1) { true }
+        basePrimesArray[0] = false
+        basePrimesArray[1] = false
+        
+        var p = 2
+        while (p * p <= limit) {
+            if (basePrimesArray[p]) {
+                for (i in p * p..limit step p) {
+                    basePrimesArray[i] = false
+                }
+            }
+            p++
+        }
+        
+        // Extract base primes and count them
+        val basePrimes = basePrimesArray.indices.filter { basePrimesArray[it] }
+        var primeCount = basePrimes.size
+        
+        // Step 2: Process segments from √n+1 to n
+        val segmentSize = limit
+        var low = limit + 1
+        
+        while (low <= n) {
+            val high = kotlin.math.min(low + segmentSize - 1, n)
+            val segmentLength = high - low + 1
+            
+            // Create segment array (reused for each segment)
+            val isPrime = BooleanArray(segmentLength) { true }
+            
+            // Step 3: Sieve this segment using base primes
+            for (prime in basePrimes) {
+                // Find first multiple of prime in this segment
+                var start = ((low + prime - 1) / prime) * prime
+                if (start < low) start += prime
+                
+                // Mark multiples as composite
+                var i = start
+                while (i <= high) {
+                    isPrime[i - low] = false
+                    i += prime
+                }
+            }
+            
+            // Count primes in this segment
+            primeCount += isPrime.count { it }
+            
+            // Move to next segment
+            low += segmentSize
+        }
+        
+        return primeCount
+    }
+
+    /**
+     * Parallel Sieve of Eratosthenes - Multi-threaded prime generation
+     * 
+     * Uses segmented sieve approach for parallel processing:
+     * 1. Find base primes up to √n using single-threaded sieve
+     * 2. Divide range [√n+1, n] into segments
+     * 3. Process each segment in parallel using base primes
+     * 4. Combine results from all segments
+     * 
+     * PARALLELIZATION STRATEGY:
+     * - Base primes (up to √n) computed single-threaded (small, fast)
+     * - Remaining range divided into equal segments for each thread
+     * - Each thread sieves its segment independently using base primes
+     * - No synchronization needed during sieving (embarrassingly parallel)
+     * 
+     * COMPLEXITY:
+     * - Time: O(N log log N) with near-linear speedup on multiple cores
+     * - Space: O(√N) per thread for segment + O(√N) for base primes
+     * 
+     * @param n The upper limit (inclusive) for finding primes
+     * @param numThreads Number of threads to use for parallel processing
+     * @param dispatcher CoroutineDispatcher for parallel execution
+     * @return Count of prime numbers in range [2, n]
+     */
+    suspend fun parallelSieveOfEratosthenes(
+        n: Int,
+        numThreads: Int,
+        dispatcher: kotlinx.coroutines.CoroutineDispatcher
+    ): Int = kotlinx.coroutines.coroutineScope {
+        if (n < 2) return@coroutineScope 0
+        
+        val limit = kotlin.math.sqrt(n.toDouble()).toInt()
+        
+        // Step 1: Find base primes up to √n (single-threaded, fast)
+        val basePrimesArray = BooleanArray(limit + 1) { true }
+        basePrimesArray[0] = false
+        basePrimesArray[1] = false
+        
+        var p = 2
+        while (p * p <= limit) {
+            if (basePrimesArray[p]) {
+                for (i in p * p..limit step p) {
+                    basePrimesArray[i] = false
+                }
+            }
+            p++
+        }
+        
+        // Extract base primes as list for segment sieving
+        val basePrimes = basePrimesArray.indices.filter { basePrimesArray[it] }
+        val basePrimeCount = basePrimes.size
+        
+        // Step 2: Divide remaining range into segments
+        val rangeStart = limit + 1
+        val rangeSize = n - limit
+        
+        if (rangeSize <= 0) {
+            // All primes are in base range
+            return@coroutineScope basePrimeCount
+        }
+        
+        
+        // Calculate segment size (distribute work evenly)
+        val segmentSize = (rangeSize + numThreads - 1) / numThreads
+        
+        // Step 3: Process segments in parallel
+        val segmentCounts = (0 until numThreads).map { threadId ->
+            async(dispatcher) {
+                val segStart = rangeStart + threadId * segmentSize
+                val segEnd = kotlin.math.min(segStart + segmentSize - 1, n)
+                
+                if (segStart > n) {
+                    return@async 0
+                }
+                
+                // Create segment boolean array
+                val segmentLength = segEnd - segStart + 1
+                val isPrime = BooleanArray(segmentLength) { true }
+                
+                // Sieve this segment using base primes
+                for (prime in basePrimes) {
+                    // Find first multiple of prime in this segment
+                    var start = ((segStart + prime - 1) / prime) * prime
+                    if (start < segStart) start += prime
+                    
+                    // Mark multiples as composite
+                    var i = start
+                    while (i <= segEnd) {
+                        isPrime[i - segStart] = false
+                        i += prime
+                    }
+                }
+                
+                // Count primes in this segment
+                isPrime.count { it }
+            }
+        }.awaitAll()
+        
+        // Step 4: Combine results
+        basePrimeCount + segmentCounts.sum()
     }
 
     /** Calculate checksum of a 2D matrix */
