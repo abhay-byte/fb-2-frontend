@@ -674,48 +674,22 @@ class KotlinBenchmarkManager {
                                         // iterations
 
                                         primeRange = 900_000_000,
-                                        fibonacciNRange = Pair(92, 92), // Use fixed max safe value
-                                        fibonacciIterations = 125_000_000,
-                                        matrixSize =
-                                                128, // CACHE-RESIDENT: Fixed small size for cache
-                                        // efficiency
-                                        matrixIterations =
-                                                3000, // CACHE-RESIDENT: High iterations for
-                                        // flagship devices
+                                        fibonacciNRange = Pair(92, 92),
+                                        fibonacciIterations = 5_000_000,
+                                        matrixSize = 128,
+                                        matrixIterations = 100,
                                         hashDataSizeMb = 8,
-                                        hashIterations =
-                                                2_500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
-                                        // seconds
-
-                                        stringSortIterations =
-                                                5_000, // CACHE-RESIDENT: Explicit control - target
-                                        // ~1.0-2.0s
-                                        rayTracingIterations =
-                                                800, // FIXED: Increased to 2000 to reach ~5s
-                                        // target
-                                        // duration for better thermal testing
-                                        rayTracingResolution =
-                                                Pair(
-                                                        256, // REVERTED: 256×256 caused thermal
-                                                        // throttling
-                                                        256
-                                                ), // OPTIMIZED: Increased from 100×100 to 256×256
-                                        // for better multi-core scaling
-                                        rayTracingDepth = 5,
-                                        compressionDataSizeMb = 2,
-                                        compressionIterations =
-                                                2_000, // INCREASED: Target ~15s execution (was
-                                        // 100)
-                                        monteCarloSamples =
-                                                4_999_000_000L, // FIXED WORK PER CORE: Target ~1.5s
-                                        // (was
-                                        // 15M)
+                                        hashIterations = 10_000,
+                                        stringSortIterations = 100,
+                                        rayTracingIterations = 10,
+                                        rayTracingResolution = Pair(100, 100),
+                                        rayTracingDepth = 2,
+                                        compressionDataSizeMb = 1,
+                                        compressionIterations = 100,
+                                        monteCarloSamples = 1_000_000L,
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations =
-                                                800, // CACHE-RESIDENT: High iterations for flagship
-                                        // devices (~1-2s)
-                                        nqueensSize =
-                                                15 // INCREASED: 14,200 solutions, ~20s (was 10)
+                                        jsonParsingIterations = 100,
+                                        nqueensSize = 11
                                 )
                         else -> WorkloadParams() // Default values
                 }

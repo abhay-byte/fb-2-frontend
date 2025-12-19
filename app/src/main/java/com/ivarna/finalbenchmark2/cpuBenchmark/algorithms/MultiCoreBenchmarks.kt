@@ -64,7 +64,9 @@ object MultiCoreBenchmarks {
 
                 // FIXED WORK PER CORE: Each thread processes the full range
                 val rangePerThread = params.primeRange
-                val totalRange = rangePerThread * numThreads
+                // CRITICAL: Use Long to prevent integer overflow
+                // For 900M × 8 cores = 7.2B, which exceeds Int.MAX_VALUE (2.1B)
+                val totalRange = rangePerThread.toLong() * numThreads
 
                 val (totalPrimes, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
