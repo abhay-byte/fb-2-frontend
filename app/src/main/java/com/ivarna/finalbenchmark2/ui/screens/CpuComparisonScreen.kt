@@ -27,13 +27,25 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.Gson
-import com.ivarna.finalbenchmark2.data.database.AppDatabase
 import com.ivarna.finalbenchmark2.data.repository.HistoryRepository
 import com.ivarna.finalbenchmark2.ui.viewmodels.BenchmarkDetails
 import com.ivarna.finalbenchmark2.ui.viewmodels.RankingItem
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
-import kotlin.math.abs
+
+// Scaling factors from KotlinBenchmarkManager
+private val SCORING_FACTORS = mapOf(
+    "PRIME_GENERATION" to 1.7985e-6*2,
+    "FIBONACCI_ITERATIVE" to 4.365e-7,
+    "MATRIX_MULTIPLICATION" to 1.56465e-8/4,
+    "HASH_COMPUTING" to 2.778e-5/2,
+    "STRING_SORTING" to 1.602e-7/2,
+    "RAY_TRACING" to 4.902e-6,
+    "COMPRESSION" to 1.5243e-8,
+    "MONTE_CARLO" to 0.6125e-6/50,
+    "JSON_PARSING" to 1.56e-6*4,
+    "N_QUEENS" to 2.011e-7/2
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,10 +181,10 @@ fun CpuComparisonScreen(
                     )
                 }
                 
-                // Individual benchmark comparisons
+                // Single-Core Benchmarks Section
                 item {
                     Text(
-                        text = "Individual Benchmarks",
+                        text = "Single-Core Benchmarks",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onBackground,
@@ -180,9 +192,28 @@ fun CpuComparisonScreen(
                     )
                 }
                 
-                // Benchmark comparison items
-                val benchmarks = getBenchmarkComparisonItems(userDevice, selectedDevice)
-                items(benchmarks) { benchmark ->
+                val singleCoreBenchmarks = getSingleCoreBenchmarkItems(userDevice, selectedDevice)
+                items(singleCoreBenchmarks) { benchmark ->
+                    BenchmarkComparisonCard(
+                        benchmark = benchmark,
+                        userDeviceName = userDevice?.name ?: "Your Device",
+                        selectedDeviceName = selectedDevice.name
+                    )
+                }
+                
+                // Multi-Core Benchmarks Section
+                item {
+                    Text(
+                        text = "Multi-Core Benchmarks",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                    )
+                }
+                
+                val multiCoreBenchmarks = getMultiCoreBenchmarkItems(userDevice, selectedDevice)
+                items(multiCoreBenchmarks) { benchmark ->
                     BenchmarkComparisonCard(
                         benchmark = benchmark,
                         userDeviceName = userDevice?.name ?: "Your Device",
@@ -429,6 +460,12 @@ private fun ScoreComparisonCard(
         label = "selectedProgress"
     )
     
+    // Calculate percentage difference
+    val scoreDiff = userScore - selectedScore
+    val percentDiff = if (selectedScore > 0) {
+        (scoreDiff.toFloat() / selectedScore * 100).toInt()
+    } else if (userScore > 0) 100 else 0
+    
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
@@ -443,21 +480,41 @@ private fun ScoreComparisonCard(
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = title,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
+                // Percentage difference chip
+                if (percentDiff != 0) {
+                    val diffColor = if (percentDiff > 0) Color(0xFF4CAF50) else Color(0xFFE53935)
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = diffColor.copy(alpha = 0.15f)
+                    ) {
+                        Text(
+                            text = if (percentDiff > 0) "+$percentDiff%" else "$percentDiff%",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = diffColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
+                }
             }
             
             // User's progress bar
@@ -550,10 +607,83 @@ data class BenchmarkComparisonItem(
     val selectedScore: Double
 )
 
-private fun getBenchmarkComparisonItems(
+private fun getSingleCoreBenchmarkItems(
     userDevice: RankingItem?,
     selectedDevice: RankingItem
 ): List<BenchmarkComparisonItem> {
+    val userDetails = userDevice?.benchmarkDetails
+    val selectedDetails = selectedDevice.benchmarkDetails
+    
+    return listOf(
+        BenchmarkComparisonItem(
+            name = "Prime Generation",
+            icon = Icons.Rounded.Calculate,
+            userScore = userDetails?.primeNumberScore ?: 0.0,
+            selectedScore = selectedDetails?.primeNumberScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "Fibonacci",
+            icon = Icons.Rounded.Functions,
+            userScore = userDetails?.fibonacciScore ?: 0.0,
+            selectedScore = selectedDetails?.fibonacciScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "Matrix Multiplication",
+            icon = Icons.Rounded.GridOn,
+            userScore = userDetails?.matrixMultiplicationScore ?: 0.0,
+            selectedScore = selectedDetails?.matrixMultiplicationScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "Hash Computing",
+            icon = Icons.Rounded.Lock,
+            userScore = userDetails?.hashComputingScore ?: 0.0,
+            selectedScore = selectedDetails?.hashComputingScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "String Sorting",
+            icon = Icons.Rounded.SortByAlpha,
+            userScore = userDetails?.stringSortingScore ?: 0.0,
+            selectedScore = selectedDetails?.stringSortingScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "Ray Tracing",
+            icon = Icons.Rounded.Lightbulb,
+            userScore = userDetails?.rayTracingScore ?: 0.0,
+            selectedScore = selectedDetails?.rayTracingScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "Compression",
+            icon = Icons.Rounded.Compress,
+            userScore = userDetails?.compressionScore ?: 0.0,
+            selectedScore = selectedDetails?.compressionScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "Monte Carlo",
+            icon = Icons.Rounded.Casino,
+            userScore = userDetails?.monteCarloScore ?: 0.0,
+            selectedScore = selectedDetails?.monteCarloScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "JSON Parsing",
+            icon = Icons.Rounded.Code,
+            userScore = userDetails?.jsonParsingScore ?: 0.0,
+            selectedScore = selectedDetails?.jsonParsingScore ?: 0.0
+        ),
+        BenchmarkComparisonItem(
+            name = "N-Queens",
+            icon = Icons.Rounded.Dashboard,
+            userScore = userDetails?.nQueensScore ?: 0.0,
+            selectedScore = selectedDetails?.nQueensScore ?: 0.0
+        )
+    )
+}
+
+private fun getMultiCoreBenchmarkItems(
+    userDevice: RankingItem?,
+    selectedDevice: RankingItem
+): List<BenchmarkComparisonItem> {
+    // For now, return the same items but we'll need to store multi-core scores separately
+    // This is a placeholder - in the future, BenchmarkDetails should have separate single/multi scores
     val userDetails = userDevice?.benchmarkDetails
     val selectedDetails = selectedDevice.benchmarkDetails
     
@@ -731,7 +861,7 @@ private fun BenchmarkComparisonCard(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = formatBenchmarkScore(benchmark.userScore),
+                        text = String.format("%.2f pts", benchmark.userScore),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.primary
@@ -775,7 +905,7 @@ private fun BenchmarkComparisonCard(
                     }
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = formatBenchmarkScore(benchmark.selectedScore),
+                        text = String.format("%.2f pts", benchmark.selectedScore),
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.secondary,
@@ -793,14 +923,5 @@ private fun formatScore(score: Int): String {
         score >= 1_000_000 -> String.format("%.1fM", score / 1_000_000.0)
         score >= 1_000 -> String.format("%.1fK", score / 1_000.0)
         else -> score.toString()
-    }
-}
-
-private fun formatBenchmarkScore(score: Double): String {
-    return when {
-        score >= 1_000_000 -> String.format("%.2fM", score / 1_000_000.0)
-        score >= 1_000 -> String.format("%.2fK", score / 1_000.0)
-        score > 0 -> String.format("%.2f", score)
-        else -> "N/A"
     }
 }
