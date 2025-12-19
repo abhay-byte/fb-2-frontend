@@ -99,26 +99,24 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
-                        // JIT warm-up: Run small number of iterations to force JIT compilation
-                        // This ensures consistent performance between consecutive runs
-                        val warmupN = 35
-                        var warmupResult = 0L
-                        repeat(10_000) {
-                            warmupResult += BenchmarkHelpers.fibonacciIterative(warmupN)
-                        }
-                        Log.d(TAG, "JIT warm-up complete (warmup sum: $warmupResult)")
+                        // INLINED Fibonacci - prevents JIT function-level caching variance
 
                         val (results, timeMs) =
                                 BenchmarkHelpers.measureBenchmark {
-                                        val targetN = 35 // Consistent with Multi-Core config
-                                        val iterations =
-                                                params.fibonacciIterations // Use configurable
-                                        // workload
+                                        val targetN = 35
+                                        val iterations = params.fibonacciIterations
 
                                         var totalResult = 0L
                                         repeat(iterations) {
-                                                totalResult +=
-                                                        BenchmarkHelpers.fibonacciIterative(targetN)
+                                                // Inline Fibonacci computation
+                                                var prev = 0L
+                                                var curr = 1L
+                                                for (i in 2..targetN) {
+                                                    val next = prev + curr
+                                                    prev = curr
+                                                    curr = next
+                                                }
+                                                totalResult += curr
                                         }
                                         totalResult
                                 }
@@ -659,7 +657,9 @@ object SingleCoreBenchmarks {
                             var sum = 0.0
                             var term = 0L
 
-                            repeat(iterations.toInt()) {
+                            // Use while loop instead of repeat() to handle Long iterations
+                            // repeat() takes Int, which overflows for >2.1 billion iterations
+                            while (term < iterations) {
                                 // Leibniz: (-1)^n / (2n + 1)
                                 val denominator = 2.0 * term + 1.0
                                 val sign = if (term % 2 == 0L) 1.0 else -1.0

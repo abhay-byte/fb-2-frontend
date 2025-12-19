@@ -159,13 +159,7 @@ object MultiCoreBenchmarks {
                 // Expected value for validation (fib(35) = 9227465)
                 val expectedFibValue = 9227465L
 
-                // JIT warm-up: Run small number of iterations to force JIT compilation
-                // This ensures consistent performance between consecutive runs
-                var warmupResult = 0L
-                repeat(10_000) {
-                    warmupResult += BenchmarkHelpers.fibonacciIterative(targetN)
-                }
-                Log.d(TAG, "JIT warm-up complete (warmup sum: $warmupResult)")
+                // REMOVED JIT warm-up - inlined Fibonacci instead
 
                 // EXPLICIT timing with try-catch for debugging
                 val startTime = System.currentTimeMillis()
@@ -182,13 +176,16 @@ object MultiCoreBenchmarks {
                                         async(highPriorityDispatcher) {
                                                 var threadSum = 0L
 
-                                                // Each thread computes fibonacci(targetN) fixed
-                                                // number of times
+                                                // INLINED Fibonacci - prevents JIT function caching
                                                 repeat(iterationsPerThread) { iteration ->
-                                                        val fibResult =
-                                                                BenchmarkHelpers.fibonacciIterative(
-                                                                        targetN
-                                                                )
+                                                        var prev = 0L
+                                                        var curr = 1L
+                                                        for (i in 2..targetN) {
+                                                            val next = prev + curr
+                                                            prev = curr
+                                                            curr = next
+                                                        }
+                                                        val fibResult = curr
                                                         threadSum += fibResult
 
                                                         // Validate first result
@@ -1200,13 +1197,17 @@ object MultiCoreBenchmarks {
                         var sum = 0.0
                         var term = threadId.toLong()
                         val step = numThreads.toLong()
+                        var count = 0L
 
-                        repeat(iterationsPerThread.toInt()) {
+                        // Use while loop instead of repeat() to handle Long iterations
+                        // repeat() takes Int, which overflows for >2.1 billion iterations
+                        while (count < iterationsPerThread) {
                             // Leibniz: (-1)^n / (2n + 1)
                             val denominator = 2.0 * term + 1.0
                             val sign = if (term % 2 == 0L) 1.0 else -1.0
                             sum += sign / denominator
                             term += step
+                            count++
                         }
 
                         Log.d(TAG, "Thread $threadId: computed $iterationsPerThread terms, partial sum: $sum")
