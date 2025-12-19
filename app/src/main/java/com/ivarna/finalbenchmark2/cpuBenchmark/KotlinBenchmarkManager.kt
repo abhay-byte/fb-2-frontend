@@ -32,7 +32,7 @@ class KotlinBenchmarkManager {
                 BenchmarkName.STRING_SORTING to 1.602e-7/2,          // 20 / 62.42 Mops/s
                 BenchmarkName.RAY_TRACING to 4.902e-6,             // 20 / 2.04 Mops/s
                 BenchmarkName.COMPRESSION to 1.5243e-8,            // 20 / 656.04 Mops/s
-                BenchmarkName.MONTE_CARLO to 0.6125e-6,             // 20 / 16.32 Mops/s
+                BenchmarkName.MONTE_CARLO to 0.6125e-6/50,             // 20 / 16.32 Mops/s
                 BenchmarkName.JSON_PARSING to 1.56e-6*4,            // 20 / 6.41 Mops/s
                 BenchmarkName.N_QUEENS to 2.011e-7/2                 // 20 / 66.18e6 ops/s
         )
@@ -601,7 +601,7 @@ class KotlinBenchmarkManager {
                                         rayTracingDepth = 2,
                                         compressionDataSizeMb = 1,
                                         compressionIterations = 100,
-                                        monteCarloSamples = 1_000_000,
+                                        monteCarloSamples = 1_000_000L,
                                         jsonDataSizeMb = 1,
                                         jsonParsingIterations = 100,
                                         nqueensSize = 11
@@ -630,7 +630,7 @@ class KotlinBenchmarkManager {
                                         compressionIterations =
                                                 600, // INCREASED: Target ~15s execution (was 20)
                                         monteCarloSamples =
-                                                10_000_000, // FIXED WORK PER CORE: Target ~1.5s
+                                                10_000_000L, // FIXED WORK PER CORE: Target ~1.5s
                                         jsonDataSizeMb = 1,
                                         jsonParsingIterations =
                                                 400, // CACHE-RESIDENT: Low iterations for slow
@@ -661,7 +661,7 @@ class KotlinBenchmarkManager {
                                         compressionIterations =
                                                 1_000, // INCREASED: Target ~15s execution (was 50)
                                         monteCarloSamples =
-                                                20_000_000, // FIXED WORK PER CORE: Target ~1.5s
+                                                200_000_000L, // FIXED WORK PER CORE: Target ~1.5s
                                         jsonDataSizeMb = 1,
                                         jsonParsingIterations =
                                                 600, // CACHE-RESIDENT: Medium iterations for mid
@@ -707,7 +707,7 @@ class KotlinBenchmarkManager {
                                                 2_000, // INCREASED: Target ~15s execution (was
                                         // 100)
                                         monteCarloSamples =
-                                                500_000_000, // FIXED WORK PER CORE: Target ~1.5s
+                                                4_999_000_000L, // FIXED WORK PER CORE: Target ~1.5s
                                         // (was
                                         // 15M)
                                         jsonDataSizeMb = 1,

@@ -159,6 +159,14 @@ object MultiCoreBenchmarks {
                 // Expected value for validation (fib(35) = 9227465)
                 val expectedFibValue = 9227465L
 
+                // JIT warm-up: Run small number of iterations to force JIT compilation
+                // This ensures consistent performance between consecutive runs
+                var warmupResult = 0L
+                repeat(10_000) {
+                    warmupResult += BenchmarkHelpers.fibonacciIterative(targetN)
+                }
+                Log.d(TAG, "JIT warm-up complete (warmup sum: $warmupResult)")
+
                 // EXPLICIT timing with try-catch for debugging
                 val startTime = System.currentTimeMillis()
                 var totalResults = 0L

@@ -99,6 +99,15 @@ object SingleCoreBenchmarks {
                         CpuAffinityManager.setLastCoreAffinity()
                         CpuAffinityManager.setMaxPerformance()
 
+                        // JIT warm-up: Run small number of iterations to force JIT compilation
+                        // This ensures consistent performance between consecutive runs
+                        val warmupN = 35
+                        var warmupResult = 0L
+                        repeat(10_000) {
+                            warmupResult += BenchmarkHelpers.fibonacciIterative(warmupN)
+                        }
+                        Log.d(TAG, "JIT warm-up complete (warmup sum: $warmupResult)")
+
                         val (results, timeMs) =
                                 BenchmarkHelpers.measureBenchmark {
                                         val targetN = 35 // Consistent with Multi-Core config

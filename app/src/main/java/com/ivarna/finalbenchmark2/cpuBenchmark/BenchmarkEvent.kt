@@ -57,7 +57,7 @@ data class WorkloadParams(
         val compressionDataSizeMb: Int = 2,
         val compressionIterations: Int =
                 100, // FIXED WORK PER CORE: Target ~1.5-2.0 seconds execution
-        val monteCarloSamples: Int = 1000000,
+        val monteCarloSamples: Long = 1000000L,
         val jsonDataSizeMb: Int = 1,
         val jsonParsingIterations: Int = 1000, // CACHE-RESIDENT: Number of parsing iterations
         val nqueensSize: Int = 10
