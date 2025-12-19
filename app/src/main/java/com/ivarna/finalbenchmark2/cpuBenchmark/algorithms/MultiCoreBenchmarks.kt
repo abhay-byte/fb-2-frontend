@@ -45,29 +45,44 @@ object MultiCoreBenchmarks {
 
         /**
          * Test 1: Parallel Prime Generation using Sieve of Eratosthenes
-         * Uses segmented sieve approach for optimal parallelization
-         * Complexity: O(N log log N) with near-linear multi-core speedup
-         * UNIFIED: Uses same algorithm as Single-Core for fair comparison
+         * 
+         * FIXED WORK PER CORE APPROACH:
+         * - Each thread processes the FULL range independently
+         * - Total work scales with cores: range × numThreads
+         * - Ensures similar execution time and Mops/s as single-core
+         * - Same pattern as Fibonacci, Matrix, and other multi-core benchmarks
+         * 
+         * COMPLEXITY: O(N log log N) per thread
+         * TOTAL WORK: O(N log log N × numThreads)
          */
         suspend fun primeGeneration(params: WorkloadParams, isTestRun: Boolean = false): BenchmarkResult = coroutineScope {
                 Log.d(
                         TAG,
-                        "Starting Multi-Core Prime Generation - Sieve of Eratosthenes (Parallel Segmented)"
+                        "Starting Multi-Core Prime Generation - Fixed Work Per Core (range: ${params.primeRange}, threads: $numThreads)"
                 )
                 CpuAffinityManager.setMaxPerformance()
 
-                val (primeCount, timeMs) =
+                // FIXED WORK PER CORE: Each thread processes the full range
+                val rangePerThread = params.primeRange
+                val totalRange = rangePerThread * numThreads
+
+                val (totalPrimes, timeMs) =
                         BenchmarkHelpers.measureBenchmark {
-                                // Use parallel segmented Sieve of Eratosthenes
-                                BenchmarkHelpers.parallelSieveOfEratosthenes(
-                                        params.primeRange,
-                                        numThreads,
-                                        highPriorityDispatcher
-                                )
+                                // Each thread independently sieves the full range
+                                val results = (0 until numThreads).map { threadId ->
+                                        async(highPriorityDispatcher) {
+                                                Log.d(TAG, "Thread $threadId processing range 1 to $rangePerThread")
+                                                BenchmarkHelpers.sieveOfEratosthenes(rangePerThread)
+                                        }
+                                }.awaitAll()
+                                
+                                // Sum all prime counts (for validation)
+                                results.sum()
                         }
 
-                val ops = params.primeRange.toDouble() // Operations = numbers processed
-                val opsPerSecond = ops / (timeMs / 1000.0)
+                // FIXED WORK PER CORE: Total operations = range × numThreads
+                val totalOps = totalRange.toDouble()
+                val opsPerSecond = totalOps / (timeMs / 1000.0)
 
                 CpuAffinityManager.resetPerformance()
 
@@ -79,23 +94,24 @@ object MultiCoreBenchmarks {
                         name = "Multi-Core Prime Generation",
                         executionTimeMs = timeMs.toDouble(),
                         opsPerSecond = opsPerSecond,
-                        isValid = primeCount > 0,
+                        isValid = totalPrimes > 0,
                         metricsJson =
                                 JSONObject()
                                         .apply {
-                                                put("prime_count", primeCount)
-                                                put("range", params.primeRange)
+                                                put("total_primes", totalPrimes)
+                                                put("range_per_thread", rangePerThread)
                                                 put("threads", numThreads)
+                                                put("total_range", totalRange)
                                                 put("algorithm", "Sieve of Eratosthenes")
                                                 put("complexity", "O(N log log N)")
-                                                put("implementation", "Parallel Segmented Sieve")
+                                                put("implementation", "Fixed Work Per Core")
                                                 put(
-                                                        "parallelization",
-                                                        "Base primes computed single-threaded, segments processed in parallel"
+                                                        "workload_approach",
+                                                        "Each thread processes full range - total work scales with cores"
                                                 )
                                                 put(
                                                         "description",
-                                                        "Segmented sieve: base primes up to √N, then parallel segment sieving"
+                                                        "Fixed Work Per Core: ensures similar execution time and Mops/s as single-core"
                                                 )
                                         }
                                         .toString()
