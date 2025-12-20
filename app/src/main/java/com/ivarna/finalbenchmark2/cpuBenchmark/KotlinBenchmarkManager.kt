@@ -33,7 +33,7 @@ class KotlinBenchmarkManager {
                 BenchmarkName.STRING_SORTING to 124_600_000.0,            // 124.6 Mops/s
                 BenchmarkName.RAY_TRACING to 2_840_000.0,                 // 2.84 Mops/s
                 BenchmarkName.COMPRESSION to 750_300_000.0,               // 750.3 Mops/s
-                BenchmarkName.MONTE_CARLO to 801_600_000.0,               // 801.6 Mops/s
+                BenchmarkName.MONTE_CARLO to 514_500_000.0,               // 514.5 Mops/s (LCG)
                 BenchmarkName.JSON_PARSING to 1_330_000.0,                // 1.33 Mops/s
                 BenchmarkName.N_QUEENS to 160_500_000.0                   // 160.5 Mops/s
         )
@@ -48,7 +48,7 @@ class KotlinBenchmarkManager {
                 BenchmarkName.STRING_SORTING to 1.602e-7/2,          // 20 / 62.42 Mops/s
                 BenchmarkName.RAY_TRACING to 4.902e-6,             // 20 / 2.04 Mops/s
                 BenchmarkName.COMPRESSION to 1.5243e-8,            // 20 / 656.04 Mops/s
-                BenchmarkName.MONTE_CARLO to 0.6125e-6/50,             // 20 / 16.32 Mops/s
+                BenchmarkName.MONTE_CARLO to 0.6125e-6/30,             // 20 / 16.32 Mops/s
                 BenchmarkName.JSON_PARSING to 1.56e-6*4,            // 20 / 6.41 Mops/s
                 BenchmarkName.N_QUEENS to 2.011e-7/2                 // 20 / 66.18e6 ops/s
         )

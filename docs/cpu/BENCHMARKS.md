@@ -388,16 +388,16 @@ val throughput = totalBytes.toDouble() / (timeMs / 1000.0)
 
 ---
 
-## 8. Monte Carlo π (Leibniz)
+## 8. Monte Carlo π Simulation
 
 ### Overview
 
 | Property | Value |
 |----------|-------|
-| **Algorithm** | Leibniz formula: π/4 = 1 - 1/3 + 1/5 - 1/7 + ... |
-| **Complexity** | O(iterations) |
+| **Algorithm** | Monte Carlo with Linear Congruential Generator (LCG) |
+| **Complexity** | O(samples) |
 | **Type** | Floating-Point |
-| **Tests** | Division, alternating series, accumulation |
+| **Tests** | FPU operations, circle geometry, deterministic sampling |
 
 ### Implementation
 

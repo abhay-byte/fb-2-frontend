@@ -101,7 +101,7 @@ val ratio = sutMopsPerSecond / referenceMopsPerSecond
 | String Sorting | 124.6 |
 | Ray Tracing | 2.84 |
 | Compression | 750.3 |
-| Monte Carlo | 801.6 |
+| Monte Carlo | 514.5 |
 | JSON Parsing | 1.33 |
 | N-Queens | 160.5 |
 

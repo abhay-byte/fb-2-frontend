@@ -37,6 +37,11 @@ Type `/fix` in the chat to invoke this workflow.
 - Check for potential side effects or edge cases
 - Recommend additional tests if needed BUILD AND RUN APK
 
+### Step 6: Update docs
+- @docs/cpu, 
+- changes should be simple and only change what you must.
+- donot add comments only change things required. changes should be minimal.
+
 ### Step 6: Commit all changes and push to github
 
 ```bash
@@ -44,4 +49,3 @@ git add .
 git commit -m "Fix: [brief description of the fix]"
 git push origin main
 ```
-
