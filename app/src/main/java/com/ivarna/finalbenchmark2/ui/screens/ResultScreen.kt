@@ -324,13 +324,15 @@ fun ResultScreen(
 
         // Delete benchmark function
         val deleteBenchmark: () -> Unit = {
-                benchmarkId?.let { id ->
-                        historyRepository?.let { repo ->
-                                coroutineScope.launch {
+                coroutineScope.launch {
+                        // Delete from database if this is a saved benchmark
+                        benchmarkId?.let { id ->
+                                historyRepository?.let { repo ->
                                         repo.deleteResultById(id)
-                                        onBackToHome()
                                 }
                         }
+                        // Always navigate back to home
+                        onBackToHome()
                 }
         }
 
