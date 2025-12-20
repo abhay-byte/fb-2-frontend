@@ -380,21 +380,15 @@ fun ResultScreen(
                                                                 contentDescription = "Share"
                                                         )
                                                 }
-                                                if (historyRepository != null && benchmarkId != null
-                                                ) {
-                                                        IconButton(
-                                                                onClick = {
-                                                                        showDeleteDialog = true
-                                                                }
-                                                        ) {
-                                                                Icon(
-                                                                        imageVector =
-                                                                                Icons.Rounded
-                                                                                        .Delete,
-                                                                        contentDescription =
-                                                                                "Delete"
-                                                                )
+                                                IconButton(
+                                                        onClick = {
+                                                                showDeleteDialog = true
                                                         }
+                                                ) {
+                                                        Icon(
+                                                                imageVector = Icons.Rounded.Delete,
+                                                                contentDescription = "Delete"
+                                                        )
                                                 }
                                         },
                                         colors =
