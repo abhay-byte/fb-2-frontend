@@ -22,6 +22,22 @@ class KotlinBenchmarkManager {
                 private const val TAG = "KotlinBenchmarkManager"
 
 
+        // Reference device: Snapdragon 8 Gen 3 (OnePlus Pad 2)
+        // These are the baseline ops/s values used for geometric mean calculation
+        // Note: Values are in ops/s, not Mops/s, to match benchmark result format
+        val REFERENCE_MOPS = mapOf(
+                BenchmarkName.PRIME_GENERATION to 72_000_000.0,           // 72.0 Mops/s
+                BenchmarkName.FIBONACCI_ITERATIVE to 45_300_000.0,        // 45.3 Mops/s
+                BenchmarkName.MATRIX_MULTIPLICATION to 3_145_000_000.0,   // 3145.0 Mops/s
+                BenchmarkName.HASH_COMPUTING to 780_000.0,                // 0.78 Mops/s
+                BenchmarkName.STRING_SORTING to 124_600_000.0,            // 124.6 Mops/s
+                BenchmarkName.RAY_TRACING to 2_840_000.0,                 // 2.84 Mops/s
+                BenchmarkName.COMPRESSION to 750_300_000.0,               // 750.3 Mops/s
+                BenchmarkName.MONTE_CARLO to 801_600_000.0,               // 801.6 Mops/s
+                BenchmarkName.JSON_PARSING to 1_330_000.0,                // 1.33 Mops/s
+                BenchmarkName.N_QUEENS to 160_500_000.0                   // 160.5 Mops/s
+        )
+
         val SCORING_FACTORS =
         mapOf(
                 // Target 20 / Performance (Mops/s)
@@ -442,25 +458,65 @@ class KotlinBenchmarkManager {
                 }
         }
 
+        /**
+         * Calculate geometric mean score for benchmark results.
+         * 
+         * Formula: GeometricMean = (∏ ratios)^(1/n)
+         * where ratio = SUT_Mops / Reference_Mops
+         * 
+         * This prevents one fast benchmark from dominating the score and provides
+         * fair comparison across different device architectures.
+         * 
+         * @param results List of benchmark results
+         * @return Geometric mean score scaled to 100-point baseline (SD 8 Gen 3 = 100)
+         */
+        private fun calculateGeometricMean(results: List<BenchmarkResult>): Double {
+                if (results.isEmpty()) return 0.0
+                
+                // Calculate performance ratios for each benchmark
+                val ratios = results.mapNotNull { result ->
+                        val benchmarkName = BenchmarkName.fromString(result.name)
+                        val refMops = benchmarkName?.let { REFERENCE_MOPS[it] }
+                        
+                        if (refMops != null && refMops > 0.0) {
+                                // Ratio = SUT performance / Reference performance
+                                result.opsPerSecond / refMops
+                        } else {
+                                Log.w(TAG, "No reference value for ${result.name}, skipping in geometric mean")
+                                null
+                        }
+                }
+                
+                if (ratios.isEmpty()) {
+                        Log.e(TAG, "No valid ratios calculated for geometric mean")
+                        return 0.0
+                }
+                
+                // Calculate geometric mean: (product)^(1/n)
+                var product = 1.0
+                for (ratio in ratios) {
+                        product *= ratio
+                }
+                
+                val geometricMean = Math.pow(product, 1.0 / ratios.size)
+                
+                // Scale to 100-point baseline (SD 8 Gen 3 = 100)
+                val score = geometricMean * 100.0
+                
+                Log.d(TAG, "Geometric mean calculation: ${ratios.size} benchmarks, GM=${geometricMean}, Score=${score}")
+                
+                return score
+        }
+
         private fun calculateSummary(
                 singleResults: List<BenchmarkResult>,
                 multiResults: List<BenchmarkResult>
         ): String {
-                // Calculate single-core score using weighted scoring
-                var calculatedSingleCoreScore = 0.0
-                for (result in singleResults) {
-                        val benchmarkName = BenchmarkName.fromString(result.name)
-                        val factor = benchmarkName?.let { SCORING_FACTORS[it] } ?: 0.0
-                        calculatedSingleCoreScore += result.opsPerSecond * factor
-                }
+                // Calculate single-core score using geometric mean
+                val calculatedSingleCoreScore = calculateGeometricMean(singleResults)
 
-                // Calculate multi-core score using weighted scoring
-                var calculatedMultiCoreScore = 0.0
-                for (result in multiResults) {
-                        val benchmarkName = BenchmarkName.fromString(result.name)
-                        val factor = benchmarkName?.let { SCORING_FACTORS[it] } ?: 0.0
-                        calculatedMultiCoreScore += result.opsPerSecond * factor
-                }
+                // Calculate multi-core score using geometric mean
+                val calculatedMultiCoreScore = calculateGeometricMean(multiResults)
 
                 // Calculate final weighted score (35% single, 65% multi)
                 val calculatedFinalScore =

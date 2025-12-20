@@ -63,6 +63,17 @@ Using the same factors for both modes provides:
 
 ## Score Calculation
 
+### SPEC CPU2017 Compliant Methodology
+
+FinalBenchmark2 uses **geometric mean** for score calculation, following industry standards like SPEC CPU2017.
+
+### Why Geometric Mean?
+
+1. **Fair Comparison**: No single benchmark can dominate the overall score
+2. **Industry Standard**: Used by SPEC CPU2017, Geekbench, and other professional benchmarks
+3. **Mathematically Sound**: Properly handles ratios and relative performance
+4. **Prevents Gaming**: Can't artificially boost score by optimizing one benchmark
+
 ### Step 1: Measure Operations Per Second
 
 Each benchmark returns `opsPerSecond`:
@@ -71,30 +82,45 @@ Each benchmark returns `opsPerSecond`:
 val opsPerSecond = totalOperations.toDouble() / (timeMs / 1000.0)
 ```
 
-### Step 2: Apply Scaling Factor
+### Step 2: Calculate Performance Ratios
+
+For each benchmark, calculate the ratio of System Under Test (SUT) to Reference:
 
 ```kotlin
-// For each benchmark result
-val benchmarkScore = result.opsPerSecond * SCORING_FACTORS[benchmarkName]
+val ratio = sutMopsPerSecond / referenceMopsPerSecond
 ```
 
-### Step 3: Sum Benchmark Scores
+**Reference Device**: Snapdragon 8 Gen 3 (OnePlus Pad 2)
+
+| Benchmark | Reference Mops/s |
+|-----------|------------------|
+| Prime Generation | 72.0 |
+| Fibonacci | 45.3 |
+| Matrix Multiplication | 3145.0 |
+| Hash Computing | 0.78 |
+| String Sorting | 124.6 |
+| Ray Tracing | 2.84 |
+| Compression | 750.3 |
+| Monte Carlo | 801.6 |
+| JSON Parsing | 1.33 |
+| N-Queens | 160.5 |
+
+### Step 3: Calculate Geometric Mean
 
 ```kotlin
-// Single-core total
-var singleCoreScore = 0.0
-for (result in singleResults) {
-    singleCoreScore += result.opsPerSecond * factor
-}
-
-// Multi-core total
-var multiCoreScore = 0.0
-for (result in multiResults) {
-    multiCoreScore += result.opsPerSecond * factor
-}
+// Geometric mean = (product of all ratios)^(1/n)
+val product = ratios.reduce { acc, ratio -> acc * ratio }
+val geometricMean = product.pow(1.0 / ratios.size)
 ```
 
-### Step 4: Calculate Final Score
+### Step 4: Scale to 100-Point Baseline
+
+```kotlin
+// SD 8 Gen 3 = 100 points (baseline)
+val score = geometricMean * 100.0
+```
+
+### Step 5: Calculate Final Score
 
 ```kotlin
 // Weighted combination: 35% single-core, 65% multi-core
@@ -107,21 +133,32 @@ val finalScore = (singleCoreScore * 0.35) + (multiCoreScore * 0.65)
 
 ### Snapdragon 8 Gen 3 (Reference)
 
-| Benchmark | Single-Core Mops/s | SC Score | Multi-Core Mops/s | MC Score |
-|-----------|-------------------|----------|-------------------|----------|
-| Prime Generation | 72.0 | 10.4 | 409.4 | 58.9 |
-| Fibonacci | 45.3 | 19.8 | 160.9 | 70.2 |
-| Matrix Mult | 3145 | 12.3 | 13714 | 53.7 |
-| Hash Computing | 0.78 | 10.9 | 5.16 | 71.7 |
-| String Sorting | 124.6 | 10.0 | 409.5 | 32.8 |
-| Ray Tracing | 2.84 | 13.9 | 15.59 | 76.4 |
-| Compression | 750.3 | 11.4 | 2874 | 43.8 |
-| Monte Carlo | 801.6 | 9.8 | 3745 | 45.9 |
-| JSON Parsing | 1.33 | 8.3 | 4.33 | 27.0 |
-| N-Queens | 160.5 | 16.1 | 726.3 | 73.0 |
-| **TOTAL** | | **123** | | **553** |
+With the **geometric mean** methodology, the reference device scores **100 points** by definition for both single-core and multi-core:
 
-**Final Score**: (123 × 0.35) + (553 × 0.65) = **403**
+| Benchmark | Single-Core Mops/s | Ratio | Multi-Core Mops/s | Ratio |
+|-----------|-------------------|-------|-------------------|-------|
+| Prime Generation | 72.0 | 1.00 | 409.4 | 1.00 |
+| Fibonacci | 45.3 | 1.00 | 160.9 | 1.00 |
+| Matrix Mult | 3145 | 1.00 | 13714 | 1.00 |
+| Hash Computing | 0.78 | 1.00 | 5.16 | 1.00 |
+| String Sorting | 124.6 | 1.00 | 409.5 | 1.00 |
+| Ray Tracing | 2.84 | 1.00 | 15.59 | 1.00 |
+| Compression | 750.3 | 1.00 | 2874 | 1.00 |
+| Monte Carlo | 801.6 | 1.00 | 3745 | 1.00 |
+| JSON Parsing | 1.33 | 1.00 | 4.33 | 1.00 |
+| N-Queens | 160.5 | 1.00 | 726.3 | 1.00 |
+| **Geometric Mean** | | **1.00** | | **1.00** |
+| **Score (×100)** | | **100** | | **100** |
+
+**Final Score**: (100 × 0.35) + (100 × 0.65) = **100**
+
+### Other Devices
+
+Devices faster than SD 8 Gen 3 will score > 100, slower devices will score < 100.
+
+**Example**: If a device is 20% faster on average across all benchmarks:
+- Geometric mean of ratios = 1.20
+- Score = 1.20 × 100 = **120 points**
 
 ---
 

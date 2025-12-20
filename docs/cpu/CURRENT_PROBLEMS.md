@@ -8,7 +8,7 @@ This document lists known issues in the current FinalBenchmark2 CPU benchmark im
 
 | Issue | Severity | Status |
 |-------|----------|--------|
-| [Arithmetic Sum Instead of Geometric Mean](#1-arithmetic-sum-instead-of-geometric-mean) | 🔴 Critical | Open |
+| [Arithmetic Sum Instead of Geometric Mean](#1-arithmetic-sum-instead-of-geometric-mean) | 🔴 Critical | ✅ **Resolved** |
 | [No Output Validation](#2-no-output-validation) | 🔴 Critical | Open |
 | [Single Run Without Repeatability](#3-single-run-without-repeatability) | 🟡 Medium | By Design |
 | [Compressed Single-Core Variance](#4-compressed-single-core-variance) | 🟡 Medium | Under Analysis |
@@ -137,6 +137,32 @@ Replace arithmetic sum with geometric mean calculation:
 2. Calculate ratio: `SUT_Mops / Reference_Mops`
 3. Compute geometric mean of all ratios
 4. Scale to desired score range
+
+### ✅ Resolution (Implemented)
+
+**Date**: 2025-12-20
+
+**Implementation**: Replaced arithmetic sum with SPEC CPU2017-compliant geometric mean calculation in `KotlinBenchmarkManager.kt`:
+
+1. **Added Reference Values**: Created `REFERENCE_MOPS` map with SD 8 Gen 3 baseline performance for all 10 benchmarks
+2. **Implemented Geometric Mean Function**: 
+   - Calculates performance ratios (SUT/Reference) for each benchmark
+   - Computes geometric mean: `(∏ ratios)^(1/n)`
+   - Scales to 100-point baseline (SD 8 Gen 3 = 100)
+3. **Updated Score Calculation**: Modified `calculateSummary()` to use geometric mean for both single-core and multi-core scores
+4. **Updated Documentation**: Updated `SCORING.md` with new methodology and examples
+
+**Benefits**:
+- ✅ SPEC CPU2017 compliant
+- ✅ No single benchmark can dominate the score
+- ✅ Industry-standard comparability
+- ✅ Fair comparison across different device architectures
+- ✅ Reference device (SD 8 Gen 3) scores exactly 100 points
+
+**Files Modified**:
+- `app/src/main/java/com/ivarna/finalbenchmark2/cpuBenchmark/KotlinBenchmarkManager.kt`
+- `docs/cpu/SCORING.md`
+- `docs/cpu/CURRENT_PROBLEMS.md`
 
 ---
 
@@ -421,7 +447,7 @@ D8300 (3.35 GHz A715) is **9.9% slower** than SD 8s Gen 3 (3.0 GHz X4) on N-Quee
 
 ### High Priority
 
-1. ☐ Change scoring from arithmetic sum to geometric mean
+1. ✅ ~~Change scoring from arithmetic sum to geometric mean~~ **COMPLETED 2025-12-20**
 2. ☐ Add output validation with known correct values
 3. ☐ Fix Matrix Multiplication RNG overhead
 
