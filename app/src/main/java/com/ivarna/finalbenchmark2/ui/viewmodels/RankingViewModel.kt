@@ -63,33 +63,33 @@ class RankingViewModel(private val repository: HistoryRepository) : ViewModel() 
             listOf(
                     RankingItem(
                             name = "Snapdragon 8 Gen 3",
-                            normalizedScore = 400,
-                            singleCore = 128,
-                            multiCore = 550,
+                            normalizedScore = 407,
+                            singleCore = 114,
+                            multiCore = 564,
                             isCurrentUser = false,
                             benchmarkDetails = BenchmarkDetails(
-                                    // Single-Core ops/s values (converted from Mops/s)
-                                    singleCorePrimeNumberMops = 3_080_000.0,
-                                    singleCoreFibonacciMops = 45_410_000.0,
-                                    singleCoreMatrixMultiplicationMops = 3_866_910_000.0,
+                                    // Single-Core Mops/s values
+                                    singleCorePrimeNumberMops = 71_970_000.0,
+                                    singleCoreFibonacciMops = 30_230_000.0,
+                                    singleCoreMatrixMultiplicationMops = 3_148_880_000.0,
                                     singleCoreHashComputingMops = 780_000.0,
-                                    singleCoreStringSortingMops = 125_010_000.0,
-                                    singleCoreRayTracingMops = 2_850_000.0,
-                                    singleCoreCompressionMops = 757_920_000.0,
-                                    singleCoreMonteCarloMops = 807_330_000.0,
-                                    singleCoreJsonParsingMops = 1_360_000.0,
-                                    singleCoreNQueensMops = 162_820_000.0,
-                                    // Multi-Core ops/s values (converted from Mops/s)
-                                    multiCorePrimeNumberMops = 11_470_000.0,
-                                    multiCoreFibonacciMops = 161_840_000.0,
-                                    multiCoreMatrixMultiplicationMops = 15_827_560_000.0,
-                                    multiCoreHashComputingMops = 5_070_000.0,
-                                    multiCoreStringSortingMops = 420_640_000.0,
-                                    multiCoreRayTracingMops = 15_900_000.0,
-                                    multiCoreCompressionMops = 2_935_130_000.0,
-                                    multiCoreMonteCarloMops = 3_784_610_000.0,
-                                    multiCoreJsonParsingMops = 4_590_000.0,
-                                    multiCoreNQueensMops = 737_630_000.0
+                                    singleCoreStringSortingMops = 126_620_000.0,
+                                    singleCoreRayTracingMops = 2_860_000.0,
+                                    singleCoreCompressionMops = 760_250_000.0,
+                                    singleCoreMonteCarloMops = 530_570_000.0,
+                                    singleCoreJsonParsingMops = 1_390_000.0,
+                                    singleCoreNQueensMops = 163_450_000.0,
+                                    // Multi-Core Mops/s values
+                                    multiCorePrimeNumberMops = 403_700_000.0,
+                                    multiCoreFibonacciMops = 160_460_000.0,
+                                    multiCoreMatrixMultiplicationMops = 14_126_200_000.0,
+                                    multiCoreHashComputingMops = 5_090_000.0,
+                                    multiCoreStringSortingMops = 422_900_000.0,
+                                    multiCoreRayTracingMops = 15_950_000.0,
+                                    multiCoreCompressionMops = 2_959_990_000.0,
+                                    multiCoreMonteCarloMops = 3_865_080_000.0,
+                                    multiCoreJsonParsingMops = 4_920_000.0,
+                                    multiCoreNQueensMops = 743_230_000.0
                             )
                     )
             )
