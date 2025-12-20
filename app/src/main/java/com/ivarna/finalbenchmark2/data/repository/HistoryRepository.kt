@@ -30,7 +30,14 @@ class HistoryRepository(
     }
     
     suspend fun deleteResultById(id: Long) {
-        benchmarkDao.deleteResultById(id)
+        android.util.Log.d("HistoryRepository", "deleteResultById called with ID: $id")
+        try {
+            benchmarkDao.deleteResultById(id)
+            android.util.Log.d("HistoryRepository", "Successfully deleted benchmark with ID: $id")
+        } catch (e: Exception) {
+            android.util.Log.e("HistoryRepository", "Error deleting benchmark with ID: $id", e)
+            throw e
+        }
     }
     
     suspend fun deleteAllResults() {

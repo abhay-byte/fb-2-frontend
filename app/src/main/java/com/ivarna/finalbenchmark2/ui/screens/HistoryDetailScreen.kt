@@ -175,6 +175,10 @@ fun HistoryDetailScreen(
         // Function to delete benchmark
         val deleteBenchmark: () -> Unit = {
                 displayData?.let { data ->
+                        android.util.Log.d("HistoryDetailScreen", "Delete button clicked")
+                        android.util.Log.d("HistoryDetailScreen", "displayData.id = ${data.id}")
+                        android.util.Log.d("HistoryDetailScreen", "displayData.type = ${data.type}")
+                        android.util.Log.d("HistoryDetailScreen", "displayData.timestamp = ${data.timestamp}")
                         // We need to launch the suspend function in a coroutine scope
                         scope.launch {
                                 android.util.Log.d("HistoryDetailScreen", "Deleting benchmark with ID: ${data.id}")
@@ -182,6 +186,8 @@ fun HistoryDetailScreen(
                                 android.util.Log.d("HistoryDetailScreen", "Benchmark deleted successfully")
                                 onBackClick()
                         }
+                } ?: run {
+                        android.util.Log.e("HistoryDetailScreen", "Delete failed: displayData is null")
                 }
         }
 
