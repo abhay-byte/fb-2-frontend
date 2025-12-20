@@ -170,31 +170,12 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                                         result = result,
                                         timestampFormatter = formatter,
                                         onItemClick = {
-                                            // Convert detailed results to JSON using Gson
+                                            // Navigate to history detail screen with the benchmark ID
+                                            // Encode the result data as initial data for immediate display
                                             val gson = Gson()
-                                            val detailedResultsJson =
-                                                    gson.toJson(result.detailedResults)
-
-                                            // Construct summary JSON for ResultScreen
-                                            // Include performance_metrics for graphs display
-                                            val summaryJson =
-                                                    """
-                                            {
-                                                "single_core_score": ${result.singleCoreScore},
-                                                "multi_core_score": ${result.multiCoreScore},
-                                                "final_score": ${result.finalScore},
-                                                "normalized_score": ${result.normalizedScore},
-                                                "timestamp": ${result.timestamp},
-                                                "performance_metrics": ${if (result.performanceMetricsJson.isNotEmpty()) result.performanceMetricsJson else "{}"},
-                                                "detailed_results": $detailedResultsJson
-                                            }
-                                        """.trimIndent()
-
-                                            // URL-encode the JSON to handle special characters
-                                            // properly
-                                            val encodedJson =
-                                                    java.net.URLEncoder.encode(summaryJson, "UTF-8")
-                                            navController.navigate("result/$encodedJson")
+                                            val initialDataJson = gson.toJson(result)
+                                            val encodedInitialData = java.net.URLEncoder.encode(initialDataJson, "UTF-8")
+                                            navController.navigate("history-detail/${result.id}?initialData=$encodedInitialData")
                                         }
                                 )
                             }
