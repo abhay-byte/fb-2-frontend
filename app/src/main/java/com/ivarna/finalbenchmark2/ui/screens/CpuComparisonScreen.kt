@@ -2,7 +2,9 @@ package com.ivarna.finalbenchmark2.ui.screens
 
 import android.os.Build
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -48,16 +50,8 @@ fun CpuComparisonScreen(
     // Parse the selected device from JSON
     val selectedDevice = remember(selectedDeviceJson) {
         try {
-            android.util.Log.d("CpuComparison", "Raw JSON: $selectedDeviceJson")
-            val device = Gson().fromJson(selectedDeviceJson, RankingItem::class.java)
-            android.util.Log.d("CpuComparison", "Parsed device: ${device.name}")
-            android.util.Log.d("CpuComparison", "BenchmarkDetails: ${device.benchmarkDetails}")
-            android.util.Log.d("CpuComparison", "Single-core Prime Mops: ${device.benchmarkDetails?.singleCorePrimeNumberMops}")
-            android.util.Log.d("CpuComparison", "Single-core Fibonacci Mops: ${device.benchmarkDetails?.singleCoreFibonacciMops}")
-            android.util.Log.d("CpuComparison", "Multi-core Prime Mops: ${device.benchmarkDetails?.multiCorePrimeNumberMops}")
-            device
+            Gson().fromJson(selectedDeviceJson, RankingItem::class.java)
         } catch (e: Exception) {
-            android.util.Log.e("CpuComparison", "Error parsing device JSON", e)
             null
         }
     }
@@ -138,120 +132,122 @@ fun CpuComparisonScreen(
         }
     }
     
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        "CPU Comparison",
-                        fontWeight = FontWeight.Bold
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.surfaceContainerLowest
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
             )
-        }
-    ) { paddingValues ->
-        if (isLoading) {
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+        ) {
+            // Custom Glass Header
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
+                    .fillMaxWidth()
+                    .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
             ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        } else if (selectedDevice == null) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
+                IconButton(
+                    onClick = onBackClick,
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .background(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            CircleShape
+                        )
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                
                 Text(
-                    text = "Unable to load device data",
-                    color = MaterialTheme.colorScheme.error
+                    text = "Comparison",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.align(Alignment.Center)
                 )
             }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(MaterialTheme.colorScheme.background),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Header with device names
-                item {
-                    ComparisonHeader(
-                        userDevice = userDevice,
-                        selectedDevice = selectedDevice
-                    )
+
+            if (isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
-                
-                // Main score comparison cards
-                item {
-                    MainScoreComparison(
-                        userDevice = userDevice,
-                        selectedDevice = selectedDevice
-                    )
+            } else if (selectedDevice == null) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("Unable to load device data", color = MaterialTheme.colorScheme.error)
                 }
-                
-                // Single-Core Benchmarks Section
-                item {
-                    Text(
-                        text = "Single-Core Benchmarks",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                    )
-                }
-                
-                val singleCoreBenchmarks = getSingleCoreBenchmarkItems(userDevice, selectedDevice)
-                items(singleCoreBenchmarks) { benchmark ->
-                    BenchmarkComparisonCard(
-                        benchmark = benchmark,
-                        userDeviceName = userDevice?.name ?: "Your Device",
-                        selectedDeviceName = selectedDevice.name
-                    )
-                }
-                
-                // Multi-Core Benchmarks Section
-                item {
-                    Text(
-                        text = "Multi-Core Benchmarks",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
-                    )
-                }
-                
-                val multiCoreBenchmarks = getMultiCoreBenchmarkItems(userDevice, selectedDevice)
-                items(multiCoreBenchmarks) { benchmark ->
-                    BenchmarkComparisonCard(
-                        benchmark = benchmark,
-                        userDeviceName = userDevice?.name ?: "Your Device",
-                        selectedDeviceName = selectedDevice.name
-                    )
-                }
-                
-                // Bottom spacing
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                ) {
+                    // Header with device names
+                    item {
+                        ComparisonHeader(
+                            userDevice = userDevice,
+                            selectedDevice = selectedDevice
+                        )
+                    }
+                    
+                    // Main score comparison cards
+                    item {
+                        MainScoreComparison(
+                            userDevice = userDevice,
+                            selectedDevice = selectedDevice
+                        )
+                    }
+                    
+                    // Single-Core Benchmarks Section
+                    item {
+                        Text(
+                            text = "Single-Core Benchmarks",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                        )
+                    }
+                    
+                    val singleCoreBenchmarks = getSingleCoreBenchmarkItems(userDevice, selectedDevice)
+                    items(singleCoreBenchmarks) { benchmark ->
+                        BenchmarkComparisonCard(
+                            benchmark = benchmark,
+                            userDeviceName = userDevice?.name ?: "Your Device",
+                            selectedDeviceName = selectedDevice.name
+                        )
+                    }
+                    
+                    // Multi-Core Benchmarks Section
+                    item {
+                        Text(
+                            text = "Multi-Core Benchmarks",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                        )
+                    }
+                    
+                    val multiCoreBenchmarks = getMultiCoreBenchmarkItems(userDevice, selectedDevice)
+                    items(multiCoreBenchmarks) { benchmark ->
+                        BenchmarkComparisonCard(
+                            benchmark = benchmark,
+                            userDeviceName = userDevice?.name ?: "Your Device",
+                            selectedDeviceName = selectedDevice.name
+                        )
+                    }
                 }
             }
         }
@@ -267,13 +263,15 @@ private fun ComparisonHeader(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp)
+                .padding(16.dp) // Reduced padding
         ) {
             // Percentage difference at top
             val scoreDiff = (userDevice?.normalizedScore ?: 0) - selectedDevice.normalizedScore
@@ -290,23 +288,24 @@ private fun ComparisonHeader(
                 val diffColor = if (isAhead) Color(0xFF4CAF50) else Color(0xFFE53935)
                 
                 Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = diffColor.copy(alpha = 0.15f)
+                    shape = RoundedCornerShape(50),
+                    color = diffColor.copy(alpha = 0.15f),
+                    border = BorderStroke(1.dp, diffColor.copy(alpha = 0.3f))
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             imageVector = if (isAhead) Icons.AutoMirrored.Rounded.TrendingUp else Icons.AutoMirrored.Rounded.TrendingDown,
                             contentDescription = null,
                             tint = diffColor,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = if (percentDiff >= 0) "+$percentDiff%" else "$percentDiff%",
-                            fontSize = 24.sp,
+                            text = if (percentDiff >= 0) "Better by $percentDiff%" else "Slower by ${-percentDiff}%",
+                            fontSize = 14.sp,
                             fontWeight = FontWeight.Bold,
                             color = diffColor
                         )
@@ -319,106 +318,114 @@ private fun ComparisonHeader(
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.Top
             ) {
                 // User device
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f),
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.PhoneAndroid,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = userDevice?.name?.replace("Your Device ", "")?.trim('(', ')') ?: "Your Device",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${userDevice?.normalizedScore ?: 0}",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+                DeviceColumn(
+                    device = userDevice,
+                    fallbackName = "Your Device",
+                    icon = Icons.Rounded.PhoneAndroid,
+                    color = MaterialTheme.colorScheme.primary,
+                    isUser = true
+                )
                 
                 // VS indicator
-                Box(
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        .size(40.dp)
-                        .background(
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
                         text = "VS",
                         fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontWeight = FontWeight.Black,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
                 
                 // Selected device
-                Column(
-                    modifier = Modifier.weight(1f),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .background(
-                                MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                                CircleShape
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Rounded.Memory,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = selectedDevice.name.replace("Your Device ", "").trim('(', ')'),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        text = "${selectedDevice.normalizedScore}",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                }
+                DeviceColumn(
+                    device = selectedDevice,
+                    fallbackName = "Unknown",
+                    icon = Icons.Rounded.Memory,
+                    color = MaterialTheme.colorScheme.secondary,
+                    isUser = false
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun RowScope.DeviceColumn(
+    device: RankingItem?,
+    fallbackName: String,
+    icon: ImageVector,
+    color: Color,
+    isUser: Boolean
+) {
+    Column(
+        modifier = Modifier.weight(1f),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(48.dp) // Smaller icon box
+                .background(
+                    color.copy(alpha = 0.15f),
+                    CircleShape
+                )
+                .border(2.dp, color.copy(alpha = 0.3f), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        
+        Spacer(modifier = Modifier.height(8.dp))
+        
+        Text(
+            text = if (isUser) "Your Device" else device?.name?.replace("Your Device ", "")?.trim('(', ')') ?: fallbackName,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.titleSmall
+        )
+        
+        if (isUser) {
+             Text(
+                text = "(${Build.MODEL})",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Spacer(modifier = Modifier.height(2.dp))
+        
+        Text(
+            text = "${device?.normalizedScore ?: 0}",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Black,
+            color = color,
+            letterSpacing = (-1).sp
+        )
+        Text(
+            text = "POINTS",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = color.copy(alpha = 0.7f),
+            fontSize = 8.sp
+        )
     }
 }
 
@@ -428,11 +435,11 @@ private fun MainScoreComparison(
     selectedDevice: RankingItem
 ) {
     Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp) // Less vertical spacing
     ) {
         // Single-Core Score
         ScoreComparisonCard(
-            title = "Single-Core Score",
+            title = "Single-Core",
             userScore = userDevice?.singleCore ?: 0,
             selectedScore = selectedDevice.singleCore,
             userColor = MaterialTheme.colorScheme.primary,
@@ -441,7 +448,7 @@ private fun MainScoreComparison(
         
         // Multi-Core Score
         ScoreComparisonCard(
-            title = "Multi-Core Score",
+            title = "Multi-Core",
             userScore = userDevice?.multiCore ?: 0,
             selectedScore = selectedDevice.multiCore,
             userColor = MaterialTheme.colorScheme.primary,
@@ -489,128 +496,125 @@ private fun ScoreComparisonCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp) // Compact padding
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 12.dp),
+                    .padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
                     text = title,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp
                 )
                 
                 // Percentage difference chip
                 if (percentDiff != 0) {
                     val diffColor = if (percentDiff > 0) Color(0xFF4CAF50) else Color(0xFFE53935)
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(4.dp),
                         color = diffColor.copy(alpha = 0.15f)
                     ) {
                         Text(
                             text = if (percentDiff > 0) "+$percentDiff%" else "$percentDiff%",
-                            fontSize = 12.sp,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = diffColor,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
                 }
             }
             
-            // User's progress bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "You",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.width(50.dp)
-                )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(userColor.copy(alpha = 0.2f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(userProgress)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(userColor, userColor.copy(alpha = 0.7f))
-                                )
-                            )
-                    )
-                }
-                Text(
-                    text = formatScore(userScore),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = userColor,
-                    modifier = Modifier.width(60.dp),
-                    textAlign = TextAlign.End
-                )
-            }
+            // User's progress bar with label on the same line
+            LabeledScoreBar(
+                label = "You",
+                score = userScore,
+                progress = userProgress,
+                color = userColor,
+                delta = if (scoreDiff > 0) "+$scoreDiff" else "$scoreDiff"
+            )
             
             Spacer(modifier = Modifier.height(8.dp))
             
-            // Selected device's progress bar
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Other",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                    modifier = Modifier.width(50.dp)
-                )
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(8.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(selectedColor.copy(alpha = 0.2f))
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxHeight()
-                            .fillMaxWidth(selectedProgress)
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(selectedColor, selectedColor.copy(alpha = 0.7f))
-                                )
-                            )
-                    )
-                }
-                Text(
-                    text = formatScore(selectedScore),
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = selectedColor,
-                    modifier = Modifier.width(60.dp),
-                    textAlign = TextAlign.End
-                )
-            }
+            // Selected device's progress bar with label on the same line
+            LabeledScoreBar(
+                label = "Ref",
+                score = selectedScore,
+                progress = selectedProgress,
+                color = selectedColor,
+                delta = if (scoreDiff < 0) "+${-scoreDiff}" else "${-scoreDiff}"
+            )
         }
     }
 }
+
+@Composable
+private fun LabeledScoreBar(
+    label: String,
+    score: Int,
+    progress: Float,
+    color: Color,
+    delta: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.8f),
+            modifier = Modifier.width(36.dp)
+        )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(8.dp) // Thinner bar
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth(progress)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(color.copy(alpha = 0.8f), color)
+                        )
+                    )
+            )
+        }
+        
+        Column(
+            modifier = Modifier.width(60.dp),
+            horizontalAlignment = Alignment.End
+        ) {
+            Text(
+                text = formatScore(score),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Black,
+                color = color,
+                textAlign = TextAlign.End
+            )
+        }
+    }
+}
+
 
 data class BenchmarkComparisonItem(
     val name: String,
@@ -782,7 +786,6 @@ private fun BenchmarkComparisonCard(
     selectedDeviceName: String
 ) {
     val userWins = benchmark.userScore > benchmark.selectedScore
-    val isTie = benchmark.userScore == benchmark.selectedScore
     val maxScore = maxOf(benchmark.userScore, benchmark.selectedScore, 1.0)
     
     val userProgress by animateFloatAsState(
@@ -796,156 +799,162 @@ private fun BenchmarkComparisonCard(
         label = "benchmarkSelectedProgress"
     )
     
-    val winnerColor = if (userWins) Color(0xFF4CAF50) else Color(0xFFE53935)
-    
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(12.dp), // More squared
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
-        )
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
+        elevation = CardDefaults.cardElevation(0.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp) // Compact padding
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier
+                        .size(32.dp) // Smaller icon
+                        .background(
+                            MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f),
+                            RoundedCornerShape(8.dp)
+                        ),
+                    contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = benchmark.icon,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = benchmark.name,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        modifier = Modifier.size(16.dp)
                     )
                 }
-                
-                if (!isTie && (benchmark.userScore > 0 || benchmark.selectedScore > 0)) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = winnerColor.copy(alpha = 0.15f)
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                imageVector = if (userWins) Icons.Rounded.EmojiEvents else Icons.Rounded.Close,
-                                contentDescription = null,
-                                tint = winnerColor,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = if (userWins) "You win" else "Behind",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = winnerColor
-                            )
-                        }
-                    }
+                Spacer(modifier = Modifier.width(10.dp))
+                Column {
+                    Text(
+                        text = benchmark.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 13.sp
+                    )
+                    
+                    val scoreDiff = benchmark.userScore - benchmark.selectedScore
+                    val percentDiff = if (benchmark.selectedScore > 0) {
+                        (scoreDiff / benchmark.selectedScore * 100).toInt()
+                    } else 0
+                    
+                    val diffText = if (userWins) "Faster by $percentDiff%" else "Slower by ${-percentDiff}%"
+                    val diffColor = if (userWins) Color(0xFF4CAF50) else Color(0xFFE53935)
+                    
+                    Text(
+                        text = diffText,
+                        fontSize = 11.sp,
+                        color = diffColor,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
             
             Spacer(modifier = Modifier.height(12.dp))
             
-            // Score comparison bars
+            // Labeled bars for better understanding
+            // User Bar
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // User score
-                Column(modifier = Modifier.weight(1f)) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.2f))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(userProgress)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = String.format("%.2f pts", benchmark.userScore),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                // Difference chip
-                val diff = benchmark.userScore - benchmark.selectedScore
-                val percentDiff = if (benchmark.selectedScore > 0) {
-                    (diff / benchmark.selectedScore * 100).toInt()
-                } else if (benchmark.userScore > 0) 100 else 0
-                
                 Text(
-                    text = if (percentDiff >= 0) "+$percentDiff%" else "$percentDiff%",
+                    text = "You",
                     fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (percentDiff >= 0) Color(0xFF4CAF50) else Color(0xFFE53935),
-                    modifier = Modifier.width(48.dp),
-                    textAlign = TextAlign.Center
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.width(36.dp),
+                    fontWeight = FontWeight.Bold
                 )
                 
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                // Selected device score
-                Column(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp) // Thinner bar
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .clip(RoundedCornerShape(3.dp))
-                            .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth(selectedProgress)
-                                .background(MaterialTheme.colorScheme.secondary)
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = String.format("%.2f pts", benchmark.selectedScore),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.fillMaxWidth()
+                            .fillMaxHeight()
+                            .fillMaxWidth(userProgress)
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                                        MaterialTheme.colorScheme.primary
+                                    )
+                                )
+                            )
                     )
                 }
+                
+                Text(
+                    text = String.format("%.0f", benchmark.userScore),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.width(40.dp),
+                    textAlign = TextAlign.End
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(6.dp))
+            
+            // Selected Device Bar
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Ref",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                    modifier = Modifier.width(36.dp),
+                     fontWeight = FontWeight.Bold
+                )
+                
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(6.dp) // Thinner bar
+                        .clip(RoundedCornerShape(3.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(selectedProgress)
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(
+                                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.7f),
+                                        MaterialTheme.colorScheme.secondary
+                                    )
+                                )
+                            )
+                    )
+                }
+                
+                Text(
+                    text = String.format("%.0f", benchmark.selectedScore),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.width(40.dp),
+                    textAlign = TextAlign.End
+                )
             }
         }
     }
 }
 
 private fun formatScore(score: Int): String {
-    return when {
-        score >= 1_000_000 -> String.format("%.1fM", score / 1_000_000.0)
-        score >= 1_000 -> String.format("%.1fK", score / 1_000.0)
-        else -> score.toString()
-    }
+    return String.format("%,d", score)
 }

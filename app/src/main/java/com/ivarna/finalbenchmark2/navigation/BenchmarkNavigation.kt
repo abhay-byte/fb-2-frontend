@@ -26,10 +26,19 @@ fun BenchmarkNavigation(modifier: Modifier = Modifier) {
         }
         
         composable("benchmark") {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val historyRepository = androidx.compose.runtime.remember {
+                 com.ivarna.finalbenchmark2.data.repository.HistoryRepository(
+                     com.ivarna.finalbenchmark2.data.database.AppDatabase.getDatabase(context).benchmarkDao()
+                 )
+            }
             BenchmarkScreen(
+                preset = "Auto",
                 onBenchmarkComplete = { summaryJson ->
                     navController.navigate("result/$summaryJson")
-                }
+                },
+                onNavBack = { navController.popBackStack() },
+                historyRepository = historyRepository
             )
         }
         

@@ -100,6 +100,10 @@ class BenchmarkViewModel(
         private val _uiState = MutableStateFlow(BenchmarkUiState())
         val uiState: StateFlow<BenchmarkUiState> = _uiState
 
+        // New state flow for warm-up status
+        private val _isWarmingUp = MutableStateFlow(false)
+        val isWarmingUp: StateFlow<Boolean> = _isWarmingUp
+
         private val benchmarkManager =
                 com.ivarna.finalbenchmark2.cpuBenchmark.KotlinBenchmarkManager()
         private val cpuUtils = CpuUtilizationUtils(application)
@@ -191,6 +195,9 @@ class BenchmarkViewModel(
                         }
         }
 
+        // Job for benchmark execution
+        private var benchmarkJob: Job? = null
+
         // NEW IMPLEMENTATION: Delegate to KotlinBenchmarkManager for Single Source of Truth
         fun runBenchmarks(preset: String = "Auto") {
                 // FIX: Reset state immediately to prevent stale navigation
@@ -226,6 +233,12 @@ class BenchmarkViewModel(
 
                                 // Start performance monitoring for metrics collection
                                 performanceMonitor.start()
+
+                                // Initial Warm-up Phase
+                                _isWarmingUp.value = true
+                                _uiState.value = _uiState.value.copy(currentTestName = "WARMING UP...")
+                                delay(2000) // Simulate warm-up
+                                // Do NOT turn off warm-up here. Wait for first test to start.
 
                                 // 1. RESET STATE - Initialize test states
                                 val testNames =
@@ -306,6 +319,10 @@ class BenchmarkViewModel(
                                                         // Normal benchmark event handling (SINGLE and MULTI modes)
                                                         when (event.state) {
                                                                 "STARTED" -> {
+                                                                        // Tests have started, end warm-up state
+                                                                        if (_isWarmingUp.value) {
+                                                                            _isWarmingUp.value = false
+                                                                        }
                                                                         _uiState.update { state ->
                                                                                 state.copy(
                                                                                         currentTestName =
@@ -413,7 +430,7 @@ class BenchmarkViewModel(
                                 }
 
                                 // Start the benchmark execution
-                                val benchmarkJob =
+                                benchmarkJob =
                                         launch(Dispatchers.IO) {
                                                 benchmarkManager.runAllBenchmarks(preset)
                                         }
@@ -472,6 +489,8 @@ class BenchmarkViewModel(
                                         try {
                                                 // Create summary JSON similar to what
                                                 // BenchmarkScreen expects
+                                                val gson = com.google.gson.Gson()
+                                                
                                                 fun sanitize(value: Double): Double =
                                                         when {
                                                                 value.isInfinite() -> 0.0
@@ -479,20 +498,32 @@ class BenchmarkViewModel(
                                                                 else -> value
                                                         }
 
-                                                // Parse performance metrics JSON to avoid
-                                                // double-escaping by Gson
-                                                val performanceMetricsObject =
+                                                // Parse performance metrics JSON into a Map for clean
+                                                // Gson serialization
+                                                val performanceMetricsMap: Map<String, Any> =
                                                         try {
                                                                 if (lastPerformanceMetricsJson
                                                                                 .isNotBlank() &&
                                                                                 lastPerformanceMetricsJson !=
                                                                                         "{}"
                                                                 ) {
-                                                                        JSONObject(
-                                                                                lastPerformanceMetricsJson
+                                                                        val type =
+                                                                                object :
+                                                                                        com.google.gson
+                                                                                        .reflect
+                                                                                        .TypeToken<
+                                                                                                Map<
+                                                                                                        String,
+                                                                                                        Any
+                                                                                                >
+                                                                                        >() {}
+                                                                                        .type
+                                                                        gson.fromJson(
+                                                                                lastPerformanceMetricsJson,
+                                                                                type
                                                                         )
                                                                 } else {
-                                                                        JSONObject()
+                                                                        emptyMap()
                                                                 }
                                                         } catch (e: Exception) {
                                                                 Log.e(
@@ -500,7 +531,7 @@ class BenchmarkViewModel(
                                                                         "Error parsing performance metrics JSON",
                                                                         e
                                                                 )
-                                                                JSONObject()
+                                                                emptyMap()
                                                         }
 
                                                 val summaryData =
@@ -531,7 +562,7 @@ class BenchmarkViewModel(
                                                                 "timestamp" to
                                                                         System.currentTimeMillis(), // Capture completion time
                                                                 "performance_metrics" to
-                                                                        performanceMetricsObject, // FIXED: Use JSONObject instead of String
+                                                                        performanceMetricsMap, // FIXED: Use Map for correct JSON structure
                                                                 "detailed_results" to
                                                                         finalResults.detailedResults
                                                                                 .map { result ->
@@ -554,7 +585,6 @@ class BenchmarkViewModel(
                                                                                 }
                                                         )
 
-                                                val gson = com.google.gson.Gson()
                                                 val summaryJson = gson.toJson(summaryData)
 
                                                 Log.d(
@@ -774,6 +804,21 @@ class BenchmarkViewModel(
         // Legacy function kept for compatibility
         fun startBenchmark(preset: String = "Auto") {
                 runBenchmarks(preset)
+        }
+
+        fun stopBenchmark() {
+                // Cancel the actual execution job
+                benchmarkJob?.cancel()
+                
+                // Stop the foreground service
+                BenchmarkForegroundService.stop(application)
+                
+                // Reset state
+                isBenchmarkRunning = false
+                _uiState.update { 
+                    it.copy(isRunning = false) 
+                }
+                _benchmarkState.value = BenchmarkState.Idle
         }
 
         fun saveCpuBenchmarkResult(results: BenchmarkResults, performanceMetricsJson: String = "") {

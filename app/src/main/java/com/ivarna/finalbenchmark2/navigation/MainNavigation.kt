@@ -185,6 +185,7 @@ fun MainNavigation(
                             },
                             onBenchmarkStart = { activity?.startAllOptimizations() },
                             onBenchmarkEnd = { activity?.stopAllOptimizations() },
+                            onNavBack = { navController.popBackStack() }, // Pass navigation logic
                             historyRepository = historyRepository
                     )
                 }
