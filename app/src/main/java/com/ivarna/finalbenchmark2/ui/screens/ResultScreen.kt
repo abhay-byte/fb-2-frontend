@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.animation.core.*
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import androidx.compose.ui.Alignment
@@ -514,7 +515,13 @@ fun ResultScreen(
                                     .alpha(fadeAnim.value)
                                     .clip(RoundedCornerShape(32.dp))
                                     .then(
-                                        Modifier.hazeChild(state = localHazeState)
+                                        Modifier.hazeChild(
+                                            state = localHazeState,
+                                            style = HazeStyle(
+                                                backgroundColor = MaterialTheme.colorScheme.surface,
+                                                tint = null
+                                            )
+                                        )
                                     )
                                     .border(
                                         1.dp,
