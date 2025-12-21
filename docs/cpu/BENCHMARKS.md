@@ -20,15 +20,16 @@ Detailed documentation of all 10 benchmarks in the FinalBenchmark2 CPU suite.
 ```kotlin
 // BenchmarkHelpers.kt
 fun countFactorsPollardRho(limit: Int): Long {
-    var totalFactors = 0L
-    var n = 2L
+    if (limit < 4) return 0
     
-    while (n <= limit) {
-        val factor = pollardRho(n)
-        if (factor > 1) {
-            totalFactors++
+    var totalFactors = 0L
+    
+    // Test composite numbers (skip primes for performance)
+    for (n in 4..limit step 2) {  // Even numbers only for speed
+        val factor = pollardRho(n.toLong())
+        if (factor > 1 && factor < n) {
+            totalFactors += factor
         }
-        n += 2  // Test even numbers only for performance
     }
     
     return totalFactors
