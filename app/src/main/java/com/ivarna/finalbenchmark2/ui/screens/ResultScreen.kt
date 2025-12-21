@@ -4,6 +4,7 @@ import android.content.Intent
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.pager.HorizontalPager
@@ -19,10 +20,6 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.animation.core.*
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.haze
-import dev.chrisbanes.haze.hazeChild
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
@@ -80,12 +77,6 @@ fun ResultScreen(
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         var showDeleteDialog by remember { mutableStateOf(false) }
-        
-        // Create a local HazeState to avoid conflict with global HazeState
-        // The error "Modifier.haze and Modifier.hazeChild can not be descendants" happens because
-        // MainNavigation applies haze() to the root, so using that state here causes a crash.
-        // We use a local state with sibling hierarchy (Background vs Surface) to fix this.
-        val localHazeState = remember { HazeState() }
 
         val summary =
                 remember(summaryJson) {
@@ -414,21 +405,6 @@ fun ResultScreen(
                         )
                     )
             ) {
-                // Ambient Glow - Source for Haze Blur
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(400.dp)
-                        .alpha(0.15f)
-                        .haze(state = localHazeState) // Apply local haze source here
-                        .background(
-                            Brush.radialGradient(
-                                colors = listOf(MaterialTheme.colorScheme.primary, Color.Transparent),
-                                radius = 1000f
-                            )
-                        )
-                )
-
                 Scaffold(
                     topBar = {
                         CenterAlignedTopAppBar(
@@ -545,7 +521,7 @@ fun ResultScreen(
                                 verticalAlignment = Alignment.Top
                             ) { page ->
                                 when (page) {
-                                    0 -> SummaryTab(summary, localHazeState)
+                                    0 -> SummaryTab(summary)
                                     1 -> DetailedDataTab(summary)
                                     2 -> RankingsTab(
                                             summary.finalScore,
@@ -562,47 +538,52 @@ fun ResultScreen(
 }
 
 @Composable
-fun SummaryTab(summary: BenchmarkSummary, hazeState: HazeState) {
+fun SummaryTab(summary: BenchmarkSummary) {
         LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
                 // Final Score Card - Glassmorphic
                 item {
-                        Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(24.dp))
-                                    .hazeChild(
-                                        state = hazeState,
-                                        style = HazeStyle(
-                                            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
-                                            tint = null
-                                        )
-                                    )
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                                        RoundedCornerShape(24.dp)
-                                    )
+                        Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(24.dp),
+                                colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
                         ) {
-                                Column(
-                                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
+                                Box(
+                                        modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                        brush = Brush.verticalGradient(
+                                                                colors = listOf(
+                                                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                                                )
+                                                        )
+                                                )
                                 ) {
-                                        Text(
-                                                text = "Final Score",
-                                                fontSize = 18.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                                text = String.format("%.2f", summary.finalScore),
-                                                fontSize = 48.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                                        Column(
+                                                modifier = Modifier.fillMaxWidth().padding(24.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                                Text(
+                                                        text = "Final Score",
+                                                        fontSize = 18.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                        text = String.format("%.2f", summary.finalScore),
+                                                        fontSize = 48.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                )
+                                        }
                                 }
                         }
                 }
@@ -614,90 +595,100 @@ fun SummaryTab(summary: BenchmarkSummary, hazeState: HazeState) {
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                                 // Single-Core Score
-                                Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(20.dp))
-                                            .hazeChild(
-                                                state = hazeState,
-                                                style = HazeStyle(
-                                                    backgroundColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                                    tint = null
-                                                )
-                                            )
-                                            .border(
-                                                1.dp,
-                                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                                                RoundedCornerShape(20.dp)
-                                            )
+                                Card(
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(20.dp),
+                                        colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                 ) {
-                                        Column(
-                                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally
+                                        Box(
+                                                modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(
+                                                                brush = Brush.verticalGradient(
+                                                                        colors = listOf(
+                                                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                                                        )
+                                                                )
+                                                        )
                                         ) {
-                                                Text(
-                                                        text = "Single-Core",
-                                                        fontSize = 14.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color =
-                                                                MaterialTheme.colorScheme
-                                                                        .onSurfaceVariant
-                                                )
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                Text(
-                                                        text =
-                                                                String.format(
-                                                                        "%.2f",
-                                                                        summary.singleCoreScore
-                                                                ),
-                                                        fontSize = 24.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                )
+                                                Column(
+                                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                        Text(
+                                                                text = "Single-Core",
+                                                                fontSize = 14.sp,
+                                                                fontWeight = FontWeight.Medium,
+                                                                color =
+                                                                        MaterialTheme.colorScheme
+                                                                                .onSurfaceVariant
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        Text(
+                                                                text =
+                                                                        String.format(
+                                                                                "%.2f",
+                                                                                summary.singleCoreScore
+                                                                        ),
+                                                                fontSize = 24.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                }
                                         }
                                 }
 
                                 // Multi-Core Score
-                                Box(
-                                        modifier = Modifier
-                                            .weight(1f)
-                                            .clip(RoundedCornerShape(20.dp))
-                                            .hazeChild(
-                                                state = hazeState,
-                                                style = HazeStyle(
-                                                    backgroundColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-                                                    tint = null
-                                                )
-                                            )
-                                            .border(
-                                                1.dp,
-                                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                                                RoundedCornerShape(20.dp)
-                                            )
+                                Card(
+                                        modifier = Modifier.weight(1f),
+                                        shape = RoundedCornerShape(20.dp),
+                                        colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                 ) {
-                                        Column(
-                                                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally
+                                        Box(
+                                                modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(
+                                                                brush = Brush.verticalGradient(
+                                                                        colors = listOf(
+                                                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+                                                                        )
+                                                                )
+                                                        )
                                         ) {
-                                                Text(
-                                                        text = "Multi-Core",
-                                                        fontSize = 14.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                        color =
-                                                                MaterialTheme.colorScheme
-                                                                        .onSurfaceVariant
-                                                )
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                Text(
-                                                        text =
-                                                                String.format(
-                                                                        "%.2f",
-                                                                        summary.multiCoreScore
-                                                                ),
-                                                        fontSize = 24.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.primary
-                                                )
+                                                Column(
+                                                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                                        horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                        Text(
+                                                                text = "Multi-Core",
+                                                                fontSize = 14.sp,
+                                                                fontWeight = FontWeight.Medium,
+                                                                color =
+                                                                        MaterialTheme.colorScheme
+                                                                                .onSurfaceVariant
+                                                        )
+                                                        Spacer(modifier = Modifier.height(8.dp))
+                                                        Text(
+                                                                text =
+                                                                        String.format(
+                                                                                "%.2f",
+                                                                                summary.multiCoreScore
+                                                                        ),
+                                                                fontSize = 24.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                color = MaterialTheme.colorScheme.primary
+                                                        )
+                                                }
                                         }
                                 }
                         }
@@ -711,41 +702,46 @@ fun SummaryTab(summary: BenchmarkSummary, hazeState: HazeState) {
                                 0.0
                         }
                         
-                        Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(20.dp))
-                                    .hazeChild(
-                                        state = hazeState,
-                                        style = HazeStyle(
-                                            backgroundColor = Color(0xFFFFE0E0).copy(alpha = 0.7f),
-                                            tint = null
-                                        )
-                                    )
-                                    .border(
-                                        1.dp,
-                                        Color(0xFFFF9999).copy(alpha = 0.5f),
-                                        RoundedCornerShape(20.dp)
-                                    )
+                        Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(
+                                        containerColor = Color(0xFFFFE0E0).copy(alpha = 0.5f)
+                                ),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                border = BorderStroke(1.dp, Color(0xFFFF9999).copy(alpha = 0.3f))
                         ) {
-                                Row(
-                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
+                                Box(
+                                        modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                        brush = Brush.verticalGradient(
+                                                                colors = listOf(
+                                                                        Color(0xFFFFE0E0).copy(alpha = 0.3f),
+                                                                        Color(0xFFFFE0E0).copy(alpha = 0.5f)
+                                                                )
+                                                        )
+                                                )
                                 ) {
-                                        Text(
-                                                text = "MP Ratio",
-                                                fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = Color(0xFF8B0000) // Dark red
-                                        )
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        Text(
-                                                text = String.format("%.2fx", mpRatio),
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = Color(0xFF8B0000) // Dark red
-                                        )
+                                        Row(
+                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                                                horizontalArrangement = Arrangement.Center,
+                                                verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                                Text(
+                                                        text = "MP Ratio",
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Medium,
+                                                        color = Color(0xFF8B0000) // Dark red
+                                                )
+                                                Spacer(modifier = Modifier.width(16.dp))
+                                                Text(
+                                                        text = String.format("%.2fx", mpRatio),
+                                                        fontSize = 16.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = Color(0xFF8B0000) // Dark red
+                                                )
+                                        }
                                 }
                         }
                 }
