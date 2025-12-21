@@ -26,31 +26,31 @@ class KotlinBenchmarkManager {
         // These are the baseline ops/s values used for geometric mean calculation
         // Note: Values are in ops/s, not Mops/s, to match benchmark result format
         val REFERENCE_MOPS = mapOf(
-                BenchmarkName.PRIME_GENERATION to 72_000_000.0,           // 72.0 Mops/s
-                BenchmarkName.FIBONACCI_ITERATIVE to 45_300_000.0,        // 45.3 Mops/s
-                BenchmarkName.MATRIX_MULTIPLICATION to 4_887_000_000.0,   // 4887.0 Mops/s (deterministic init)
-                BenchmarkName.HASH_COMPUTING to 780_000.0,                // 0.78 Mops/s
-                BenchmarkName.STRING_SORTING to 124_600_000.0,            // 124.6 Mops/s
-                BenchmarkName.RAY_TRACING to 2_840_000.0,                 // 2.84 Mops/s
-                BenchmarkName.COMPRESSION to 750_300_000.0,               // 750.3 Mops/s
-                BenchmarkName.MONTE_CARLO to 514_500_000.0,               // 514.5 Mops/s (LCG)
-                BenchmarkName.JSON_PARSING to 1_330_000.0,                // 1.33 Mops/s
-                BenchmarkName.N_QUEENS to 160_500_000.0                   // 160.5 Mops/s
+                BenchmarkName.PRIME_GENERATION to 571_430_000.0,           // 571.43 Mops/s (Pollard's Rho)
+                BenchmarkName.FIBONACCI_ITERATIVE to 4_560_000.0,          // 4.56 Mops/s
+                BenchmarkName.MATRIX_MULTIPLICATION to 3_876_440_000.0,    // 3876.44 Mops/s
+                BenchmarkName.HASH_COMPUTING to 138_370_000.0,             // 138.37 Mops/s
+                BenchmarkName.STRING_SORTING to 125_200_000.0,             // 125.20 Mops/s
+                BenchmarkName.RAY_TRACING to 8_820_000.0,                 // 8.82 Mops/s (Perlin Noise)
+                BenchmarkName.COMPRESSION to 758_880_000.0,                // 758.88 Mops/s
+                BenchmarkName.MONTE_CARLO to 229_460_000.0,               // 229.46 Mops/s (Mandelbrot Set)
+                BenchmarkName.JSON_PARSING to 91_503_800_000.0,            // 91503.80 Mops/s
+                BenchmarkName.N_QUEENS to 166_790_000.0                    // 166.79 Mops/s
         )
 
         val SCORING_FACTORS =
         mapOf(
                 // Target 20 / Performance (Mops/s)
-                BenchmarkName.PRIME_GENERATION to 1.7985e-6/12.5,        // 20 / 2.90e6 ops/s        
-                BenchmarkName.FIBONACCI_ITERATIVE to 4.365e-7,     // 20 / 22.91 Mops/s
+                BenchmarkName.PRIME_GENERATION to 1.7985e-6/102.5,        // 20 / 2.90e6 ops/s        
+                BenchmarkName.FIBONACCI_ITERATIVE to 4.365e-7*5,     // 20 / 22.91 Mops/s
                 BenchmarkName.MATRIX_MULTIPLICATION to 1.56465e-8/7.2,  // 20 / 639.13 Mops/s
-                BenchmarkName.HASH_COMPUTING to 2.778e-5/2,          // 20 / 0.36 Mops/s
+                BenchmarkName.HASH_COMPUTING to 2.778e-5/384,          // 20 / 0.36 Mops/s
                 BenchmarkName.STRING_SORTING to 1.602e-7/2,          // 20 / 62.42 Mops/s
-                BenchmarkName.RAY_TRACING to 4.902e-6,             // 20 / 2.04 Mops/s
-                BenchmarkName.COMPRESSION to 1.5243e-8,            // 20 / 656.04 Mops/s
-                BenchmarkName.MONTE_CARLO to 0.6125e-6/30,             // 20 / 16.32 Mops/s
-                BenchmarkName.JSON_PARSING to 1.56e-6*4,            // 20 / 6.41 Mops/s
-                BenchmarkName.N_QUEENS to 2.011e-7/2                 // 20 / 66.18e6 ops/s
+                BenchmarkName.RAY_TRACING to 4.902e-6/4.2,             // 20 / 2.04 Mops/s
+                BenchmarkName.COMPRESSION to 1.5243e-8*1.2,            // 20 / 656.04 Mops/s
+                BenchmarkName.MONTE_CARLO to 0.6125e-6/24,             // 20 / 16.32 Mops/s
+                BenchmarkName.JSON_PARSING to 1.56e-6/14250,            // 20 / 6.41 Mops/s
+                BenchmarkName.N_QUEENS to 2.011e-7/3.2                 // 20 / 66.18e6 ops/s
         )
 
         }
@@ -664,7 +664,7 @@ class KotlinBenchmarkManager {
                                 )
                         "slow" ->
                                 WorkloadParams(
-                                        primeRange = 1_750_000,  // Miller-Rabin: ~15-20s
+                                        primeRange = 10_750_000,  // Miller-Rabin: ~15-20s
 
                                         // ~1.0-2.0s
                                         fibonacciNRange = Pair(92, 92),
@@ -688,12 +688,12 @@ class KotlinBenchmarkManager {
                                         monteCarloSamples =
                                                 100_000L, // Reduced 100x for Mandelbrot Set (was 10M)
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 100,  // Reduced 10x for CPU-bound parsing
+                                        jsonParsingIterations = 500,  // Reduced 10x for CPU-bound parsing
                                         nqueensSize = 12 // INCREASED: 92 solutions, ~1.5s (was 8)
                                 )
                         "mid" ->
                                 WorkloadParams(
-                                        primeRange = 4_000_000,  // Miller-Rabin: ~20-25s
+                                        primeRange = 40_000_000,  // Miller-Rabin: ~20-25s
                                         // ~1.0-2.0s
                                         fibonacciNRange = Pair(96, 96),
                                         fibonacciIterations = 25_000_000,  // Reduced 3x for polynomial
@@ -717,7 +717,7 @@ class KotlinBenchmarkManager {
                                         monteCarloSamples =
                                                 2_000_000L, // Reduced 100x for Mandelbrot Set (was 200M)
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 250,  // Reduced 10x for CPU-bound parsing
+                                        jsonParsingIterations = 1000,  // Reduced 10x for CPU-bound parsing
                                         nqueensSize = 13 // INCREASED: 341 solutions, ~5s (was 9)
                                 )
                         "flagship" ->
@@ -725,7 +725,7 @@ class KotlinBenchmarkManager {
                                         // CACHE-RESIDENT STRATEGY: Small matrices with high
                                         // iterations
 
-                                        primeRange = 8_000_000,  // Miller-Rabin: ~40-50s
+                                        primeRange = 980_000_000,  // Miller-Rabin: ~40-50s
                                         fibonacciNRange = Pair(92, 92), // Use fixed max safe value
                                         fibonacciIterations = 41_666_667,  // Reduced 3x for polynomial
                                         matrixSize =
@@ -736,7 +736,7 @@ class KotlinBenchmarkManager {
                                         // flagship devices
                                         hashDataSizeMb = 8,
                                         hashIterations =
-                                                125_500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
+                                                525_500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
                                         // seconds
 
                                         stringSortIterations =
@@ -761,9 +761,9 @@ class KotlinBenchmarkManager {
                                         monteCarloSamples =
                                                 50_000_000L, // Reduced 100x for Mandelbrot Set (was 5B)
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 500,  // Reduced 10x for CPU-bound parsing
+                                        jsonParsingIterations = 2500,  // Reduced 10x for CPU-bound parsing
                                         nqueensSize =
-                                                15 // INCREASED: 14,200 solutions, ~20s (was 10)
+                                                16 // INCREASED: 14,200 solutions, ~20s (was 10)
                                 )
                         else -> WorkloadParams() // Default values
                 }

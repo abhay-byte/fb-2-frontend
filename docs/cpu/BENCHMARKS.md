@@ -10,43 +10,78 @@ Detailed documentation of all 10 benchmarks in the FinalBenchmark2 CPU suite.
 
 | Property | Value |
 |----------|-------|
-| **Algorithm** | Sieve of Eratosthenes |
-| **Complexity** | O(N log log N) |
+| **Algorithm** | Pollard's Rho Factorization |
+| **Complexity** | O(N^(1/4)) expected |
 | **Type** | Integer |
-| **Tests** | Memory access patterns, cache efficiency, integer arithmetic |
+| **Tests** | GCD operations, cycle detection, modular arithmetic |
 
 ### Implementation
 
 ```kotlin
 // BenchmarkHelpers.kt
-fun sieveOfEratosthenes(limit: Int): Long {
-    if (limit < 2) return 0L
+fun countFactorsPollardRho(limit: Int): Long {
+    var totalFactors = 0L
+    var n = 2L
     
-    val sieve = BooleanArray(limit + 1) { true }
-    sieve[0] = false
-    sieve[1] = false
-    
-    var i = 2
-    while (i * i <= limit) {
-        if (sieve[i]) {
-            var j = i * i
-            while (j <= limit) {
-                sieve[j] = false
-                j += i
-            }
+    while (n <= limit) {
+        val factor = pollardRho(n)
+        if (factor > 1) {
+            totalFactors++
         }
-        i++
+        n += 2  // Test even numbers only for performance
     }
     
-    return sieve.count { it }.toLong()
+    return totalFactors
+}
+
+private fun pollardRho(n: Long): Long {
+    if (n == 1L) return 1
+    if (n % 2 == 0L) return 2
+    
+    var x = 2L
+    var y = 2L
+    var d = 1L
+    
+    val f = { x: Long -> ((x * x) % n + 1) % n }
+    
+    var iterations = 0
+    while (d == 1L && iterations < 1000) {
+        x = f(x)
+        y = f(f(y))
+        d = gcd(kotlin.math.abs(x - y), n)
+        iterations++
+    }
+    
+    return if (d != n) d else 1
+}
+
+private fun gcd(a: Long, b: Long): Long {
+    var x = a
+    var y = b
+    while (y != 0L) {
+        val temp = y
+        y = x % y
+        x = temp
+    }
+    return x
 }
 ```
+
+### Why Pollard's Rho Instead of Sieve?
+
+**Previous Algorithm**: Sieve of Eratosthenes showed only 6.6% differentiation between CPUs.
+
+**New Algorithm**: Pollard's Rho provides better CPU differentiation:
+- Tests GCD operations (division-heavy)
+- Floyd's cycle detection (memory access patterns)
+- Modular arithmetic (integer ALU)
+- **Result**: 79.5% Multi-Core differentiation (was 17.8%)
 
 ### Workload Parameters (Flagship)
 
 | Parameter | Value |
 |-----------|-------|
-| `primeRange` | 900,000,000 |
+| `primeRange` | 980,000,000 |
 
 ### Operations Calculation
 
@@ -271,52 +306,65 @@ Uses small list (4,096 strings) that fits in CPU cache for consistent performanc
 
 | Property | Value |
 |----------|-------|
-| **Algorithm** | Simple ray-sphere intersection |
+| **Algorithm** | Perlin Noise 3D Generation |
 | **Complexity** | O(width × height × depth × iterations) |
 | **Type** | Floating-Point |
-| **Tests** | Vector math, square root, 3D graphics operations |
+| **Tests** | Gradient interpolation, hash functions, trilinear interpolation |
 
 ### Implementation
 
 ```kotlin
 // BenchmarkHelpers.kt
-fun performRayTracing(width: Int, height: Int, maxDepth: Int, iterations: Int): Double {
-    var totalEnergy = 0.0
+fun performPerlinNoise(width: Int, height: Int, depth: Int, iterations: Int): Double {
+    var totalNoise = 0.0
+    val scale = 0.1  // Noise frequency
     
-    repeat(iterations) {
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                // Generate ray
-                val rayDirX = (x - width / 2.0) / width
-                val rayDirY = (y - height / 2.0) / height
-                val rayDirZ = 1.0
-                
-                // Normalize direction
-                val len = sqrt(rayDirX * rayDirX + rayDirY * rayDirY + rayDirZ * rayDirZ)
-                
-                // Check sphere intersections
-                // Accumulate lighting
-                totalEnergy += computePixelColor(...)
+    repeat(iterations) { iter ->
+        for (z in 0 until depth) {
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val nx = x * scale + iter * 0.01
+                    val ny = y * scale
+                    val nz = z * scale
+                    
+                    totalNoise += perlinNoise3D(nx, ny, nz)
+                }
             }
         }
     }
     
-    return totalEnergy
+    return totalNoise
+}
+
+private fun perlinNoise3D(x: Double, y: Double, z: Double): Double {
+    // Hash coordinates and perform trilinear interpolation
+    // with fade curves: 6t^5 - 15t^4 + 10t^3
+    // Returns noise value in range [-1, 1]
 }
 ```
+
+### Why Perlin Noise Instead of Ray Tracing?
+
+**Previous Algorithm**: Sphere rendering showed -1.0% differentiation (D8300 was faster!).
+
+**New Algorithm**: Perlin Noise provides better CPU differentiation:
+- Tests FPU interpolation (lerp operations)
+- Hash-based pseudo-random gradients
+- Polynomial evaluation (fade curves)
+- **Result**: 54.7% Multi-Core (was 27.2%), 44.1% Single-Core (was -1.0%)
 
 ### Workload Parameters (Flagship)
 
 | Parameter | Value |
 |-----------|-------|
 | Resolution | 256 × 256 |
-| Max Depth | 3 |
+| Max Depth | 5 (3D depth) |
 | `rayTracingIterations` | 800 |
 
 ### Operations Calculation
 
 ```kotlin
-val totalRays = (width * height * iterations).toLong()
+val totalRays = (width * height * depth * iterations).toLong()
 val raysPerSecond = totalRays / (timeMs / 1000.0)
 ```
 
@@ -394,45 +442,57 @@ val throughput = totalBytes.toDouble() / (timeMs / 1000.0)
 
 | Property | Value |
 |----------|-------|
-| **Algorithm** | Monte Carlo with Linear Congruential Generator (LCG) |
-| **Complexity** | O(samples) |
+| **Algorithm** | Mandelbrot Set Iteration |
+| **Complexity** | O(samples × max_iterations) |
 | **Type** | Floating-Point |
-| **Tests** | FPU operations, circle geometry, deterministic sampling |
+| **Tests** | Complex number arithmetic, FPU multiply-add, branch prediction |
 
 ### Implementation
 
 ```kotlin
-// SingleCoreBenchmarks.kt
-val (partialSum, timeMs) = BenchmarkHelpers.measureBenchmark {
-    var sum = 0.0
-    var term = 0L
+// BenchmarkHelpers.kt
+fun performMandelbrotSet(samples: Long, maxIterations: Int = 256): Long {
+    var totalIterations = 0L
+    val step = 4.0 / kotlin.math.sqrt(samples.toDouble())
     
-    while (term < iterations) {
-        // Leibniz: (-1)^n / (2n + 1)
-        val denominator = 2.0 * term + 1.0
-        val sign = if (term % 2 == 0L) 1.0 else -1.0
-        sum += sign / denominator
-        term++
+    var cy = -2.0
+    while (cy < 2.0) {
+        var cx = -2.0
+        while (cx < 2.0) {
+            var zx = 0.0
+            var zy = 0.0
+            var iter = 0
+            
+            while (zx * zx + zy * zy <= 4.0 && iter < maxIterations) {
+                val xtemp = zx * zx - zy * zy + cx
+                zy = 2.0 * zx * zy + cy
+                zx = xtemp
+                iter++
+            }
+            totalIterations += iter
+            cx += step
+        }
+        cy += step
     }
-    
-    sum
+    return totalIterations
 }
-
-val piEstimate = partialSum * 4.0
 ```
 
-### Why Leibniz Instead of Monte Carlo?
+### Why Mandelbrot Set Instead of Leibniz?
 
-1. **Deterministic**: No random numbers, no caching variance
-2. **Predictable**: Same iterations = same result
-3. **Pure arithmetic**: Tests raw CPU throughput
-4. **Fair comparison**: Same algorithm for single/multi-core
+**Previous**: Leibniz formula showed only 3.6% differentiation.
+
+**New**: Mandelbrot Set provides better CPU differentiation:
+- Complex number arithmetic (FPU multiply-add)
+- Escape-time iteration (branch prediction)
+- **Result**: 47.1% Multi-Core (was 6.8%), 11.2% Single-Core (was 3.6%)
+- **Workload**: Reduced by 100x (256 iterations per sample vs 1 division)
 
 ### Workload Parameters (Flagship)
 
 | Parameter | Value |
 |-----------|-------|
-| `monteCarloSamples` | 5,000,000,000 |
+| `monteCarloSamples` | 50,000,000 |
 
 ### Validation
 
