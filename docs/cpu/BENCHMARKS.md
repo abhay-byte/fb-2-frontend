@@ -102,33 +102,55 @@ val totalRange = rangePerThread.toLong() * numThreads
 
 | Property | Value |
 |----------|-------|
-| **Algorithm** | Iterative Fibonacci |
-| **Complexity** | O(n) per iteration |
-| **Type** | Integer |
-| **Tests** | Pure ALU arithmetic, register usage |
+| **Algorithm** | Polynomial Evaluation (Horner's Method) |
+| **Complexity** | O(n × degree) |
+| **Type** | Floating-Point |
+| **Tests** | FPU multiply-add chains (FMA units), floating-point precision |
 
 ### Implementation
 
 ```kotlin
-// SingleCoreBenchmarks.kt - Inlined for JIT stability
-repeat(iterations) {
-    var prev = 0L
-    var curr = 1L
-    for (i in 2..targetN) {
-        val next = prev + curr
-        prev = curr
-        curr = next
+// BenchmarkHelpers.kt
+fun fibonacciIterative(n: Int): Long {
+    if (n <= 1) return n.toLong()
+    
+    // Polynomial coefficients (use Fibonacci-like sequence for determinism)
+    val coeffs = DoubleArray(10) { i -> (i + 1).toDouble() }
+    
+    var result = 0.0
+    
+    // Evaluate polynomial multiple times
+    for (iteration in 0 until n) {
+        val x = 1.0 + (iteration % 100) / 100.0  // x varies from 1.0 to 2.0
+        
+        // Horner's method: tests FPU multiply-add chains
+        var poly = coeffs[coeffs.size - 1]
+        for (i in coeffs.size - 2 downTo 0) {
+            poly = poly * x + coeffs[i]  // FMA operation
+        }
+        
+        result += poly
     }
-    totalResult += curr
+    
+    return result.toLong()
 }
 ```
+
+### Why Polynomial Evaluation Instead of Simple Fibonacci?
+
+**Previous**: Simple Fibonacci showed poor CPU differentiation.
+
+**New**: Polynomial Evaluation provides better testing:
+- Tests FPU multiply-add chains (FMA units)
+- Tests floating-point precision
+- More comprehensive than simple integer addition
+- Better differentiation between CPU architectures
 
 ### Workload Parameters (Flagship)
 
 | Parameter | Value |
 |-----------|-------|
-| `targetN` | 35 |
-| `fibonacciIterations` | 120,000,000 |
+| `fibonacciIterations` | 41,666,667 |
 
 ### Operations Calculation
 
@@ -213,26 +235,38 @@ Uses 128×128 matrices (128 KB) that fit in L2/L3 cache to prevent memory bottle
 
 | Property | Value |
 |----------|-------|
-| **Algorithm** | FNV-1a Hash |
-| **Complexity** | O(bufferSize × iterations) |
+| **Algorithm** | SHA-256-like Hash Computing |
+| **Complexity** | O(iterations) |
 | **Type** | Integer |
-| **Tests** | Byte manipulation, XOR, multiplication |
+| **Tests** | Bitwise operations (rotations, shifts, XOR), division, modulo |
 
 ### Implementation
 
 ```kotlin
 // BenchmarkHelpers.kt
-fun performHashComputing(bufferSize: Int, iterations: Int): Long {
-    val data = ByteArray(bufferSize) { (it % 255).toByte() }
-    var currentState = 0x811C9DC5.toInt()  // FNV offset basis
+fun performHashComputing(iterations: Int): Long {
+    // SHA-256 initial hash values
+    var h0 = 0x6a09e667.toInt()
+    var h1 = 0xbb67ae85.toInt()
+    // ... (8 state variables total)
     
-    repeat(iterations) {
-        for (i in 0 until bufferSize step 4) {
-            currentState = (currentState xor data[i].toInt()) * 16777619
-        }
+    repeat(iterations) { i ->
+        // SHA-256-like compression: rotations, XOR, AND
+        val s0 = ((h0 ushr 2) or (h0 shl 30)) xor ...
+        val s1 = ((h4 ushr 6) or (h4 shl 26)) xor ...
+        
+        // ENHANCED: Division/modulo operations
+        val extra = if (i > 0) {
+            val divisor = ((i and 0xFF) + 1)
+            (h0 / divisor) xor (h1 % divisor)
+        } else 0
+        
+        // State rotation
+        h0 = temp1 + temp2
+        // ...
     }
     
-    return bufferSize.toLong() * iterations
+    return (h0.toLong() shl 32) or (h1.toLong() and 0xFFFFFFFFL)
 }
 ```
 
@@ -240,8 +274,7 @@ fun performHashComputing(bufferSize: Int, iterations: Int): Long {
 
 | Parameter | Value |
 |-----------|-------|
-| Buffer Size | 4 KB |
-| `hashIterations` | 10,000 |
+| `hashIterations` | 525,500,000 |
 
 ### Operations Calculation
 
