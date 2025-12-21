@@ -117,6 +117,9 @@ fun BenchmarkScreen(
     val uiState by viewModel.uiState.collectAsState()
     val isWarmingUp by viewModel.isWarmingUp.collectAsState()
     val scrollState = rememberLazyListState()
+    
+    // Track list position for wheel calculations
+    var listCoordinates by remember { mutableStateOf<androidx.compose.ui.layout.LayoutCoordinates?>(null) }
 
     // Handle back press - stop benchmark if running
     BackHandler(enabled = uiState.isRunning) {
@@ -305,17 +308,24 @@ fun BenchmarkScreen(
                 // Timeline List
                 LazyColumn(
                     state = scrollState,
-                    contentPadding = PaddingValues(bottom = 120.dp), // Space for HUD
-                    modifier = Modifier.fillMaxWidth()
+                    contentPadding = PaddingValues(bottom = 150.dp), // Increased space for HUD
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .onGloballyPositioned { listCoordinates = it }
                 ) {
                     val singleCoreTests = uiState.testStates.filter { !it.name.startsWith("Multi-Core", ignoreCase = true) }
                     val multiCoreTests = uiState.testStates.filter { it.name.startsWith("Multi-Core", ignoreCase = true) }
 
                     // Single Core Section
                     if (singleCoreTests.isNotEmpty()) {
-                        item { SectionHeader("SINGLE CORE OPERATIONS") }
+                        item { 
+                            // Header also curves
+                            Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
+                                SectionHeader("SINGLE CORE OPERATIONS") 
+                            }
+                        }
                         items(singleCoreTests) { test ->
-                            Box(modifier = Modifier.wheelCurve(scrollState)) {
+                            Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
                                 TimelineTestRow(test = test)
                             }
                         }
@@ -324,17 +334,17 @@ fun BenchmarkScreen(
                     // Multi Core Section
                     if (multiCoreTests.isNotEmpty()) {
                         item { 
-                            Box(modifier = Modifier.wheelCurve(scrollState)) {
+                            Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
                                 Spacer(modifier = Modifier.height(24.dp))
                             }
                         }
                         item {
-                           Box(modifier = Modifier.wheelCurve(scrollState)) {
+                           Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
                                SectionHeader("MULTI CORE OPERATIONS")
                            }
                         }
                         items(multiCoreTests) { test ->
-                            Box(modifier = Modifier.wheelCurve(scrollState)) {
+                            Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
                                 TimelineTestRow(test = test)
                             }
                         }
@@ -504,7 +514,8 @@ fun TimelineTestRow(test: TestState) {
         modifier = Modifier
             .fillMaxWidth()
             .background(rowBackgroundColor)
-            .padding(horizontal = 24.dp, vertical = 12.dp),
+            .padding(start = 24.dp, top = 12.dp, bottom = 12.dp)
+            .padding(end = 60.dp), // Extra padding to ensure text isn't clipped when shifted right
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Status Icon
@@ -696,7 +707,10 @@ fun HUDMetric(
 
 
 // Wheel Curve Modifier
-fun Modifier.wheelCurve(scrollState: androidx.compose.foundation.lazy.LazyListState): Modifier = this.composed {
+fun Modifier.wheelCurve(
+    scrollState: androidx.compose.foundation.lazy.LazyListState,
+    listCoordinates: androidx.compose.ui.layout.LayoutCoordinates?
+): Modifier = this.composed {
     var itemY by remember { mutableStateOf(0f) }
     
     Modifier
@@ -705,17 +719,27 @@ fun Modifier.wheelCurve(scrollState: androidx.compose.foundation.lazy.LazyListSt
         }
         .graphicsLayer {
             val viewportHeight = scrollState.layoutInfo.viewportSize.height.toFloat()
-            val centerY = viewportHeight / 2f + 150f // Adjusted for top padding
+            
+            // Calculate accurate center based on list position in window
+            // If listCoordinates is not yet available, fallback to simple view height center
+            val listY = listCoordinates?.positionInWindow()?.y ?: 0f
+            val centerY = listY + (viewportHeight / 2f)
+            
+            // If listY is 0 (first frame), usage of just positionInWindow might be offset?
+            // itemY is also global.
+            // distance = itemGlobalY - listCenterGlobalY
             val distanceFromCenter = itemY - centerY
             
             // Normalized distance [-1, 1] relative to half height
             val normalizedDist = (distanceFromCenter / (viewportHeight / 1.6f)).coerceIn(-1f, 1f)
             
-            val maxTranslationX = 120.dp.toPx() 
+            val maxTranslationX = 80.dp.toPx() // Reduced from 120dp to make stats more visible
             
             // Apply translation
             // 1 - dist^2 creates a nice bell curve
-            translationX = maxTranslationX * (1f - (normalizedDist * normalizedDist)) - (40.dp.toPx()) 
+            translationX = maxTranslationX * (1f - (normalizedDist * normalizedDist)) 
+            
+            // scaleX = 1f + 0.1f * (1f - Math.abs(normalizedDist)) // subtle scale up center?
             
             alpha = 1f - 0.7f * Math.abs(normalizedDist) // Fade out edges
         }
