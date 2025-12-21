@@ -2,6 +2,10 @@ package com.ivarna.finalbenchmark2.ui.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import com.ivarna.finalbenchmark2.data.database.entities.BenchmarkResultEntity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -106,13 +110,16 @@ fun HomeScreen(
 
         // Swipe state for high score card
         var showHighScoreCard by remember { mutableStateOf(true) }
-        var highestScore by remember { mutableStateOf<Double?>(null) }
+        var highestScoreEntity by remember { mutableStateOf<BenchmarkResultEntity?>(null) }
 
         // Load highest score from database
         LaunchedEffect(historyRepository) {
                 if (historyRepository != null) {
                         historyRepository.getAllResults().collect { results ->
-                                highestScore = results.maxOfOrNull { it.benchmarkResult.normalizedScore }
+                                highestScoreEntity = results
+                                        .filter { it.benchmarkResult.type.contains("CPU", ignoreCase = true) }
+                                        .maxByOrNull { it.benchmarkResult.normalizedScore }
+                                        ?.benchmarkResult
                         }
                 }
         }
@@ -163,7 +170,7 @@ fun HomeScreen(
                                                                 if (abs(dragAmount) > swipeThreshold / 10) {
                                                                         if (dragAmount < 0) {
                                                                                 // Left swipe - show high score card
-                                                                                if (highestScore != null) {
+                                                                                if (highestScoreEntity != null) {
                                                                                         showHighScoreCard = true
                                                                                 }
                                                                         } else {
@@ -176,17 +183,19 @@ fun HomeScreen(
                                         contentAlignment = Alignment.Center
                                 ) {
                                         AnimatedContent(
-                                                targetState = showHighScoreCard && highestScore != null,
+                                                targetState = showHighScoreCard && highestScoreEntity != null,
                                                 label = "swipe_animation"
                                         ) { showScore ->
-                                                if (showScore) {
-                                                        // High Score Card
+                                                if (showScore && highestScoreEntity != null) {
+                                                        // High Score Card View
                                                         Column(
                                                                 modifier = Modifier.fillMaxWidth(),
                                                                 horizontalAlignment = Alignment.CenterHorizontally
                                                         ) {
                                                                 HighScoreCard(
-                                                                        score = highestScore ?: 0.0,
+                                                                        score = highestScoreEntity!!.normalizedScore,
+                                                                        deviceModel = highestScoreEntity!!.deviceModel,
+                                                                        timestamp = highestScoreEntity!!.timestamp,
                                                                         historyRepository = historyRepository
                                                                 )
                                                         }
@@ -238,7 +247,7 @@ fun HomeScreen(
                                 }
 
                                 // Dot Navigation Indicators (only show if high score exists)
-                                if (highestScore != null) {
+                                if (highestScoreEntity != null) {
                                         Spacer(modifier = Modifier.height(12.dp))
                                         Row(
                                                 modifier = Modifier.fillMaxWidth(),
@@ -1420,9 +1429,13 @@ fun RomCompatibilityWarningCard() {
 @Composable
 fun HighScoreCard(
         score: Double,
+        deviceModel: String,
+        timestamp: Long,
         historyRepository: HistoryRepository?
 ) {
         var beatsPercentage by remember { mutableStateOf(0) }
+        val dateFormat = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
+        val formattedDate = remember(timestamp) { dateFormat.format(Date(timestamp)) }
 
         // Calculate percentage beaten using same logic as ResultScreen
         LaunchedEffect(score, historyRepository) {
@@ -1482,74 +1495,151 @@ fun HighScoreCard(
                 modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp), // Slightly more rounded for premium feel
                 colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) // Subtle glass-like feel
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp), // Flat for cleaner look
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
         ) {
                 Box(
                         modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
-                                        brush = Brush.horizontalGradient(
+                                        brush = Brush.verticalGradient(
                                                 colors = listOf(
-                                                        MaterialTheme.colorScheme.primaryContainer,
-                                                        MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+                                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                                        MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
                                                 )
                                         )
                                 )
-                                .padding(20.dp)
                 ) {
-                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                        Column(
+                                modifier = Modifier
+                                        .padding(20.dp)
+                                        .fillMaxWidth()
                         ) {
-                                // Left: App Icon
-                                Box(
-                                        modifier = Modifier.size(70.dp),
-                                        contentAlignment = Alignment.Center
+                                // Header: Label and Date
+                                Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                        Box(
-                                                modifier = Modifier
-                                                        .size(65.dp)
-                                                        .clip(CircleShape)
-                                                        .background(Color(0xFF2A2A2A))
-                                        )
-                                        Image(
-                                                painter = painterResource(id = R.drawable.logo_2),
-                                                contentDescription = "App Logo",
-                                                modifier = Modifier.size(50.dp)
+                                        Surface(
+                                                color = MaterialTheme.colorScheme.primaryContainer,
+                                                shape = RoundedCornerShape(50),
+                                                modifier = Modifier.height(24.dp)
+                                        ) {
+                                                Row(
+                                                        verticalAlignment = Alignment.CenterVertically,
+                                                        modifier = Modifier.padding(horizontal = 10.dp)
+                                                ) {
+                                                        Text(
+                                                                text = "PERSONAL BEST",
+                                                                fontSize = 10.sp,
+                                                                fontWeight = FontWeight.Bold,
+                                                                letterSpacing = 1.sp,
+                                                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                        )
+                                                }
+                                        }
+
+                                        Text(
+                                                text = formattedDate,
+                                                fontSize = 11.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                                fontWeight = FontWeight.Medium
                                         )
                                 }
 
-                                Spacer(modifier = Modifier.width(16.dp))
+                                Spacer(modifier = Modifier.height(20.dp))
 
-                                // Right: Score and Percentage
-                                Column(
-                                        modifier = Modifier.weight(1f),
-                                        horizontalAlignment = Alignment.End
+                                // Main Content: Logo + Score
+                                Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                        // App Logo Bubble
+                                        Box(
+                                                modifier = Modifier.size(64.dp),
+                                                contentAlignment = Alignment.Center
+                                        ) {
+                                                Box(
+                                                        modifier = Modifier
+                                                                .size(64.dp)
+                                                                .clip(CircleShape)
+                                                                .background(
+                                                                        brush = Brush.linearGradient(
+                                                                                colors = listOf(
+                                                                                        Color(0xFF2A2A2A),
+                                                                                        Color(0xFF1A1A1A)
+                                                                                )
+                                                                        )
+                                                                )
+                                                )
+                                                Image(
+                                                        painter = painterResource(id = R.drawable.logo_2),
+                                                        contentDescription = "Logo",
+                                                        modifier = Modifier.size(48.dp)
+                                                )
+                                        }
+
+                                        Spacer(modifier = Modifier.width(20.dp))
+
+                                        // Score Info
+                                        Column(
+                                                horizontalAlignment = Alignment.Start
+                                        ) {
+                                                Text(
+                                                        text = "${score.toInt()}",
+                                                        fontSize = 48.sp,
+                                                        fontWeight = FontWeight.ExtraBold, // More impactful
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        lineHeight = 48.sp,
+                                                        letterSpacing = (-1).sp
+                                                )
+                                                Text(
+                                                        text = "POINTS",
+                                                        fontSize = 12.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.primary,
+                                                        letterSpacing = 1.sp
+                                                )
+                                        }
+                                }
+
+                                Spacer(modifier = Modifier.height(20.dp))
+
+                                // Footer: Device + Performance Stat
+                                Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                        // Device Model
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                        imageVector = Icons.Rounded.Settings, // Using generic icon as placeholder for device
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(14.dp),
+                                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                        text = deviceModel.ifEmpty { "Unknown Device" },
+                                                        fontSize = 12.sp,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                        fontWeight = FontWeight.Medium,
+                                                        maxLines = 1
+                                                )
+                                        }
+
+                                        // Performance Badge
                                         Text(
-                                                text = "Highest Score",
+                                                text = "Top $beatsPercentage% Performance",
                                                 fontSize = 12.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                                text = score.toInt().toString(),
-                                                fontSize = 36.sp,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                                text = "Beats $beatsPercentage% of devices",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Medium,
-                                                color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                                                color = MaterialTheme.colorScheme.primary
                                         )
                                 }
                         }
