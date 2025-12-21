@@ -644,23 +644,23 @@ class KotlinBenchmarkManager {
                 return when (deviceTier.lowercase()) {
                         "test" ->
                                 WorkloadParams(
-                                        primeRange = 500_000,  // Miller-Rabin: ~10-15s
+                                        primeRange = 1_000_000,  // 10x less than slow (10.75M)
                                         fibonacciNRange = Pair(92, 92),
-                                        fibonacciIterations = 1_666_667,  // Reduced 3x for polynomial
+                                        fibonacciIterations = 1_000_000,  // 10x less than slow (10M)
                                         matrixSize = 128,
-                                        matrixIterations = 100,
+                                        matrixIterations = 80,  // 10x less than slow (800)
                                         hashDataSizeMb = 8,
-                                        hashIterations = 10_000,
-                                        stringSortIterations = 100,
-                                        rayTracingIterations = 10,
+                                        hashIterations = 1_080_000,  // 10x less than slow (10.8M)
+                                        stringSortIterations = 80,  // 10x less than slow (800)
+                                        rayTracingIterations = 5,  // 10x less than slow (50)
                                         rayTracingResolution = Pair(100, 100),
                                         rayTracingDepth = 2,
                                         compressionDataSizeMb = 1,
-                                        compressionIterations = 100,
-                                        monteCarloSamples = 10_000L,  // Reduced 100x for Mandelbrot Set
+                                        compressionIterations = 60,  // 10x less than slow (600)
+                                        monteCarloSamples = 10_000L,  // 10x less than slow (100K)
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 10,  // Reduced 10x for CPU-bound parsing
-                                        nqueensSize = 11
+                                        jsonParsingIterations = 50,  // 10x less than slow (500)
+                                        nqueensSize = 12  // One less than slow (12)
                                 )
                         "slow" ->
                                 WorkloadParams(
