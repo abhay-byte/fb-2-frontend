@@ -1,17 +1,28 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,42 +45,108 @@ fun HistoryFilterBar(
         onSortSelect: (HistorySort) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        // Sort Dropdown
+        // Sort Dropdown (Glass Style)
         Box {
             var expanded by remember { mutableStateOf(false) }
-            AssistChip(
-                    onClick = { expanded = true },
-                    label = { Text("Sort: ${formatSortName(currentSort)}") },
-                    leadingIcon = { Icon(Icons.Rounded.Sort, null) }
-            )
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            
+            // Glass Sort Button
+            Surface(
+                onClick = { expanded = true },
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Rounded.Sort, 
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Sort: ${formatSortName(currentSort)}",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            DropdownMenu(
+                expanded = expanded, 
+                onDismissRequest = { expanded = false },
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            ) {
                 HistorySort.values().forEach { option ->
                     DropdownMenuItem(
-                            text = { Text(formatSortName(option)) },
+                            text = { 
+                                Text(
+                                    formatSortName(option),
+                                    fontWeight = if (option == currentSort) FontWeight.Bold else FontWeight.Normal
+                                ) 
+                            },
                             onClick = {
                                 onSortSelect(option)
                                 expanded = false
-                            }
+                            },
+                            leadingIcon = if (option == currentSort) {
+                                { Icon(Icons.Rounded.Check, null) }
+                            } else null
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Category Chips
+        // Category Chips (Horizontal Scroll)
         val categories = listOf("All", "CPU", "GPU", "RAM", "Storage", "Full", "Stress")
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(categories) { category ->
-                FilterChip(
-                        selected = selectedCategory == category,
-                        onClick = { onCategorySelect(category) },
-                        label = { Text(category) },
-                        leadingIcon =
-                                if (selectedCategory == category) {
-                                    { Icon(Icons.Rounded.Check, null, Modifier.size(16.dp)) }
-                                } else null
-                )
+                val isSelected = selectedCategory == category
+                
+                // Custom Glass Chip
+                Surface(
+                    onClick = { onCategorySelect(category) },
+                    shape = RoundedCornerShape(50), // Pill shape
+                    color = if (isSelected) 
+                        MaterialTheme.colorScheme.primaryContainer 
+                    else 
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                    border = if (isSelected) 
+                        null 
+                    else 
+                        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (isSelected) {
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                        }
+                        Text(
+                            text = category,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) 
+                                MaterialTheme.colorScheme.onPrimaryContainer 
+                            else 
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
         }
     }
@@ -77,10 +154,10 @@ fun HistoryFilterBar(
 
 fun formatSortName(sort: HistorySort): String {
     return when (sort) {
-        HistorySort.DATE_NEWEST -> "Date (Newest)"
-        HistorySort.DATE_OLDEST -> "Date (Oldest)"
-        HistorySort.SCORE_HIGH_TO_LOW -> "Score (High to Low)"
-        HistorySort.SCORE_LOW_TO_HIGH -> "Score (Low to High)"
+        HistorySort.DATE_NEWEST -> "Newest First"
+        HistorySort.DATE_OLDEST -> "Oldest First"
+        HistorySort.SCORE_HIGH_TO_LOW -> "Highest Score"
+        HistorySort.SCORE_LOW_TO_HIGH -> "Lowest Score"
     }
 }
 
@@ -90,29 +167,41 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
     val screenState by viewModel.screenState.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val sortOption by viewModel.sortOption.collectAsState()
-    val formatter = SimpleDateFormat("MMM dd, yyyy HH:mm", Locale.getDefault())
+    val formatter = SimpleDateFormat("MMM dd, yyyy • HH:mm", Locale.getDefault())
 
     FinalBenchmark2Theme {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceContainerLowest
+                        )
+                    )
+                )
+        ) {
             Column(
                     modifier =
                             Modifier.fillMaxSize()
-                                    .padding(
-                                            top = 56.dp,
-                                            start = 16.dp,
-                                            end = 16.dp,
-                                            bottom = 16.dp
-                                    )
+                                    .padding(top = 24.dp) // Adjusted top padding
             ) {
-                // Header
-                Text(
-                        text = "Benchmark History",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Start,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-                )
+                // Large Modern Header
+                Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                    Text(
+                            text = "History",
+                            fontSize = 36.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-1).sp,
+                            color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Track your device performance over time",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
 
                 // Filter bar
                 HistoryFilterBar(
@@ -122,48 +211,62 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                         onSortSelect = { viewModel.updateSortOption(it) }
                 )
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 when (val state = screenState) {
                     is HistoryScreenState.Loading -> {
-                        // Show loading indicator
                         Box(
                                 modifier = Modifier.fillMaxSize(),
                                 contentAlignment = Alignment.Center
                         ) { CircularProgressIndicator() }
                     }
                     is HistoryScreenState.Empty -> {
-                        // Empty state
                         Box(
-                                modifier = Modifier.fillMaxSize().padding(16.dp),
+                                modifier = Modifier.fillMaxSize().padding(32.dp),
                                 contentAlignment = Alignment.Center
                         ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(
-                                        imageVector = Icons.Default.List,
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .background(
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                                            CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Rounded.History, // Changed icon
                                         contentDescription = "No history",
-                                        modifier = Modifier.size(64.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                        modifier = Modifier.size(48.dp),
+                                        tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(24.dp))
                                 Text(
-                                        text = "No benchmark history found",
-                                        fontSize = 16.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(top = 16.dp)
+                                        text = "No Benchmarks Yet",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                        text = "Run your first benchmark to see results here",
-                                        fontSize = 14.sp,
+                                        text = "Run a benchmark to see your results history here.",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        textAlign = TextAlign.Center,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     }
                     is HistoryScreenState.Success -> {
-                        // Benchmark history list
                         LazyColumn(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 24.dp), // Bottom padding for list
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             items(state.results) { result ->
                                 BenchmarkHistoryItem(
@@ -175,8 +278,6 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                                             val detailedResultsJson =
                                                     gson.toJson(result.detailedResults)
 
-                                            // Construct summary JSON for ResultScreen
-                                            // Include performance_metrics for graphs display
                                             val summaryJson =
                                                     """
                                             {
@@ -191,8 +292,6 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                                             }
                                         """.trimIndent()
 
-                                            // URL-encode the JSON to handle special characters
-                                            // properly
                                             val encodedJson =
                                                     java.net.URLEncoder.encode(summaryJson, "UTF-8")
                                             navController.navigate("result/$encodedJson")
@@ -213,46 +312,106 @@ fun BenchmarkHistoryItem(
         timestampFormatter: SimpleDateFormat,
         onItemClick: () -> Unit = {}
 ) {
+    // Glass Card for History Item
     Card(
-            modifier = Modifier.fillMaxWidth().clickable { onItemClick() },
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp) // Side padding for the card
+                .clickable { onItemClick() },
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Translucent
+            ),
+            elevation = CardDefaults.cardElevation(0.dp), // No shadow for glass effect
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
     ) {
-        Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.1f)
+                        )
+                    )
+                )
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = result.testName, fontWeight = FontWeight.Medium, fontSize = 16.sp)
+            Row(
+                    modifier = Modifier.fillMaxWidth().padding(20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Left Side: Type Icon + Details
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                    // Type Icon Container
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val icon = when {
+                            result.testName.contains("CPU", ignoreCase = true) -> Icons.Rounded.Memory
+                            result.testName.contains("GPU", ignoreCase = true) -> Icons.Rounded.VideogameAsset
+                            result.testName.contains("RAM", ignoreCase = true) -> Icons.Rounded.SdStorage
+                            else -> Icons.Rounded.Speed
+                        }
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
 
-                Text(
-                        text = timestampFormatter.format(Date(result.timestamp)),
-                        fontSize = 14.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    Spacer(modifier = Modifier.width(16.dp))
 
-                Text(
-                        text =
-                                "Single: ${String.format("%.1f", result.singleCoreScore)} | Multi: ${String.format("%.1f", result.multiCoreScore)}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp)
-                )
-            }
+                    Column {
+                        Text(
+                            text = result.testName.replace("Benchmark", "").trim(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Rounded.CalendarToday,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                    text = timestampFormatter.format(Date(result.timestamp)),
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
 
-            // Final score
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                        text = String.format("%.1f", result.finalScore),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.primary
-                )
-                Text(
-                        text = "Score",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Right Side: Score
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                            text = String.format("%.0f", result.finalScore),
+                            fontSize = 28.sp, // Large Score
+                            fontWeight = FontWeight.Black,
+                            letterSpacing = (-1).sp,
+                            color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                            text = "POINTS",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            letterSpacing = 1.sp
+                    )
+                }
             }
         }
     }

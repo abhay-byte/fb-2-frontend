@@ -1,5 +1,7 @@
 package com.ivarna.finalbenchmark2.ui.screens
 
+import android.content.Context
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -7,14 +9,21 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccessTime
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -27,8 +36,6 @@ import com.ivarna.finalbenchmark2.ui.viewmodels.RankingItem
 import com.ivarna.finalbenchmark2.ui.viewmodels.RankingScreenState
 import com.ivarna.finalbenchmark2.ui.viewmodels.RankingViewModel
 import com.ivarna.finalbenchmark2.ui.viewmodels.RankingViewModelFactory
-import android.content.Context
-import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun RankingsScreen(
@@ -48,56 +55,70 @@ fun RankingsScreen(
     val selectedCategory by viewModel.selectedCategory.collectAsState()
     val screenState by viewModel.screenState.collectAsState()
 
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(
-                top = 56.dp,
-                start = 16.dp,
-                end = 16.dp,
-                bottom = 16.dp
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.surfaceContainerLowest
+                    )
+                )
             )
     ) {
-        // Header
-        Text(
-            text = "Rankings",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Start,
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
-
-        // Filter Bar
-        RankingFilterBar(
-            selectedCategory = selectedCategory,
-            onCategorySelect = { category ->
-                viewModel.selectCategory(category)
+                .fillMaxSize()
+                .padding(top = 24.dp)
+        ) {
+            // Large Modern Header
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+                Text(
+                    text = "Rankings",
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-1).sp,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    text = "Compare performance with other devices",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
             }
-        )
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Content
-        when (screenState) {
-            is RankingScreenState.Loading -> {
-                LoadingContent()
-            }
-            is RankingScreenState.Success -> {
-                if (selectedCategory == "CPU") {
-                    CpuRankingList(
-                        rankings = (screenState as RankingScreenState.Success).rankings,
-                        onItemClick = onDeviceClick
-                    )
-                } else {
-                    ComingSoonContent(category = selectedCategory)
+            // Filter Bar
+            RankingFilterBar(
+                selectedCategory = selectedCategory,
+                onCategorySelect = { category ->
+                    viewModel.selectCategory(category)
                 }
-            }
-            is RankingScreenState.Error -> {
-                ErrorContent()
+            )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Content
+            val state = screenState
+            Box(modifier = Modifier.fillMaxSize()) {
+                when (state) {
+                    is RankingScreenState.Loading -> {
+                        LoadingContent()
+                    }
+                    is RankingScreenState.Success -> {
+                        if (selectedCategory == "CPU") {
+                            CpuRankingList(
+                                rankings = state.rankings,
+                                onItemClick = onDeviceClick
+                            )
+                        } else {
+                            ComingSoonContent(category = selectedCategory)
+                        }
+                    }
+                    is RankingScreenState.Error -> {
+                        ErrorContent()
+                    }
+                }
             }
         }
     }
@@ -117,17 +138,45 @@ private fun RankingFilterBar(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         items(categories) { category ->
-            FilterChip(
-                selected = selectedCategory == category,
+            val isSelected = selectedCategory == category
+            
+            // Custom Glass Chip
+            Surface(
                 onClick = { onCategorySelect(category) },
-                label = { Text(category) },
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
+                shape = RoundedCornerShape(50), // Pill shape
+                color = if (isSelected) 
+                    MaterialTheme.colorScheme.primaryContainer 
+                else 
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                border = if (isSelected) 
+                    null 
+                else 
+                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (isSelected) {
+                        Icon(
+                            Icons.Rounded.Check,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                    }
+                    Text(
+                        text = category,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        color = if (isSelected) 
+                            MaterialTheme.colorScheme.onPrimaryContainer 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -139,10 +188,9 @@ private fun CpuRankingList(
 ) {
     LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(vertical = 8.dp)
+            .fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(rankings) { item ->
             RankingItemCard(
@@ -169,136 +217,173 @@ private fun RankingItemCard(
         1 -> goldColor
         2 -> silverColor
         3 -> bronzeColor
-        else -> MaterialTheme.colorScheme.onSurface
+        else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
     }
 
+    val isTop3 = item.rank <= 3
+
+    // Glass Card Logic
     val containerColor = if (item.isCurrentUser) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)
     } else {
-        MaterialTheme.colorScheme.surfaceVariant
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     }
 
-    val borderModifier = if (item.isCurrentUser) {
-        Modifier.border(
-            width = 2.dp,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-            shape = RoundedCornerShape(12.dp)
-        )
+    val borderColor = if (item.isCurrentUser) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
     } else {
-        Modifier
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
     }
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .then(borderModifier)
+            .padding(horizontal = 16.dp)
             .clickable { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = containerColor
-        )
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
+        elevation = CardDefaults.cardElevation(0.dp),
+        border = BorderStroke(1.dp, borderColor)
     ) {
-        Column(
-            modifier = Modifier.padding(12.dp)
-        ) {
-            // Header row: Rank, Name, Score
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                // Left: Rank
-                Box(
-                    modifier = Modifier
-                        .width(50.dp)
-                        .height(40.dp)
-                        .background(
-                            color = rankColor.copy(alpha = 0.2f),
-                            shape = RoundedCornerShape(8.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "#${item.rank}",
-                        fontWeight = FontWeight.Bold,
-                        color = rankColor,
-                        fontSize = 16.sp
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            containerColor,
+                            MaterialTheme.colorScheme.surface.copy(alpha = 0.05f)
+                        )
                     )
-                }
-
-                Spacer(modifier = Modifier.width(12.dp))
-
-                // Center: Name and Scores
-                Column(
-                    modifier = Modifier.weight(1f)
+                )
+        ) {
+            Column(
+                modifier = Modifier.padding(20.dp)
+            ) {
+                // Header row: Rank, Name, Score
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    // Rank Badge
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape) // Circle badge
+                            .background(
+                                if (isTop3) rankColor.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceContainerHigh
+                            ),
+                        contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = item.name,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 14.sp,
-                            color = MaterialTheme.colorScheme.onSurface
+                            text = "#${item.rank}",
+                            fontWeight = FontWeight.Black,
+                            color = if (isTop3) rankColor else MaterialTheme.colorScheme.onSurface,
+                            fontSize = 18.sp
                         )
-                        // Display tag if present
-                        item.tag?.let { tag ->
-                            Surface(
-                                color = MaterialTheme.colorScheme.tertiaryContainer,
-                                shape = RoundedCornerShape(4.dp),
-                                modifier = Modifier.padding(start = 4.dp)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    fontSize = 9.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // Center: Name and Tag
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = item.name,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            // Display tag if present
+                            item.tag?.let { tag ->
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiaryContainer,
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            // "You" Tag
+                            if (item.isCurrentUser) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = RoundedCornerShape(6.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Star,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(10.dp),
+                                            tint = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                        Spacer(modifier = Modifier.width(2.dp))
+                                        Text(
+                                            text = "YOU",
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    }
+                                }
                             }
                         }
+                        
+                        // Subtitle
+                        Text(
+                            text = "Single: ${item.singleCore} | Multi: ${item.multiCore}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
                     }
-                    Text(
-                        text = "Single: ${item.singleCore} | Multi: ${item.multiCore}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                        modifier = Modifier.paddingFromBaseline(top = 4.dp)
-                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Right: Score
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = item.normalizedScore.toString(),
+                            fontWeight = FontWeight.Black,
+                            fontSize = 24.sp,
+                            letterSpacing = (-1).sp,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = "PTS",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                            fontSize = 10.sp
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                // Right: Normalized Score
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
-                    Text(
-                        text = item.normalizedScore.toString(),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = "Score",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
+                // Progress Bar (Sleek)
+                LinearProgressIndicator(
+                    progress = { scoreProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(3.dp)),
+                    color = if (isTop3) rankColor else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                )
             }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Progress Bar
-            LinearProgressIndicator(
-                progress = scoreProgress,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(4.dp),
-                color = GruvboxDarkAccent,
-                trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-            )
         }
     }
 }
@@ -310,33 +395,43 @@ private fun ComingSoonContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
+            .padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Rounded.AccessTime,
-            contentDescription = "Coming Soon",
-            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-            modifier = Modifier.size(64.dp)
-        )
+        Box(
+            modifier = Modifier
+                .size(100.dp)
+                .background(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.EmojiEvents, // Trophy icon
+                contentDescription = "Coming Soon",
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                modifier = Modifier.size(48.dp)
+            )
+        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         Text(
             text = "Coming Soon",
-            fontSize = 24.sp,
+            style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "$category rankings will be available soon.",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            text = "$category rankings will be available in a future update.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
     }
@@ -344,23 +439,12 @@ private fun ComingSoonContent(
 
 @Composable
 private fun LoadingContent() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
     ) {
         CircularProgressIndicator(
             color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            text = "Loading rankings...",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
         )
     }
 }
@@ -374,9 +458,16 @@ private fun ErrorContent() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Icon(
+            imageVector = Icons.Rounded.AccessTime, // Warning icon might be better but reusing existing import
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(48.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Error Loading Rankings",
-            fontSize = 18.sp,
+            style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.error,
             textAlign = TextAlign.Center
@@ -386,8 +477,8 @@ private fun ErrorContent() {
 
         Text(
             text = "Unable to fetch ranking data. Please try again later.",
-            fontSize = 14.sp,
-            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
     }

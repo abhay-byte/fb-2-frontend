@@ -290,329 +290,142 @@ fun HomeScreen(
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 // =========================================================
-                                // CONSOLIDATED SYSTEM CARD (Redesigned)
+                                // SYSTEM STATS ROW (Split for Variety)
                                 // =========================================================
                                 if (isDataInitialized) {
-                                        var isExpanded by remember { mutableStateOf(false) }
+                                    var isSystemStatsExpanded by remember { mutableStateOf(false) }
 
+                                    // Row of 3 Cards
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp) // Gap between cards
+                                    ) {
+                                        // 1. Temperature Card
+                                        SmallStatCard(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Rounded.Thermostat,
+                                            label = "TEMP",
+                                            value = "${if(cpuTemp > 0) cpuTemp else "--"}°C",
+                                            color = MaterialTheme.colorScheme.error,
+                                            onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
+                                        )
+
+                                        // 2. CPU Load Card
+                                        SmallStatCard(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Rounded.Memory,
+                                            label = "CPU",
+                                            value = "${String.format("%.0f", cpuUtilization)}%",
+                                            color = MaterialTheme.colorScheme.primary,
+                                            onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
+                                        )
+
+                                        // 3. Power Card
+                                        SmallStatCard(
+                                            modifier = Modifier.weight(1f),
+                                            icon = Icons.Rounded.Bolt,
+                                            label = "POWER",
+                                            value = "${String.format("%.1f", powerInfo.power)}W",
+                                            color = MaterialTheme.colorScheme.tertiary,
+                                            onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
+                                        )
+                                    }
+
+                                    // Detailed Stats (Expandable Section)
+                                    AnimatedVisibility(
+                                        visible = isSystemStatsExpanded,
+                                        enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
+                                        exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
+                                    ) {
                                         Card(
-                                                modifier =
-                                                        Modifier.fillMaxWidth()
-                                                                .padding(vertical = 8.dp)
-                                                                .clickable {
-                                                                        isExpanded = !isExpanded
-                                                                },
-                                                shape = RoundedCornerShape(24.dp),
-                                                colors =
-                                                        CardDefaults.cardColors(
-                                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                                                        ),
-                                                elevation =
-                                                        CardDefaults.cardElevation(
-                                                                defaultElevation = 0.dp
-                                                        ),
-                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 16.dp),
+                                            shape = RoundedCornerShape(24.dp),
+                                            colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                                            ),
+                                            elevation = CardDefaults.cardElevation(0.dp),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                                         ) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .background(
-                                                        brush = Brush.verticalGradient(
-                                                            colors = listOf(
-                                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                                                            )
-                                                        )
-                                                    )
-                                            ) {
-                                                Column(
-                                                        modifier =
-                                                                Modifier.fillMaxWidth()
-                                                                        .padding(20.dp) // Increased padding for premium feel
+                                            Column(modifier = Modifier.padding(20.dp)) {
+                                                Text(
+                                                    text = "DETAILED STATISTICS",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 1.sp,
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.padding(bottom = 16.dp)
+                                                )
+
+                                                // Row 1: Detailed Values Grid
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween
                                                 ) {
-                                                        // --- SUMMARY ROW (Always Visible) ---
-                                                        Row(
-                                                                modifier = Modifier.fillMaxWidth(),
-                                                                horizontalArrangement =
-                                                                        Arrangement.SpaceBetween,
-                                                                verticalAlignment =
-                                                                        Alignment.CenterVertically
-                                                        ) {
-                                                                // 1. Temperature Summary
-                                                                CompactStatItem(
-                                                                        icon =
-                                                                                Icons.Rounded
-                                                                                        .Thermostat,
-                                                                        value =
-                                                                                "${if(cpuTemp > 0) cpuTemp else "--"}°C",
-                                                                        tint =
-                                                                                MaterialTheme
-                                                                                        .colorScheme
-                                                                                        .error
-                                                                )
+                                                    DetailIconPair(Icons.Rounded.Memory, "${cpuTemp}°C", "CPU")
+                                                    DetailIconPair(Icons.Rounded.BatteryStd, "${batteryTemp}°C", "Batt")
+                                                    DetailIconPair(Icons.Rounded.ElectricBolt, "${String.format("%.1f", powerInfo.voltage)}V", "Volts")
+                                                    DetailIconPair(Icons.Rounded.Bolt, "${String.format("%.1f", powerInfo.current)}A", "Amps")
+                                                }
 
-                                                                // 2. CPU Load Summary
-                                                                CompactStatItem(
-                                                                        icon = Icons.Rounded.Memory,
-                                                                        value =
-                                                                                "${String.format("%.0f", cpuUtilization)}%",
-                                                                        tint =
-                                                                                MaterialTheme
-                                                                                        .colorScheme
-                                                                                        .primary
-                                                                )
+                                                HorizontalDivider(
+                                                    modifier = Modifier.padding(vertical = 16.dp),
+                                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                                )
 
-                                                                // 3. Power Summary
-                                                                CompactStatItem(
-                                                                        icon = Icons.Rounded.Bolt,
-                                                                        value =
-                                                                                "${String.format("%.1f", powerInfo.power)}W",
-                                                                        tint =
-                                                                                MaterialTheme
-                                                                                        .colorScheme
-                                                                                        .tertiary
-                                                                )
+                                                // Row 2: CPU Cores Visualization
+                                                Text(
+                                                    text = "CORE UTILIZATION",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 1.sp,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                                    modifier = Modifier.padding(bottom = 12.dp)
+                                                )
 
-                                                                // Expand Arrow
-                                                                Icon(
-                                                                        imageVector =
-                                                                                Icons.Rounded
-                                                                                        .ArrowDropDown,
-                                                                        contentDescription =
-                                                                                "Expand",
-                                                                        modifier =
-                                                                                Modifier.size(28.dp)
-                                                                                        .rotate(
-                                                                                                if (isExpanded
-                                                                                                )
-                                                                                                        180f
-                                                                                                else
-                                                                                                        0f
-                                                                                        ),
-                                                                        tint =
-                                                                                MaterialTheme
-                                                                                        .colorScheme
-                                                                                        .onSurfaceVariant
+                                                LazyVerticalGrid(
+                                                    columns = GridCells.Fixed(4),
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .heightIn(max = 240.dp),
+                                                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                                ) {
+                                                    items(coreUtilizations.size) { index ->
+                                                        val utilization = coreUtilizations[index] ?: 0f
+                                                        val (currentFreq, _) = allCoreFrequencies[index] ?: Pair(0L, 0L)
+
+                                                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                                            Box(contentAlignment = Alignment.Center) {
+                                                                CircularProgressIndicator(
+                                                                    progress = { utilization / 100f },
+                                                                    modifier = Modifier.size(48.dp),
+                                                                    strokeWidth = 4.dp,
+                                                                    strokeCap = StrokeCap.Round,
+                                                                    color = MaterialTheme.colorScheme.primary,
+                                                                    trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                                                                 )
+                                                                Text(
+                                                                    text = "$index",
+                                                                    style = MaterialTheme.typography.labelSmall,
+                                                                    fontWeight = FontWeight.ExtraBold,
+                                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                                                )
+                                                            }
+                                                            Spacer(modifier = Modifier.height(6.dp))
+                                                            Text(
+                                                                text = "${currentFreq / 1000} GHz", // Changed to GHz for cleaner look if space is tight? No, stick to MHz or make it compact.
+                                                                fontSize = 10.sp, // Or keep original formatting
+                                                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                                maxLines = 1
+                                                            )
                                                         }
-
-                                                        // --- EXPANDED DETAILS ---
-                                                        AnimatedVisibility(
-                                                                visible = isExpanded,
-                                                                enter =
-                                                                        expandVertically(
-                                                                                animationSpec =
-                                                                                        tween(300)
-                                                                        ) + fadeIn(),
-                                                                exit =
-                                                                        shrinkVertically(
-                                                                                animationSpec =
-                                                                                        tween(300)
-                                                                        ) + fadeOut()
-                                                        ) {
-                                                                Column(
-                                                                        modifier =
-                                                                                Modifier.padding(
-                                                                                        top = 20.dp // Increased spacing
-                                                                                )
-                                                                ) {
-                                                                        HorizontalDivider(
-                                                                                color =
-                                                                                        MaterialTheme
-                                                                                                .colorScheme
-                                                                                                .outlineVariant
-                                                                                                .copy(
-                                                                                                        alpha =
-                                                                                                                0.3f // Softer divider
-                                                                                                ),
-                                                                                modifier =
-                                                                                        Modifier.padding(
-                                                                                                bottom =
-                                                                                                        20.dp
-                                                                                        )
-                                                                        )
-
-                                                                        // Row 1: Detailed Stats
-                                                                        // Grid
-                                                                        Row(
-                                                                                modifier =
-                                                                                        Modifier.fillMaxWidth(),
-                                                                                horizontalArrangement =
-                                                                                        Arrangement
-                                                                                                .SpaceAround
-                                                                        ) {
-                                                                                // CPU Temp
-                                                                                DetailIconPair(
-                                                                                        Icons.Rounded
-                                                                                                .Memory,
-                                                                                        "${cpuTemp}°C",
-                                                                                        "CPU"
-                                                                                )
-                                                                                // Battery Temp
-                                                                                DetailIconPair(
-                                                                                        Icons.Rounded
-                                                                                                .BatteryStd,
-                                                                                        "${batteryTemp}°C",
-                                                                                        "Batt"
-                                                                                )
-                                                                                // Voltage
-                                                                                DetailIconPair(
-                                                                                        Icons.Rounded
-                                                                                                .ElectricBolt,
-                                                                                        "${String.format("%.1f", powerInfo.voltage)}V",
-                                                                                        "Volts"
-                                                                                )
-                                                                                // Amperage
-                                                                                DetailIconPair(
-                                                                                        Icons.Rounded
-                                                                                                .Bolt,
-                                                                                        "${String.format("%.1f", powerInfo.current)}A",
-                                                                                        "Amps"
-                                                                                )
-                                                                        }
-
-                                                                        Spacer(
-                                                                                modifier =
-                                                                                        Modifier.height(
-                                                                                                24.dp
-                                                                                        )
-                                                                        )
-
-                                                                        // Row 2: CPU Cores
-                                                                        // Visualization
-                                                                        Text(
-                                                                                text =
-                                                                                        "CORE UTILIZATION",
-                                                                                style =
-                                                                                        MaterialTheme
-                                                                                                .typography
-                                                                                                .labelMedium,
-                                                                                fontWeight = FontWeight.Bold,
-                                                                                letterSpacing = 1.sp,
-                                                                                color =
-                                                                                        MaterialTheme
-                                                                                                .colorScheme
-                                                                                                .onSurfaceVariant.copy(alpha = 0.8f),
-                                                                                modifier =
-                                                                                        Modifier.padding(
-                                                                                                bottom =
-                                                                                                        16.dp,
-                                                                                                start =
-                                                                                                        4.dp
-                                                                                        )
-                                                                        )
-
-                                                                        LazyVerticalGrid(
-                                                                                columns =
-                                                                                        GridCells
-                                                                                                .Fixed(
-                                                                                                        4
-                                                                                                ),
-                                                                                modifier =
-                                                                                        Modifier.fillMaxWidth()
-                                                                                                .heightIn(
-                                                                                                        max =
-                                                                                                                240.dp
-                                                                                                ), // Limit height
-                                                                                verticalArrangement =
-                                                                                        Arrangement
-                                                                                                .spacedBy(
-                                                                                                        16.dp
-                                                                                                ),
-                                                                                horizontalArrangement =
-                                                                                        Arrangement
-                                                                                                .spacedBy(
-                                                                                                        12.dp
-                                                                                                )
-                                                                        ) {
-                                                                                items(
-                                                                                        coreUtilizations
-                                                                                                .size
-                                                                                ) { index ->
-                                                                                        val utilization =
-                                                                                                coreUtilizations[
-                                                                                                        index]
-                                                                                                        ?: 0f
-                                                                                        val (
-                                                                                                currentFreq,
-                                                                                                _) =
-                                                                                                allCoreFrequencies[
-                                                                                                        index]
-                                                                                                        ?: Pair(
-                                                                                                                0L,
-                                                                                                                0L
-                                                                                                        )
-
-                                                                                        Column(
-                                                                                                horizontalAlignment =
-                                                                                                        Alignment
-                                                                                                                .CenterHorizontally
-                                                                                        ) {
-                                                                                                Box(
-                                                                                                        contentAlignment =
-                                                                                                                Alignment
-                                                                                                                        .Center
-                                                                                                ) {
-                                                                                                        CircularProgressIndicator(
-                                                                                                                progress = {
-                                                                                                                        utilization /
-                                                                                                                                100f
-                                                                                                                },
-                                                                                                                modifier =
-                                                                                                                        Modifier.size(
-                                                                                                                                52.dp // Slightly larger
-                                                                                                                        ),
-                                                                                                                strokeWidth =
-                                                                                                                        4.dp,
-                                                                                                                strokeCap = StrokeCap.Round, // Rounded ends
-                                                                                                                color =
-                                                                                                                        MaterialTheme
-                                                                                                                                .colorScheme
-                                                                                                                                .primary,
-                                                                                                                trackColor =
-                                                                                                                        MaterialTheme
-                                                                                                                                .colorScheme
-                                                                                                                                .surfaceVariant.copy(alpha = 0.5f)
-                                                                                                        )
-                                                                                                        Text(
-                                                                                                                text =
-                                                                                                                        "${index}",
-                                                                                                                style =
-                                                                                                                        MaterialTheme
-                                                                                                                                .typography
-                                                                                                                                .labelMedium,
-                                                                                                                fontWeight =
-                                                                                                                        FontWeight
-                                                                                                                                .ExtraBold,
-                                                                                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha=0.7f)
-                                                                                                        )
-                                                                                                }
-                                                                                                Spacer(
-                                                                                                        modifier =
-                                                                                                                Modifier.height(
-                                                                                                                        6.dp
-                                                                                                                )
-                                                                                                )
-                                                                                                Text(
-                                                                                                        text =
-                                                                                                                "${currentFreq / 100} MHz",
-                                                                                                        fontSize =
-                                                                                                                10.sp,
-                                                                                                        color =
-                                                                                                                MaterialTheme
-                                                                                                                        .colorScheme
-                                                                                                                        .onSurfaceVariant,
-                                                                                                        maxLines =
-                                                                                                                1
-                                                                                                )
-                                                                                        }
-                                                                                }
-                                                                        }
-                                                                }
-                                                        }
+                                                    }
                                                 }
                                             }
                                         }
+                                    }
                                 }
                                 // =========================================================
 
@@ -745,7 +558,7 @@ fun HomeScreen(
                                 // Benchmark Tips Card
                                 BenchmarkTipsCard()
 
-                                // Workload Selection Dropdown
+                                // Workload Selection (Compact Style)
                                 Text(
                                         text = "BENCHMARK CONFIGURATION",
                                         style = MaterialTheme.typography.labelMedium,
@@ -761,33 +574,33 @@ fun HomeScreen(
                                         },
                                         modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
                                 ) {
-                                        // Custom Dropdown Trigger
+                                        // Custom Compact Trigger (Input Field Style)
                                         Card(
                                                 modifier = Modifier
                                                         .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                                                         .fillMaxWidth()
-                                                        .height(64.dp),
-                                                shape = RoundedCornerShape(16.dp),
+                                                        .height(56.dp), // Compact height
+                                                shape = RoundedCornerShape(12.dp), // Sharper corners
                                                 colors = CardDefaults.cardColors(
-                                                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) // Distinct background
                                                 ),
                                                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)),
                                                 elevation = CardDefaults.cardElevation(0.dp)
                                         ) {
                                             Row(
-                                                modifier = Modifier.fillMaxSize().padding(horizontal = 20.dp),
+                                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
-                                                Column {
+                                                Column(verticalArrangement = Arrangement.Center) {
                                                     Text(
                                                         text = "Workload Intensity",
                                                         style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                                                     )
                                                     Text(
                                                         text = selectedWorkload,
-                                                        style = MaterialTheme.typography.bodyLarge,
+                                                        style = MaterialTheme.typography.bodyMedium,
                                                         fontWeight = FontWeight.SemiBold,
                                                         color = MaterialTheme.colorScheme.onSurface
                                                     )
@@ -805,8 +618,8 @@ fun HomeScreen(
                                                 expanded = isDropdownExpanded,
                                                 onDismissRequest = { isDropdownExpanded = false },
                                                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                shape = RoundedCornerShape(16.dp),
-                                                modifier = Modifier.padding(vertical = 8.dp)
+                                                shape = RoundedCornerShape(12.dp),
+                                                modifier = Modifier.padding(vertical = 4.dp)
                                         ) {
                                                 workloadOptions.forEach { option ->
                                                         DropdownMenuItem(
@@ -821,13 +634,13 @@ fun HomeScreen(
                                                                         selectedWorkload = option
                                                                         isDropdownExpanded = false
                                                                 },
-                                                                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 4.dp)
+                                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
                                                         )
                                                 }
                                         }
                                 }
 
-                                // Start Benchmark Button
+                                // Start Benchmark Button (Huge Pill Style)
                                 Button(
                                         onClick = {
                                                 // Call optimizations before starting benchmark
@@ -839,9 +652,9 @@ fun HomeScreen(
                                                 // Map UI workload to backend device tier
                                                 val deviceTier =
                                                         when (selectedWorkload) {
-                                                                "Light (Quick)" -> "slow"
-                                                                "Standard (Balanced)" -> "mid"
-                                                                "Heavy (Stress Test)" -> "flagship"
+                                                                "Low Accuracy - Fastest" -> "slow"
+                                                                "Mid Accuracy - Fast" -> "mid"
+                                                                "High Accuracy - Slow" -> "flagship"
                                                                 else -> "flagship" // fallback
                                                         }
 
@@ -849,17 +662,17 @@ fun HomeScreen(
                                         },
                                         modifier = Modifier
                                                 .fillMaxWidth()
-                                                .height(64.dp)
+                                                .height(64.dp) // Standard large button height
                                                 .shadow(
                                                     elevation = 8.dp,
-                                                    shape = RoundedCornerShape(16.dp),
-                                                    spotColor = MaterialTheme.colorScheme.primary
+                                                    shape = RoundedCornerShape(32.dp),
+                                                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                                                 ),
-                                        shape = RoundedCornerShape(16.dp),
+                                        shape = RoundedCornerShape(32.dp),
                                         colors = ButtonDefaults.buttonColors(
                                             containerColor = Color.Transparent
                                         ),
-                                        contentPadding = PaddingValues(0.dp) // Remove default padding
+                                        contentPadding = PaddingValues(0.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -878,12 +691,13 @@ fun HomeScreen(
                                             Icon(
                                                     painterResource(id = R.drawable.mobile_24),
                                                     contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onPrimary
+                                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                                    modifier = Modifier.size(24.dp)
                                             )
                                             Spacer(modifier = Modifier.width(12.dp))
                                             Text(
                                                     text = "START BENCHMARK",
-                                                    fontSize = 18.sp,
+                                                    fontSize = 16.sp,
                                                     fontWeight = FontWeight.Bold,
                                                     letterSpacing = 1.sp,
                                                     color = MaterialTheme.colorScheme.onPrimary
@@ -1000,7 +814,7 @@ fun PerformanceOptimizationsCard(
                         ) {
                                 Text(
                                         text = "PERFORMANCE OPTIMIZATIONS",
-                                        style = MaterialTheme.typography.titleMedium,
+                                        fontSize = 13.sp, // Reduced from titleMedium (approx 16sp)
                                         fontWeight = FontWeight.Bold,
                                         letterSpacing = 0.5.sp,
                                         color = MaterialTheme.colorScheme.primary
@@ -1352,7 +1166,7 @@ fun BenchmarkTipsCard() {
                                     Spacer(modifier = Modifier.width(12.dp))
                                     Text(
                                             text = "BENCHMARK TIPS",
-                                            style = MaterialTheme.typography.titleMedium,
+                                            fontSize = 13.sp, // Reduced from titleMedium
                                             fontWeight = FontWeight.Bold,
                                             letterSpacing = 0.5.sp,
                                             color = MaterialTheme.colorScheme.primary
@@ -1467,7 +1281,7 @@ fun TipRow(number: String, title: String, description: String) {
 // Track if ROM warning animation has been shown (persists across navigations)
 private var romWarningAnimationShown = false
 
-// ROM Compatibility Warning Card
+// ROM Compatibility Warning Card (Alert Style)
 @Composable
 fun RomCompatibilityWarningCard() {
         var isVisible by remember { mutableStateOf(romWarningAnimationShown) }
@@ -1487,47 +1301,51 @@ fun RomCompatibilityWarningCard() {
                 enter = fadeIn(animationSpec = tween(600)) + expandVertically(),
                 exit = fadeOut() + shrinkVertically()
         ) {
+                // Redesigned as a "Warning Strip" rather than a full heavy card
                 Card(
                         modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                        shape = RoundedCornerShape(16.dp),
+                                .padding(vertical = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.1f) // Light red tint
                         ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.2f)),
+                        elevation = CardDefaults.cardElevation(0.dp)
                 ) {
                         Row(
                                 modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(16.dp),
+                                        .padding(12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                horizontalArrangement = Arrangement.Start
                         ) {
                                 // Warning Icon
                                 Icon(
                                         imageVector = Icons.Rounded.Warning,
                                         contentDescription = "Warning",
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(28.dp)
+                                        tint = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.size(24.dp)
                                 )
+
+                                Spacer(modifier = Modifier.width(12.dp))
 
                                 // Warning Text
                                 Column(
                                         modifier = Modifier.weight(1f)
                                 ) {
                                         Text(
-                                                text = "ROM Compatibility",
-                                                fontSize = 14.sp,
+                                                text = "ROM Compatibility Note",
+                                                style = MaterialTheme.typography.labelMedium,
                                                 fontWeight = FontWeight.Bold,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                color = MaterialTheme.colorScheme.error
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
-                                                text = "Works well: AOSP, CUSTOM, HYPEROS, HELLOUI, ZUI. Known issues: OxygenOS, RealmeUI, ColorOS.",
-                                                fontSize = 12.sp,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                                                lineHeight = 16.sp
+                                                text = "Known issues with OxygenOS, RealmeUI, ColorOS. Best performance on AOSP/HyperOS.",
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                                lineHeight = 14.sp
                                         )
                                 }
                         }
@@ -1755,4 +1573,81 @@ fun HighScoreCard(
                         }
                 }
         }
+}
+
+@Composable
+fun SmallStatCard(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    label: String,
+    value: String,
+    color: Color,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = modifier
+            .height(110.dp) // Fixed height for square-ish aspect ratio
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+        elevation = CardDefaults.cardElevation(0.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                            color.copy(alpha = 0.1f) // Subtle tint of the stat color
+                        )
+                    )
+                )
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Icon Container
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(color.copy(alpha = 0.2f)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = icon,
+                        contentDescription = null,
+                        tint = color,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = value,
+                    style = MaterialTheme.typography.titleMedium, // Reasonable size
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1
+                )
+
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    letterSpacing = 1.sp
+                )
+            }
+        }
+    }
 }
