@@ -124,6 +124,68 @@ class RankingViewModel(private val repository: HistoryRepository) : ViewModel() 
                                     multiCoreJsonParsingMops = 653679.47,
                                     multiCoreNQueensMops = 547.86
                             )
+                    ),
+                    RankingItem(
+                            name = "Snapdragon 8s Gen 3",
+                            normalizedScore = 241,
+                            singleCore = 87,
+                            multiCore = 324,
+                            isCurrentUser = false,
+                            benchmarkDetails = BenchmarkDetails(
+                                    // Single-Core Mops/s values
+                                    singleCorePrimeNumberMops = 658.16,
+                                    singleCoreFibonacciMops = 4.24,
+                                    singleCoreMatrixMultiplicationMops = 4147.30,
+                                    singleCoreHashComputingMops = 127.95,
+                                    singleCoreStringSortingMops = 113.73,
+                                    singleCoreRayTracingMops = 4.42,
+                                    singleCoreCompressionMops = 698.35,
+                                    singleCoreMonteCarloMops = 254.83,
+                                    singleCoreJsonParsingMops = 165987.21,
+                                    singleCoreNQueensMops = 149.82,
+                                    // Multi-Core Mops/s values
+                                    multiCorePrimeNumberMops = 2885.54,
+                                    multiCoreFibonacciMops = 11.51,
+                                    multiCoreMatrixMultiplicationMops = 11969.48,
+                                    multiCoreHashComputingMops = 694.42,
+                                    multiCoreStringSortingMops = 302.24,
+                                    multiCoreRayTracingMops = 14.79,
+                                    multiCoreCompressionMops = 2470.87,
+                                    multiCoreMonteCarloMops = 1299.32,
+                                    multiCoreJsonParsingMops = 757936.81,
+                                    multiCoreNQueensMops = 586.43
+                            )
+                    ),
+                    RankingItem(
+                            name = "MediaTek Dimensity 6300",
+                            normalizedScore = 107,
+                            singleCore = 50,
+                            multiCore = 137,
+                            isCurrentUser = false,
+                            benchmarkDetails = BenchmarkDetails(
+                                    // Single-Core Mops/s values
+                                    singleCorePrimeNumberMops = 464.02,
+                                    singleCoreFibonacciMops = 1.80,
+                                    singleCoreMatrixMultiplicationMops = 1986.88,
+                                    singleCoreHashComputingMops = 114.44,
+                                    singleCoreStringSortingMops = 50.67,
+                                    singleCoreRayTracingMops = 2.36,
+                                    singleCoreCompressionMops = 314.09,
+                                    singleCoreMonteCarloMops = 202.73,
+                                    singleCoreJsonParsingMops = 108521.36,
+                                    singleCoreNQueensMops = 92.03,
+                                    // Multi-Core Mops/s values
+                                    multiCorePrimeNumberMops = 1211.56,
+                                    multiCoreFibonacciMops = 4.42,
+                                    multiCoreMatrixMultiplicationMops = 3742.13,
+                                    multiCoreHashComputingMops = 380.52,
+                                    multiCoreStringSortingMops = 137.24,
+                                    multiCoreRayTracingMops = 5.98,
+                                    multiCoreCompressionMops = 915.59,
+                                    multiCoreMonteCarloMops = 690.68,
+                                    multiCoreJsonParsingMops = 283666.70,
+                                    multiCoreNQueensMops = 292.12
+                            )
                     )
             )
 

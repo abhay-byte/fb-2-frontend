@@ -1053,6 +1053,20 @@ private fun RankingsTab(finalScore: Double, singleCoreScore: Double, multiCoreSc
                                         singleCore = 78,
                                         multiCore = 308,
                                         isCurrentUser = false
+                                ),
+                                RankingItem(
+                                        name = "Snapdragon 8s Gen 3",
+                                        normalizedScore = 241,
+                                        singleCore = 87,
+                                        multiCore = 324,
+                                        isCurrentUser = false
+                                ),
+                                RankingItem(
+                                        name = "MediaTek Dimensity 6300",
+                                        normalizedScore = 107,
+                                        singleCore = 50,
+                                        multiCore = 137,
+                                        isCurrentUser = false
                                 )
                         )
 
