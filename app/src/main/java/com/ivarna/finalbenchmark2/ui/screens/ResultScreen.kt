@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.animation.core.*
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
@@ -78,6 +79,12 @@ fun ResultScreen(
         val context = LocalContext.current
         val coroutineScope = rememberCoroutineScope()
         var showDeleteDialog by remember { mutableStateOf(false) }
+        
+        // Create a local HazeState to avoid conflict with global HazeState
+        // The error "Modifier.haze and Modifier.hazeChild can not be descendants" happens because
+        // MainNavigation applies haze() to the root, so using that state here causes a crash.
+        // We use a local state with sibling hierarchy (Background vs Surface) to fix this.
+        val localHazeState = remember { HazeState() }
 
         val summary =
                 remember(summaryJson) {
@@ -406,12 +413,13 @@ fun ResultScreen(
                         )
                     )
             ) {
-                // Ambient Glow
+                // Ambient Glow - Source for Haze Blur
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(400.dp)
                         .alpha(0.15f)
+                        .haze(state = localHazeState) // Apply local haze source here
                         .background(
                             Brush.radialGradient(
                                 colors = listOf(MaterialTheme.colorScheme.primary, Color.Transparent),
@@ -506,11 +514,7 @@ fun ResultScreen(
                                     .alpha(fadeAnim.value)
                                     .clip(RoundedCornerShape(32.dp))
                                     .then(
-                                        if (hazeState != null) {
-                                            Modifier.hazeChild(state = hazeState)
-                                        } else {
-                                            Modifier.background(MaterialTheme.colorScheme.surface.copy(alpha = 0.5f))
-                                        }
+                                        Modifier.hazeChild(state = localHazeState)
                                     )
                                     .border(
                                         1.dp,
