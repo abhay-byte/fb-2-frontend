@@ -506,87 +506,6 @@ fun ResultScreen(
                         contentPadding = PaddingValues(bottom = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Glassmorphic Summary Card (Hero Section)
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp)
-                                    .alpha(fadeAnim.value)
-                                    .clip(RoundedCornerShape(32.dp))
-                                    .then(
-                                        Modifier.hazeChild(
-                                            state = localHazeState,
-                                            style = HazeStyle(
-                                                backgroundColor = MaterialTheme.colorScheme.surface,
-                                                tint = null
-                                            )
-                                        )
-                                    )
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
-                                        RoundedCornerShape(32.dp)
-                                    )
-                                    .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.05f))
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(vertical = 42.dp, horizontal = 24.dp)
-                                        .fillMaxWidth(),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "TOTAL SCORE",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        letterSpacing = 4.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    
-                                    Spacer(modifier = Modifier.height(16.dp))
-                                    
-                                    // Score Counter
-                                    Text(
-                                        text = scoreAnim.value.toInt().toString(),
-                                        style = MaterialTheme.typography.displayLarge.copy(
-                                            fontSize = 86.sp,
-                                            fontWeight = FontWeight.Black,
-                                            letterSpacing = (-2).sp
-                                        ),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-
-                                    Spacer(modifier = Modifier.height(32.dp))
-
-                                    // Sub-scores Row
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceEvenly,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        SubScoreItem(
-                                            label = "SINGLE-CORE",
-                                            score = summary.singleCoreScore.toInt(),
-                                            color = MaterialTheme.colorScheme.secondary
-                                        )
-                                        
-                                        Box(
-                                            modifier = Modifier
-                                                .height(40.dp)
-                                                .width(1.dp)
-                                                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-                                        )
-                                        
-                                        SubScoreItem(
-                                            label = "MULTI-CORE",
-                                            score = summary.multiCoreScore.toInt(),
-                                            color = MaterialTheme.colorScheme.tertiary
-                                        )
-                                    }
-                                }
-                            }
-                        }
 
                         // Tab Row
                         item {
@@ -626,7 +545,7 @@ fun ResultScreen(
                                 verticalAlignment = Alignment.Top
                             ) { page ->
                                 when (page) {
-                                    0 -> SummaryTab(summary) // Might duplicate? No, this is replacing the old Pager.
+                                    0 -> SummaryTab(summary, localHazeState)
                                     1 -> DetailedDataTab(summary)
                                     2 -> RankingsTab(
                                             summary.finalScore,
@@ -643,21 +562,29 @@ fun ResultScreen(
 }
 
 @Composable
-fun SummaryTab(summary: BenchmarkSummary) {
+fun SummaryTab(summary: BenchmarkSummary, hazeState: HazeState) {
         LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-                // Final Score Card
+                // Final Score Card - Glassmorphic
                 item {
-                        Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors =
-                                        CardDefaults.cardColors(
-                                                containerColor =
-                                                        MaterialTheme.colorScheme.primaryContainer
-                                        ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(24.dp))
+                                    .hazeChild(
+                                        state = hazeState,
+                                        style = HazeStyle(
+                                            backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f),
+                                            tint = null
+                                        )
+                                    )
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
+                                        RoundedCornerShape(24.dp)
+                                    )
                         ) {
                                 Column(
                                         modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -680,17 +607,29 @@ fun SummaryTab(summary: BenchmarkSummary) {
                         }
                 }
 
-                // Single-Core and Multi-Core Scores
+                // Single-Core and Multi-Core Scores - Glassmorphic
                 item {
                         Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                                 // Single-Core Score
-                                Card(
-                                        modifier = Modifier.weight(1f),
-                                        elevation =
-                                                CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .hazeChild(
+                                                state = hazeState,
+                                                style = HazeStyle(
+                                                    backgroundColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                                    tint = null
+                                                )
+                                            )
+                                            .border(
+                                                1.dp,
+                                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                                RoundedCornerShape(20.dp)
+                                            )
                                 ) {
                                         Column(
                                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -719,10 +658,22 @@ fun SummaryTab(summary: BenchmarkSummary) {
                                 }
 
                                 // Multi-Core Score
-                                Card(
-                                        modifier = Modifier.weight(1f),
-                                        elevation =
-                                                CardDefaults.cardElevation(defaultElevation = 4.dp)
+                                Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .hazeChild(
+                                                state = hazeState,
+                                                style = HazeStyle(
+                                                    backgroundColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                                                    tint = null
+                                                )
+                                            )
+                                            .border(
+                                                1.dp,
+                                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+                                                RoundedCornerShape(20.dp)
+                                            )
                                 ) {
                                         Column(
                                                 modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -752,7 +703,7 @@ fun SummaryTab(summary: BenchmarkSummary) {
                         }
                 }
 
-                // MP Ratio Card
+                // MP Ratio Card - Glassmorphic
                 item {
                         val mpRatio = if (summary.singleCoreScore > 0) {
                                 summary.multiCoreScore / summary.singleCoreScore
@@ -760,12 +711,22 @@ fun SummaryTab(summary: BenchmarkSummary) {
                                 0.0
                         }
                         
-                        Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                        containerColor = Color(0xFFFFE0E0) // Light pink/red
-                                ),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .hazeChild(
+                                        state = hazeState,
+                                        style = HazeStyle(
+                                            backgroundColor = Color(0xFFFFE0E0).copy(alpha = 0.7f),
+                                            tint = null
+                                        )
+                                    )
+                                    .border(
+                                        1.dp,
+                                        Color(0xFFFF9999).copy(alpha = 0.5f),
+                                        RoundedCornerShape(20.dp)
+                                    )
                         ) {
                                 Row(
                                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
