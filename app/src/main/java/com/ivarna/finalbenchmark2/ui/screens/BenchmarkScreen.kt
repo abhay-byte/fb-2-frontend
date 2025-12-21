@@ -58,6 +58,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.composed
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -138,12 +142,42 @@ fun BenchmarkScreen(
         }
     }
 
-    // Handle Scroll to active item
+    // Handle Scroll to active item - Center it!
     val activeIndex = uiState.testStates.indexOfFirst { it.status == TestStatus.RUNNING }
     LaunchedEffect(activeIndex) {
-        if (activeIndex > 0) {
+        if (activeIndex >= 0) {
+            // Estimate item height + header offset to center it. 
+            // A more robust way is getting layout info, but a rough offset works well for fixed-ish height items.
+            // TimelineTestRow is approx 60-80dp? Let's aim for center.
+            // Scroll offset logic: Center of screen approx 400dp down (depending on screen).
+            // We want the item to be valid in the "sweet spot" of the curve.
+            
+            // Note: LazyList auto-handling of indices with headers is tricky. 
+            // We need to account for the header "SINGLE CORE OPERATIONS" (index 0).
+            // Single core items start at index 1.
+            // Using the key or finding the exact list index is safer if we had keys.
+            // For now, let's just use the index mapping logic used in the LazyColumn below.
+            
+            val singleCoreCount = uiState.testStates.count { !it.name.startsWith("Multi-Core", ignoreCase = true) }
+            
+            // Calculate list index:
+            // 0: Header Single
+            // 1..N: Single items
+            // N+1: Spacer
+            // N+2: Header Multi
+            // N+3..End: Multi items
+            
+            val listIndex = if (activeIndex < singleCoreCount) {
+                activeIndex + 1
+            } else {
+                activeIndex + 3 // +1 (Header S) +1 (Spacer) +1 (Header M)
+            }
+
+            // Animate scroll with an offset to center the item
+            // 300px offset roughly centers it on a typical 1080x2400 screen with top bars
             scrollState.animateScrollToItem(
-                index = activeIndex.coerceAtLeast(0)
+                index = listIndex,
+                scrollOffset = -500 // Displace up to push item down to center
             )
         }
     }
@@ -281,18 +315,28 @@ fun BenchmarkScreen(
                     if (singleCoreTests.isNotEmpty()) {
                         item { SectionHeader("SINGLE CORE OPERATIONS") }
                         items(singleCoreTests) { test ->
-                            TimelineTestRow(test = test)
+                            Box(modifier = Modifier.wheelCurve(scrollState)) {
+                                TimelineTestRow(test = test)
+                            }
                         }
                     }
 
                     // Multi Core Section
                     if (multiCoreTests.isNotEmpty()) {
                         item { 
-                            Spacer(modifier = Modifier.height(24.dp))
-                            SectionHeader("MULTI CORE OPERATIONS") 
+                            Box(modifier = Modifier.wheelCurve(scrollState)) {
+                                Spacer(modifier = Modifier.height(24.dp))
+                            }
+                        }
+                        item {
+                           Box(modifier = Modifier.wheelCurve(scrollState)) {
+                               SectionHeader("MULTI CORE OPERATIONS")
+                           }
                         }
                         items(multiCoreTests) { test ->
-                            TimelineTestRow(test = test)
+                            Box(modifier = Modifier.wheelCurve(scrollState)) {
+                                TimelineTestRow(test = test)
+                            }
                         }
                     }
                 }
@@ -648,4 +692,31 @@ fun HUDMetric(
             fontSize = 10.sp
         )
     }
+}
+
+
+// Wheel Curve Modifier
+fun Modifier.wheelCurve(scrollState: androidx.compose.foundation.lazy.LazyListState): Modifier = this.composed {
+    var itemY by remember { mutableStateOf(0f) }
+    
+    Modifier
+        .onGloballyPositioned { coordinates ->
+             itemY = coordinates.positionInWindow().y
+        }
+        .graphicsLayer {
+            val viewportHeight = scrollState.layoutInfo.viewportSize.height.toFloat()
+            val centerY = viewportHeight / 2f + 150f // Adjusted for top padding
+            val distanceFromCenter = itemY - centerY
+            
+            // Normalized distance [-1, 1] relative to half height
+            val normalizedDist = (distanceFromCenter / (viewportHeight / 1.6f)).coerceIn(-1f, 1f)
+            
+            val maxTranslationX = 120.dp.toPx() 
+            
+            // Apply translation
+            // 1 - dist^2 creates a nice bell curve
+            translationX = maxTranslationX * (1f - (normalizedDist * normalizedDist)) - (40.dp.toPx()) 
+            
+            alpha = 1f - 0.7f * Math.abs(normalizedDist) // Fade out edges
+        }
 }
