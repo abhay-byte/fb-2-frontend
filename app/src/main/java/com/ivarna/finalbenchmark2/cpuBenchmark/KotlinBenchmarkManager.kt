@@ -644,81 +644,63 @@ class KotlinBenchmarkManager {
                 return when (deviceTier.lowercase()) {
                         "test" ->
                                 WorkloadParams(
-                                        primeRange = 1_000_000,  // 10x less than slow (10.75M)
+                                        primeRange = 12_250_000,  // 0.1x slow
                                         fibonacciNRange = Pair(92, 92),
-                                        fibonacciIterations = 1_000_000,  // 10x less than slow (10M)
+                                        fibonacciIterations = 520_833,  // 0.1x slow
                                         matrixSize = 128,
-                                        matrixIterations = 80,  // 10x less than slow (800)
+                                        matrixIterations = 37,  // 0.1x slow (rounded from 37.5)
                                         hashDataSizeMb = 8,
-                                        hashIterations = 1_080_000,  // 10x less than slow (10.8M)
-                                        stringSortIterations = 80,  // 10x less than slow (800)
-                                        rayTracingIterations = 5,  // 10x less than slow (50)
-                                        rayTracingResolution = Pair(100, 100),
-                                        rayTracingDepth = 2,
-                                        compressionDataSizeMb = 1,
-                                        compressionIterations = 60,  // 10x less than slow (600)
-                                        monteCarloSamples = 10_000L,  // 10x less than slow (100K)
+                                        hashIterations = 6_568_750,  // 0.1x slow
+                                        stringSortIterations = 62,  // 0.1x slow (rounded from 62.5)
+                                        rayTracingIterations = 10,  // 0.1x slow
+                                        rayTracingResolution = Pair(256, 256),
+                                        rayTracingDepth = 5,
+                                        compressionDataSizeMb = 2,
+                                        compressionIterations = 25,  // 0.1x slow
+                                        monteCarloSamples = 625_000L,  // 0.1x slow
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 50,  // 10x less than slow (500)
-                                        nqueensSize = 12  // One less than slow (12)
+                                        jsonParsingIterations = 50,  // 0.1x slow (rounded from 31.25)
+                                        nqueensSize = 12  // N-Queens: keep same as slow
                                 )
                         "slow" ->
                                 WorkloadParams(
-                                        primeRange = 10_750_000,  // Miller-Rabin: ~15-20s
-
-                                        // ~1.0-2.0s
+                                        primeRange = 122_500_000,  // 0.25x mid
                                         fibonacciNRange = Pair(92, 92),
-                                        fibonacciIterations = 10_000_000,  // Reduced 3x for polynomial
-                                        matrixSize = 128, // CACHE-RESIDENT: Fixed small size
-                                        matrixIterations =
-                                                800, // CACHE-RESIDENT: Low iterations for slow
-                                        // devices
+                                        fibonacciIterations = 5_208_333,  // 0.25x mid
+                                        matrixSize = 128,
+                                        matrixIterations = 375,  // 0.25x mid
                                         hashDataSizeMb = 8,
-                                        hashIterations =
-                                                10_800_000, // FIXED WORK PER CORE: Target ~1.5-2.0
-                                        // seconds
-                                        stringSortIterations =
-                                                800, // CACHE-RESIDENT: Explicit control - target
-                                        rayTracingIterations = 50,
-                                        rayTracingResolution = Pair(100, 100),
-                                        rayTracingDepth = 2,
-                                        compressionDataSizeMb = 1,
-                                        compressionIterations =
-                                                600, // INCREASED: Target ~15s execution (was 20)
-                                        monteCarloSamples =
-                                                100_000L, // Reduced 100x for Mandelbrot Set (was 10M)
+                                        hashIterations = 65_687_500,  // 0.25x mid
+                                        stringSortIterations = 625,  // 0.25x mid
+                                        rayTracingIterations = 100,  // 0.25x mid
+                                        rayTracingResolution = Pair(256, 256),
+                                        rayTracingDepth = 5,
+                                        compressionDataSizeMb = 2,
+                                        compressionIterations = 250,  // 0.25x mid
+                                        monteCarloSamples = 6_250_000L,  // 0.25x mid
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 500,  // Reduced 10x for CPU-bound parsing
-                                        nqueensSize = 12 // INCREASED: 92 solutions, ~1.5s (was 8)
+                                        jsonParsingIterations = 312,  // 0.25x mid (rounded from 312.5)
+                                        nqueensSize = 12  // N-Queens: -1 from mid
                                 )
                         "mid" ->
                                 WorkloadParams(
-                                        primeRange = 40_000_000,  // Miller-Rabin: ~20-25s
-                                        // ~1.0-2.0s
-                                        fibonacciNRange = Pair(96, 96),
-                                        fibonacciIterations = 25_000_000,  // Reduced 3x for polynomial
-                                        matrixSize = 128, // CACHE-RESIDENT: Fixed small size
-                                        matrixIterations =
-                                                1500, // CACHE-RESIDENT: Medium iterations for mid
-                                        // devices
-                                        hashDataSizeMb = 2,
-                                        hashIterations =
-                                                50_500_000, // FIXED WORK PER CORE: Target ~1.5-2.0
-                                        // seconds
-                                        stringSortIterations =
-                                                2_500, // CACHE-RESIDENT: Explicit control - target
-                                        rayTracingIterations =
-                                                200, // FIXED: Medium iterations for mid devices
-                                        rayTracingResolution = Pair(100, 100),
-                                        rayTracingDepth = 3,
-                                        compressionDataSizeMb = 1,
-                                        compressionIterations =
-                                                1_000, // INCREASED: Target ~15s execution (was 50)
-                                        monteCarloSamples =
-                                                2_000_000L, // Reduced 100x for Mandelbrot Set (was 200M)
+                                        primeRange = 490_000_000,  // 0.5x flagship
+                                        fibonacciNRange = Pair(92, 92),
+                                        fibonacciIterations = 20_833_333,  // 0.5x flagship (rounded from 20833333.5)
+                                        matrixSize = 128,
+                                        matrixIterations = 1_500,  // 0.5x flagship
+                                        hashDataSizeMb = 8,
+                                        hashIterations = 262_750_000,  // 0.5x flagship
+                                        stringSortIterations = 2_500,  // 0.5x flagship
+                                        rayTracingIterations = 400,  // 0.5x flagship
+                                        rayTracingResolution = Pair(256, 256),
+                                        rayTracingDepth = 5,
+                                        compressionDataSizeMb = 2,
+                                        compressionIterations = 1_000,  // 0.5x flagship
+                                        monteCarloSamples = 25_000_000L,  // 0.5x flagship
                                         jsonDataSizeMb = 1,
-                                        jsonParsingIterations = 1000,  // Reduced 10x for CPU-bound parsing
-                                        nqueensSize = 13 // INCREASED: 341 solutions, ~5s (was 9)
+                                        jsonParsingIterations = 1_250,  // 0.5x flagship
+                                        nqueensSize = 15  // N-Queens: -1 from flagship
                                 )
                         "flagship" ->
                                 WorkloadParams(
