@@ -586,8 +586,10 @@ fun HomeScreen(
                                         originalGovernor = originalGovernor
                                 )
 
-                                // Benchmark Tips Card
-                                BenchmarkTipsCard()
+
+                                // Benchmark Tips Card Removed
+                                // BenchmarkTipsCard()
+
 
                                 // Workload Selection (Compact Style)
                                 Text(

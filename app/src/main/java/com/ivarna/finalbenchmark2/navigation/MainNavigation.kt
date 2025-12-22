@@ -217,7 +217,25 @@ fun MainNavigation(
                                     .createHistoryViewModel(context)
                     HistoryScreen(viewModel = historyViewModel, navController = navController)
                 }
-                composable("settings") {
+                composable(
+                    route = "settings",
+                    enterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    exitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popEnterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popExitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    }
+                ) {
                     SettingsScreen(
                             rootStatus = rootStatus,
                             onBackClick = { navController.popBackStack() },

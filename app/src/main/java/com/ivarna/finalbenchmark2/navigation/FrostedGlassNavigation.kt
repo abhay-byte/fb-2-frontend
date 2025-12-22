@@ -36,9 +36,9 @@ fun FrostedGlassNavigationBar(
     val surfaceColor = MaterialTheme.colorScheme.surface
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
     val blurBackgroundColor = remember(surfaceColor) {
-        // Use a semi-transparent version of the surface color for the blur effect
-        // This ensures the haze material adapts to both light and dark themes
-        surfaceColor.copy(alpha = 0.6f)
+        // Use a more opaque version of the surface color for better visibility
+        // Increased alpha from 0.6f to 0.85f to prevent "muddy" look
+        surfaceColor.copy(alpha = 0.85f)
     }
 
     Box(
@@ -56,7 +56,7 @@ fun FrostedGlassNavigationBar(
                 // Apply haze effect to the entire navigation bar area
                 backgroundColor = blurBackgroundColor
                 blurRadius = 20.dp
-                noiseFactor = 0.1f
+                noiseFactor = 0.05f // Reduced noise from 0.1f for cleaner look
             }
             .border(
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
