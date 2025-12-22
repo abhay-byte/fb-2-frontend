@@ -1,0 +1,8 @@
+v0.5.1 - UI Polish & New Features
+• NEW: CPU Comparison Page - Compare devices side-by-side
+• UX: Unified sleek page transitions (Fade+Scale)
+• UI: Refined Benchmark Dial & added Time Estimation
+• Fixed navigation failure on screen rotation
+• Optimized Matrix Ops & Scoring factors (8 Gen 3 baseline)
+• Improved thermal management & workload tiers
+• polished Result Screen spacing & visuals
