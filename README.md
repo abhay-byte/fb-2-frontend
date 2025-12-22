@@ -73,8 +73,9 @@ A comprehensive Android CPU benchmarking application with detailed scoring and v
         <sub><b>Settings</b></sub>
       </td>
       <td align="center">
+        <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/8.png" width="180"/>
         <br/>
-        <sub></sub>
+        <sub><b>CPU Comparison</b></sub>
       </td>
     </tr>
   </table>
