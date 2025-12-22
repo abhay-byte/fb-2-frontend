@@ -141,7 +141,8 @@ fun MainNavigation(
                                 navController.navigate("benchmark/$preset")
                             },
                             onNavigateToSettings = { navController.navigate("settings") },
-                            historyRepository = historyRepository
+                            historyRepository = historyRepository,
+                            hazeState = hazeState // Pass hazeState
                     )
                 }
                 composable("device") { DeviceScreen() }

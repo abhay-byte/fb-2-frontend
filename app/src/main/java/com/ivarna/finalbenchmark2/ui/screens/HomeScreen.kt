@@ -9,6 +9,11 @@ import java.util.Locale
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -53,6 +58,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -78,13 +85,16 @@ import com.ivarna.finalbenchmark2.utils.PowerUtils
 import com.ivarna.finalbenchmark2.utils.TemperatureUtils
 import kotlinx.coroutines.delay
 import kotlin.math.abs
+import dev.chrisbanes.haze.hazeChild
+import dev.chrisbanes.haze.HazeStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
         onStartBenchmark: (String) -> Unit,
         onNavigateToSettings: () -> Unit = {},
-        historyRepository: HistoryRepository? = null
+        historyRepository: HistoryRepository? = null,
+        hazeState: dev.chrisbanes.haze.HazeState? = null
 ) {
 
         // --- State Holders for Data ---
@@ -311,6 +321,149 @@ fun HomeScreen(
                                                                 )
                                                 )
                                         }
+                                }
+
+                                // =========================================================
+                                // BENCHMARK CONTROLS (Moved to Top)
+                                // =========================================================
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 16.dp),
+                                    shape = RoundedCornerShape(24.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
+                                    ),
+                                    elevation = CardDefaults.cardElevation(0.dp),
+                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        // Workload Dropdown
+                                        ExposedDropdownMenuBox(
+                                            expanded = isDropdownExpanded,
+                                            onExpandedChange = { isDropdownExpanded = !isDropdownExpanded },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            OutlinedTextField(
+                                                value = selectedWorkload,
+                                                onValueChange = {},
+                                                readOnly = true,
+                                                label = { Text("Workload Intensity") },
+                                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                                                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                                                modifier = Modifier.menuAnchor().fillMaxWidth(),
+                                                shape = RoundedCornerShape(12.dp)
+                                            )
+                                            ExposedDropdownMenu(
+                                                expanded = isDropdownExpanded,
+                                                onDismissRequest = { isDropdownExpanded = false }
+                                            ) {
+                                                workloadOptions.forEach { option ->
+                                                    DropdownMenuItem(
+                                                        text = { Text(option) },
+                                                        onClick = {
+                                                            selectedWorkload = option
+                                                            isDropdownExpanded = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                            // Start Benchmark Button - Glassmorphic Style
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(56.dp)
+                                                    .shadow(
+                                                        elevation = 8.dp,
+                                                        shape = RoundedCornerShape(28.dp),
+                                                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                                                    )
+                                                    .clip(RoundedCornerShape(28.dp))
+                                                    .clickable {
+                                                        val activity = context as? com.ivarna.finalbenchmark2.MainActivity
+                                                        activity?.startAllOptimizations()
+                                                        val deviceTier = when (selectedWorkload) {
+                                                            "Low Accuracy - Fastest" -> "slow"
+                                                            "Mid Accuracy - Fast" -> "mid"
+                                                            "High Accuracy - Slow" -> "flagship"
+                                                            else -> "flagship"
+                                                        }
+                                                        onStartBenchmark(deviceTier)
+                                                    },
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                // Content Overlay
+                                                val infiniteTransition = rememberInfiniteTransition(label = "button_spin")
+                                                val angle by infiniteTransition.animateFloat(
+                                                    initialValue = 0f,
+                                                    targetValue = 360f,
+                                                    animationSpec = infiniteRepeatable(
+                                                        animation = tween(durationMillis = 4000, easing = LinearEasing),
+                                                        repeatMode = RepeatMode.Restart
+                                                    ),
+                                                    label = "spin_angle"
+                                                )
+                                                
+                                                val primary = MaterialTheme.colorScheme.primary
+                                                val tertiary = MaterialTheme.colorScheme.tertiary
+                                                
+                                                // Rotating Background
+                                                // Rotating Background - Doc Implementation
+                                                Spacer(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .drawWithCache {
+                                                            val brush = Brush.sweepGradient(
+                                                                colors = listOf(
+                                                                    primary,
+                                                                    tertiary,
+                                                                    primary
+                                                                )
+                                                            )
+                                                            onDrawBehind {
+                                                                val radius = size.maxDimension
+                                                                // pivot defaults to center
+                                                                rotate(degrees = angle) {
+                                                                    drawCircle(
+                                                                        brush = brush,
+                                                                        radius = radius
+                                                                    )
+                                                                }
+                                                            }
+                                                        }
+                                                )
+                                                // Inner Content Mask - Creates the Border Effect
+                                                Box(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(2.dp) // Border Width
+                                                        .clip(RoundedCornerShape(26.dp))
+                                                        .background(MaterialTheme.colorScheme.background),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                        Icon(
+                                                            painterResource(id = R.drawable.mobile_24),
+                                                            contentDescription = null,
+                                                            tint = MaterialTheme.colorScheme.onBackground,
+                                                            modifier = Modifier.size(24.dp)
+                                                        )
+                                                        Spacer(modifier = Modifier.width(8.dp))
+                                                        Text(
+                                                            "START BENCHMARK",
+                                                            fontWeight = FontWeight.Bold,
+                                                            fontSize = 16.sp,
+                                                            color = MaterialTheme.colorScheme.onBackground
+                                                        )
+                                                    }
+                                                }
+                                        }
+                                    }
                                 }
 
                                 Spacer(modifier = Modifier.height(16.dp))
@@ -587,166 +740,11 @@ fun HomeScreen(
                                 )
 
 
-                                // Benchmark Tips Card Removed
-                                // BenchmarkTipsCard()
+                                // Benchmark Tips Card
+                                BenchmarkTipsCard()
 
 
-                                // Workload Selection (Compact Style)
-                                Text(
-                                        text = "BENCHMARK CONFIGURATION",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
-                                )
 
-                                ExposedDropdownMenuBox(
-                                        expanded = isDropdownExpanded,
-                                        onExpandedChange = {
-                                                isDropdownExpanded = !isDropdownExpanded
-                                        },
-                                        modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)
-                                ) {
-                                        // Custom Compact Trigger (Input Field Style)
-                                        Card(
-                                                modifier = Modifier
-                                                        .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                                                        .fillMaxWidth()
-                                                        .height(56.dp), // Compact height
-                                                shape = RoundedCornerShape(12.dp), // Sharper corners
-                                                colors = CardDefaults.cardColors(
-                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.6f) // Distinct background
-                                                ),
-                                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-                                                elevation = CardDefaults.cardElevation(0.dp)
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                                                verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.SpaceBetween
-                                            ) {
-                                                Column(verticalArrangement = Arrangement.Center) {
-                                                    Text(
-                                                        text = "Workload Intensity",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
-                                                    )
-                                                    Text(
-                                                        text = selectedWorkload,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        fontWeight = FontWeight.SemiBold,
-                                                        color = MaterialTheme.colorScheme.onSurface
-                                                    )
-                                                }
-                                                Icon(
-                                                    imageVector = Icons.Rounded.ArrowDropDown,
-                                                    contentDescription = "Expand",
-                                                    modifier = Modifier.rotate(if (isDropdownExpanded) 180f else 0f),
-                                                    tint = MaterialTheme.colorScheme.primary
-                                                )
-                                            }
-                                        }
-
-                                        ExposedDropdownMenu(
-                                                expanded = isDropdownExpanded,
-                                                onDismissRequest = { isDropdownExpanded = false },
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                                shape = RoundedCornerShape(12.dp),
-                                                modifier = Modifier.padding(vertical = 4.dp)
-                                        ) {
-                                                workloadOptions.forEach { option ->
-                                                        DropdownMenuItem(
-                                                                text = {
-                                                                    Text(
-                                                                        text = option,
-                                                                        style = MaterialTheme.typography.bodyMedium,
-                                                                        fontWeight = if (option == selectedWorkload) FontWeight.Bold else FontWeight.Normal
-                                                                    )
-                                                                },
-                                                                onClick = {
-                                                                        selectedWorkload = option
-                                                                        isDropdownExpanded = false
-                                                                },
-                                                                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)
-                                                        )
-                                                }
-                                        }
-                                }
-
-                                // Start Benchmark Button (Huge Pill Style)
-                                Button(
-                                        onClick = {
-                                                // Call optimizations before starting benchmark
-                                                val activity =
-                                                        context as?
-                                                                com.ivarna.finalbenchmark2.MainActivity
-                                                activity?.startAllOptimizations()
-
-                                                // Map UI workload to backend device tier
-                                                val deviceTier =
-                                                        when (selectedWorkload) {
-                                                                "Low Accuracy - Fastest" -> "slow"
-                                                                "Mid Accuracy - Fast" -> "mid"
-                                                                "High Accuracy - Slow" -> "flagship"
-                                                                else -> "flagship" // fallback
-                                                        }
-
-                                                onStartBenchmark(deviceTier)
-                                        },
-                                        modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(64.dp) // Standard large button height
-                                                .shadow(
-                                                    elevation = 8.dp,
-                                                    shape = RoundedCornerShape(32.dp),
-                                                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                                ),
-                                        shape = RoundedCornerShape(32.dp),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = Color.Transparent
-                                        ),
-                                        contentPadding = PaddingValues(0.dp)
-                                ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                brush = Brush.horizontalGradient(
-                                                    colors = listOf(
-                                                        MaterialTheme.colorScheme.primary,
-                                                        MaterialTheme.colorScheme.tertiary
-                                                    )
-                                                )
-                                            ),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            Icon(
-                                                    painterResource(id = R.drawable.mobile_24),
-                                                    contentDescription = null,
-                                                    tint = MaterialTheme.colorScheme.onPrimary,
-                                                    modifier = Modifier.size(24.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(12.dp))
-                                            Text(
-                                                    text = "START BENCHMARK",
-                                                    fontSize = 16.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    letterSpacing = 1.sp,
-                                                    color = MaterialTheme.colorScheme.onPrimary
-                                            )
-                                        }
-                                    }
-                                }
-
-                                Text(
-                                        text =
-                                                "Run comprehensive tests on CPU, GPU, RAM, and Storage performance",
-                                        fontSize = 14.sp,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(top = 8.dp)
-                                )
                                 
                                 Spacer(modifier = Modifier.height(120.dp)) // Bottom padding for floating nav bar
                         }
@@ -1154,124 +1152,38 @@ fun DetailIconPair(icon: ImageVector, value: String, label: String) {
 
 @Composable
 fun BenchmarkTipsCard() {
-        var isExpanded by remember { mutableStateOf(false) }
-
         Card(
-                modifier =
-                        Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                                isExpanded = !isExpanded
-                        },
-                shape = RoundedCornerShape(24.dp),
-                colors =
-                        CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
-        ) {
-            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                            )
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f)
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)),
+                elevation = CardDefaults.cardElevation(0.dp)
+        ) {
+                Row(
+                        modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                        Icon(
+                                imageVector = Icons.Rounded.Lightbulb,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.tertiary,
+                                modifier = Modifier.size(18.dp)
                         )
-                    )
-            ) {
-                Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
-                        // Header Row
-                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                        ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primaryContainer),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Rounded.Lightbulb,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(12.dp))
-                                    Text(
-                                            text = "BENCHMARK TIPS",
-                                            fontSize = 13.sp, // Reduced from titleMedium
-                                            fontWeight = FontWeight.Bold,
-                                            letterSpacing = 0.5.sp,
-                                            color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-
-                                Icon(
-                                        imageVector = Icons.Rounded.ArrowDropDown,
-                                        contentDescription = "Expand",
-                                        modifier =
-                                                Modifier.size(28.dp)
-                                                        .rotate(if (isExpanded) 180f else 0f),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                        }
-
-                        // Expanded Details
-                        AnimatedVisibility(
-                                visible = isExpanded,
-                                enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
-                                exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
-                        ) {
-                                Column(modifier = Modifier.padding(top = 20.dp)) {
-                                        HorizontalDivider(
-                                                color =
-                                                        MaterialTheme.colorScheme.outlineVariant
-                                                                .copy(alpha = 0.3f),
-                                                modifier = Modifier.padding(bottom = 16.dp)
-                                        )
-
-                                        // Tip 1: Flash Thermal Disable Module
-                                        TipRow(
-                                                number = "1",
-                                                title = "Flash Thermal Disable Module",
-                                                description =
-                                                        "Flash thermal disable module to prevent thermal throttling during benchmarks"
-                                        )
-
-                                        // Tip 2: Keep Device Cool
-                                        TipRow(
-                                                number = "2",
-                                                title = "Keep Device Below 25°C",
-                                                description =
-                                                        "Maintain optimal temperature for best performance and consistent results"
-                                        )
-
-                                        // Tip 3: Update Drivers
-                                        TipRow(
-                                                number = "3",
-                                                title = "Update Drivers to Latest Version",
-                                                description =
-                                                        "Ensure all system drivers are up-to-date for optimal compatibility and performance"
-                                        )
-
-                                        // Tip 4: Close Background Apps
-                                        TipRow(
-                                                number = "4",
-                                                title = "Close All Background Apps",
-                                                description =
-                                                        "Eliminate background processes and avoid interruptions during benchmark execution"
-                                        )
-                                }
-                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                                text = "Tip: Keep device cool & close background apps for best results.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.9f),
+                                maxLines = 2, // Allow wrapping
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
                 }
-            }
         }
 }
 

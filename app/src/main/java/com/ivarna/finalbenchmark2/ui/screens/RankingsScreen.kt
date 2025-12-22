@@ -58,10 +58,21 @@ fun RankingsScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
             .background(
-                brush = Brush.verticalGradient(
+                Brush.radialGradient(
                     colors = listOf(
-                        MaterialTheme.colorScheme.surface,
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                        Color.Transparent
+                    ),
+                    center = androidx.compose.ui.geometry.Offset(0f, 0f),
+                    radius = 1000f
+                )
+            )
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.background,
                         MaterialTheme.colorScheme.surfaceContainerLowest
                     )
                 )
@@ -289,19 +300,26 @@ private fun RankingItemCard(
                     Column(
                         modifier = Modifier.weight(1f)
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        @OptIn(ExperimentalLayoutApi::class)
+                        androidx.compose.foundation.layout.FlowRow(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalArrangement = Arrangement.Start,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
                             Text(
                                 text = item.name,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
+                                color = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.align(Alignment.CenterVertically)
                             )
                             // Display tag if present
                             item.tag?.let { tag ->
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Surface(
                                     color = MaterialTheme.colorScheme.tertiaryContainer,
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.align(Alignment.CenterVertically)
                                 ) {
                                     Text(
                                         text = tag,
@@ -317,7 +335,8 @@ private fun RankingItemCard(
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Surface(
                                     color = MaterialTheme.colorScheme.primary,
-                                    shape = RoundedCornerShape(6.dp)
+                                    shape = RoundedCornerShape(6.dp),
+                                    modifier = Modifier.align(Alignment.CenterVertically)
                                 ) {
                                     Row(
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),

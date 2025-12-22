@@ -106,30 +106,28 @@ fun DeviceScreen(viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compo
         Box(
             modifier = Modifier
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .background(
+                    androidx.compose.ui.graphics.Brush.radialGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                            Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(0f, 0f),
+                        radius = 1000f
+                    )
+                )
                 .background(
                     androidx.compose.ui.graphics.Brush.verticalGradient(
                         colors = listOf(
-                            MaterialTheme.colorScheme.surface,
-                            MaterialTheme.colorScheme.surfaceContainer
+                            MaterialTheme.colorScheme.background,
+                            MaterialTheme.colorScheme.surfaceContainerLowest
                         )
                     )
                 )
         ) {
-            // Radial gradient overlay for premium feel
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        androidx.compose.ui.graphics.Brush.radialGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
-                                Color.Transparent
-                            ),
-                            center = androidx.compose.ui.geometry.Offset(x = 0f, y = 0f),
-                            radius = 1000f
-                        )
-                    )
-            )
+            // Radial gradient overlay removed as it is now integrated into the main Box modifiers
+
 
             Column(
                 modifier = Modifier.fillMaxSize()
