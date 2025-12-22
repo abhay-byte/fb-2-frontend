@@ -1,11 +1,13 @@
 package com.ivarna.finalbenchmark2.ui.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ivarna.finalbenchmark2.domain.model.*
@@ -54,9 +56,21 @@ fun InformationRow(
         }
         
         if (!isLastItem) {
-            Divider(
-                modifier = Modifier.padding(top = 8.dp),
-                color = MaterialTheme.colorScheme.outlineVariant
+            // Glassmorphic Gradient Separator
+            Box(
+                modifier = Modifier
+                    .padding(top = 12.dp)
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Transparent,
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f),
+                                Color.Transparent
+                            )
+                        )
+                    )
             )
         }
     }

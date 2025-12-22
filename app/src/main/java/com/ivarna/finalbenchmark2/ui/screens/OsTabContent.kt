@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.ivarna.finalbenchmark2.R
 import com.ivarna.finalbenchmark2.ui.viewmodels.OsViewModel
 import com.ivarna.finalbenchmark2.utils.OsInfo
+import com.ivarna.finalbenchmark2.ui.components.GlassCard
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun OsTabContent(viewModel: OsViewModel) {
@@ -88,12 +90,9 @@ fun OsInfoContent(osInfo: OsInfo) {
 
 @Composable
 fun AndroidSystemCard(osInfo: OsInfo) {
-    Card(
+    GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -135,12 +134,9 @@ fun AndroidSystemCard(osInfo: OsInfo) {
 
 @Composable
 fun FirmwareBuildCard(osInfo: OsInfo) {
-    Card(
+    GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -178,12 +174,9 @@ fun FirmwareBuildCard(osInfo: OsInfo) {
 
 @Composable
 fun KernelRuntimeCard(osInfo: OsInfo) {
-    Card(
+    GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier

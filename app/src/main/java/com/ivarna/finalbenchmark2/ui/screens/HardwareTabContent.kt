@@ -21,6 +21,8 @@ import com.ivarna.finalbenchmark2.ui.components.CameraPermissionRequest
 import com.ivarna.finalbenchmark2.ui.components.InformationRow
 import com.ivarna.finalbenchmark2.ui.components.PhoneStatePermissionRequest
 import com.ivarna.finalbenchmark2.ui.viewmodels.HardwareViewModel
+import com.ivarna.finalbenchmark2.ui.components.GlassCard
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,13 +124,9 @@ fun HardwareTabContent(viewModel: HardwareViewModel) {
 @Composable
 fun BatteryCard(batterySpecs: com.ivarna.finalbenchmark2.utils.BatterySpec?) {
         if (batterySpecs != null) {
-                Card(
+                GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                                CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(24.dp)
                 ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(
@@ -215,13 +213,9 @@ fun BatteryCard(batterySpecs: com.ivarna.finalbenchmark2.utils.BatterySpec?) {
 @Composable
 fun ConnectivityCard(networkSpecs: com.ivarna.finalbenchmark2.utils.NetworkSpec?) {
         if (networkSpecs != null) {
-                Card(
+                GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                                CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(24.dp)
                 ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(
@@ -327,13 +321,9 @@ fun ConnectivityCard(networkSpecs: com.ivarna.finalbenchmark2.utils.NetworkSpec?
 @Composable
 fun CameraCard(cameraSpecs: List<com.ivarna.finalbenchmark2.utils.CameraSpec>?) {
         if (cameraSpecs != null && cameraSpecs.isNotEmpty()) {
-                Card(
+                GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                                CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(24.dp)
                 ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(
@@ -420,13 +410,9 @@ fun CameraCard(cameraSpecs: List<com.ivarna.finalbenchmark2.utils.CameraSpec>?) 
 @Composable
 fun MemoryStorageCard(memoryStorageSpecs: com.ivarna.finalbenchmark2.utils.MemoryStorageSpec?) {
         if (memoryStorageSpecs != null) {
-                Card(
+                GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                                CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(24.dp)
                 ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(
@@ -495,13 +481,9 @@ fun MemoryStorageCard(memoryStorageSpecs: com.ivarna.finalbenchmark2.utils.Memor
 @Composable
 fun AudioMediaCard(audioMediaSpecs: com.ivarna.finalbenchmark2.utils.AudioMediaSpec?) {
         if (audioMediaSpecs != null) {
-                Card(
+                GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                                CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(24.dp)
                 ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(
@@ -566,13 +548,9 @@ fun AudioMediaCard(audioMediaSpecs: com.ivarna.finalbenchmark2.utils.AudioMediaS
 @Composable
 fun PeripheralsCard(peripheralsSpecs: com.ivarna.finalbenchmark2.utils.PeripheralsSpec?) {
         if (peripheralsSpecs != null) {
-                Card(
+                GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        colors =
-                                CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = RoundedCornerShape(24.dp)
                 ) {
                         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                                 Row(

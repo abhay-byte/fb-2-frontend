@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -101,43 +103,85 @@ fun DeviceScreen(viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compo
     val coroutineScope = rememberCoroutineScope()
     
     FinalBenchmark2Theme {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = MaterialTheme.colorScheme.background
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    androidx.compose.ui.graphics.Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.surface,
+                            MaterialTheme.colorScheme.surfaceContainer
+                        )
+                    )
+                )
         ) {
+            // Radial gradient overlay for premium feel
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        androidx.compose.ui.graphics.Brush.radialGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.08f),
+                                Color.Transparent
+                            ),
+                            center = androidx.compose.ui.geometry.Offset(x = 0f, y = 0f),
+                            radius = 1000f
+                        )
+                    )
+            )
+
             Column(
                 modifier = Modifier.fillMaxSize()
             ) {
-                // Scrollable Tab Row - attached to top
-                ScrollableTabRow(
-                    selectedTabIndex = pagerState.currentPage,
-                    edgePadding = 16.dp,
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    contentColor = MaterialTheme.colorScheme.primary,
-                    indicator = { tabPositions ->
-                        TabRowDefaults.SecondaryIndicator(
-                            modifier = Modifier
-                                .tabIndicatorOffset(tabPositions[pagerState.currentPage]),
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
+                // Glassmorphic Scrollable Tab Row
+                com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(50)
                 ) {
-                    tabs.forEachIndexed { index, title ->
-                        Tab(
-                            selected = pagerState.currentPage == index,
-                            onClick = {
-                                coroutineScope.launch {
-                                    pagerState.animateScrollToPage(index)
-                                }
-                            },
-                            text = {
-                                Text(
-                                    text = title,
-                                    maxLines = 1,
-                                    style = MaterialTheme.typography.bodyMedium
+                    ScrollableTabRow(
+                        selectedTabIndex = pagerState.currentPage,
+                        edgePadding = 16.dp,
+                        containerColor = Color.Transparent,
+                        contentColor = MaterialTheme.colorScheme.primary,
+                        divider = {},
+                        indicator = { tabPositions ->
+                            if (pagerState.currentPage < tabPositions.size) {
+                                TabRowDefaults.SecondaryIndicator(
+                                    modifier = Modifier
+                                        .tabIndicatorOffset(tabPositions[pagerState.currentPage]),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    height = 3.dp
                                 )
                             }
-                        )
+                        }
+                    ) {
+                        tabs.forEachIndexed { index, title ->
+                            Tab(
+                                selected = pagerState.currentPage == index,
+                                onClick = {
+                                    coroutineScope.launch {
+                                        pagerState.animateScrollToPage(index)
+                                    }
+                                },
+                                text = {
+                                    Text(
+                                        text = title,
+                                        maxLines = 1,
+                                        style = if (pagerState.currentPage == index) 
+                                            MaterialTheme.typography.titleSmall.copy(fontWeight = androidx.compose.ui.text.font.FontWeight.Bold)
+                                        else 
+                                            MaterialTheme.typography.bodyMedium,
+                                        color = if (pagerState.currentPage == index) 
+                                            MaterialTheme.colorScheme.primary 
+                                        else 
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            )
+                        }
                     }
                 }
                 
@@ -191,6 +235,11 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
         gpuInfoUtils.getGpuInfo()
     }
     
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -198,221 +247,248 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Top
     ) {
-        // Header
-        Text(
-            text = "Device Information",
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Start,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        )
-        
         // Power Consumption Graph (at the top, scrolls with content)
         if (viewModel != null) {
-            PowerConsumptionGraph(
-                dataPoints = powerHistory,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500)) + 
+                        slideInVertically(animationSpec = tween(500, delayMillis = 50)) { it / 2 }
+            ) {
+                PowerConsumptionGraph(
+                            dataPoints = powerHistory,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 16.dp)
+                        )
+            }
         }
         
         // Scrollable list for all device info
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            // Device info items
+            // --- Device Overview Section ---
             item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Model", "${deviceInfo.manufacturer} ${deviceInfo.deviceModel}"),
-                    isLastItem = false
-                )
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 150)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 150)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                         Text(
+                            text = "Device Overview",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Model", "${deviceInfo.manufacturer} ${deviceInfo.deviceModel}"),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Board", deviceInfo.board),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC", deviceInfo.socName),
+                            isLastItem = false
+                        )
+                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
+                            isLastItem = true
+                        )
+                    }
+                }
             }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Board", deviceInfo.board),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC", deviceInfo.socName),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()),
-                    isLastItem = false
-                )
             }
             
-            // Get CPU topology from CpuAffinityManager
+            // --- CPU Details Section ---
+            // Re-define CPU topology variables needed here
             val cpuAffinityManager = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
             val cpuCores = cpuAffinityManager.detectCpuTopology()
             val bigCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.BIG }
             val midCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.MID }
             val littleCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.LITTLE }
-            
-            // BIG cores
-            if (bigCores.isNotEmpty()) {
-                item {
-                    val maxFreq = bigCores.maxOfOrNull { it.maxFreqKhz } ?: 0
-                    val coreIds = bigCores.map { it.id }.joinToString(", ")
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
-                            "BIG Cores", 
-                            "${bigCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
-                        ),
-                        isLastItem = false
-                    )
-                }
-            }
-            
-            // Mid cores (if available)
-            if (midCores.isNotEmpty()) {
-                item {
-                    val maxFreq = midCores.maxOfOrNull { it.maxFreqKhz } ?: 0
-                    val coreIds = midCores.map { it.id }.joinToString(", ")
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
-                            "Mid Cores", 
-                            "${midCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
-                        ),
-                        isLastItem = false
-                    )
-                }
-            }
-            
-            // LITTLE cores
-            if (littleCores.isNotEmpty()) {
-                item {
-                    val maxFreq = littleCores.maxOfOrNull { it.maxFreqKhz } ?: 0
-                    val coreIds = littleCores.map { it.id }.joinToString(", ")
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
-                            "LITTLE Cores", 
-                            "${littleCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
-                        ),
-                        isLastItem = false
-                    )
-                }
-            }
-            // GPU Information Section Header
+
             item {
-                Text(
-                    text = "GPU Information",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
-            }
-            // GPU Info Content based on state
-            item {
-                // Load GPU info on demand for this specific tab with proper caching
-                val gpuInfoState by produceState<com.ivarna.finalbenchmark2.utils.GpuInfoState>(
-                    initialValue = com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading,
-                    key1 = gpuInfoUtils
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 250)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 250)) { it / 2 }
                 ) {
-                    // Use the cached gpuInfoUtils instance
-                    value = gpuInfoUtils.getGpuInfo()
-                }
-                
-                when (gpuInfoState) {
-                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
-                        InfoRow("GPU Status", "Loading GPU information...")
-                    }
-                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
-                        val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
-                        InfoRow("GPU Name", gpuInfo.basicInfo.name)
-                        InfoRow("GPU Vendor", gpuInfo.basicInfo.vendor)
-                        LongInfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
-                        // Display more detailed Vulkan info if available
-                        if (gpuInfo.vulkanInfo != null && gpuInfo.vulkanInfo.supported) {
-                            val vulkanInfo = gpuInfo.vulkanInfo
-                            val vulkanVersion = vulkanInfo.apiVersion ?: "Supported"
-                            LongInfoRow("Vulkan", vulkanVersion)
-                        } else if (gpuInfo.basicInfo.vulkanVersion != null) {
-                            LongInfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion)
-                        } else {
-                            InfoRow("Vulkan", "Not Supported")
+                     com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                         Text(
+                            text = "CPU Details",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()),
+                            isLastItem = false
+                        )
+
+                        // Cluster topology logic included here for completeness in "Info"
+                        // BIG cores
+                        if (bigCores.isNotEmpty()) {
+                             val maxFreq = bigCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                             com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                                    "BIG Cores", 
+                                    "${bigCores.size} cores (${maxFreq/1000}MHz)"
+                                ),
+                                isLastItem = false
+                            )
+                        }
+                        
+                         // Mid cores
+                        if (midCores.isNotEmpty()) {
+                             val maxFreq = midCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                             com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                                    "Mid Cores", 
+                                    "${midCores.size} cores (${maxFreq/1000}MHz)"
+                                ),
+                                isLastItem = false
+                            )
+                        }
+                        // LITTLE cores
+                        if (littleCores.isNotEmpty()) {
+                             val maxFreq = littleCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                             com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                                    "LITTLE Cores", 
+                                    "${littleCores.size} cores (${maxFreq/1000}MHz)"
+                                ),
+                                isLastItem = true
+                            )
                         }
                     }
-                    is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
-                        InfoRow("GPU Status", "Error loading GPU info")
-                        InfoRow("GPU Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                 }
+            }
+            }
+
+            // --- GPU Details Section ---
+            item {
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 350)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 350)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "GPU Information",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                         
+                        // Load GPU info on demand for this specific tab with proper caching
+                        val gpuInfoState by produceState<com.ivarna.finalbenchmark2.utils.GpuInfoState>(
+                            initialValue = com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading,
+                            key1 = gpuInfoUtils
+                        ) {
+                            // Use the cached gpuInfoUtils instance
+                            value = gpuInfoUtils.getGpuInfo()
+                        }
+                        
+                        when (gpuInfoState) {
+                            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
+                                InfoRow("GPU Status", "Loading GPU information...")
+                            }
+                            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
+                                val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
+                                InfoRow("GPU Name", gpuInfo.basicInfo.name)
+                                InfoRow("GPU Vendor", gpuInfo.basicInfo.vendor)
+                                LongInfoRow("OpenGL ES", gpuInfo.basicInfo.openGLVersion)
+                                // Display more detailed Vulkan info if available
+                                if (gpuInfo.vulkanInfo != null && gpuInfo.vulkanInfo.supported) {
+                                    val vulkanInfo = gpuInfo.vulkanInfo
+                                    val vulkanVersion = vulkanInfo.apiVersion ?: "Supported"
+                                    LongInfoRow("Vulkan", vulkanVersion)
+                                } else if (gpuInfo.basicInfo.vulkanVersion != null) {
+                                    LongInfoRow("Vulkan", gpuInfo.basicInfo.vulkanVersion)
+                                } else {
+                                    InfoRow("Vulkan", "Not Supported")
+                                }
+                            }
+                            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
+                                InfoRow("GPU Status", "Error loading GPU info")
+                                InfoRow("GPU Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                            }
+                        }
                     }
                 }
             }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytes(deviceInfo.totalRam)),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
-                    isLastItem = false
-                )
             }
             
-            // System Information Section Header
+            // --- System Information Section ---
             item {
-                Text(
-                    text = "System Information",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 450)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 450)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                         Text(
+                            text = "System Information",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Android Version", "${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})"),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Kernel Version", deviceInfo.kernelVersion),
+                            isLastItem = false
+                        )
+                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Thermal Status", deviceInfo.thermalStatus ?: "Not available"),
+                            isLastItem = false
+                        )
+                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available"),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available"),
+                            isLastItem = true
+                        )
+                    }
+                }
             }
-            
-            // System info items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Android Version", "${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})"),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Kernel Version", deviceInfo.kernelVersion),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Thermal Status", deviceInfo.thermalStatus ?: "Not available"),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Temperature", deviceInfo.batteryTemperature?.let { "${String.format("%.2f", it)}°C" } ?: "Not available"),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Battery Capacity", deviceInfo.batteryCapacity?.let { "${it.toInt()}%" } ?: "Not available"),
-                    isLastItem = true
-                )
             }
         }
     }
@@ -427,6 +503,17 @@ fun CpuTab(
     
     // Initialize CPU frequency utilities once and cache them
     val cpuFreqUtils = remember { com.ivarna.finalbenchmark2.utils.CpuUtilizationUtils(context) }
+    
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    val cpuAffinityManager = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
+    val cpuCores = cpuAffinityManager.detectCpuTopology()
+    val bigCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.BIG }
+    val midCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.MID }
+    val littleCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.LITTLE }
     
     // Optimized data fetching scoped to this specific tab - stops when tab is not visible
     val coreFrequencies by produceState<Map<Int, Pair<Long, Long>>>(
@@ -483,257 +570,258 @@ fun CpuTab(
                 
         // CPU Utilization Graph
         CpuUtilizationGraph(
-            dataPoints = cpuHistory,
-            modifier = Modifier.fillMaxWidth()
-        )
-                
+                    dataPoints = cpuHistory,
+                    modifier = Modifier.fillMaxWidth()
+                )
+        
         Spacer(modifier = Modifier.height(16.dp))
         
         LazyColumn(
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
         ) {
-            // CPU Architecture Section Header
+            // CPU Architecture Section
             item {
-                Text(
-                    text = "CPU Architecture",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-            }
-            
-            // CPU Architecture items
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()),
-                    isLastItem = false
-                )
-            }
-            
-            // Get CPU topology from CpuAffinityManager
-            val cpuAffinityManager = com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager
-            val cpuCores = cpuAffinityManager.detectCpuTopology()
-            val bigCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.BIG }
-            val midCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.MID }
-            val littleCores = cpuCores.filter { it.coreType == com.ivarna.finalbenchmark2.cpuBenchmark.CpuAffinityManager.CoreType.LITTLE }
-            
-            // BIG cores
-            if (bigCores.isNotEmpty()) {
-                item {
-                    val maxFreq = bigCores.maxOfOrNull { it.maxFreqKhz } ?: 0
-                    val coreIds = bigCores.map { it.id }.joinToString(", ")
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
-                            "BIG Cores", 
-                            "${bigCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
-                        ),
-                        isLastItem = false
-                    )
-                }
-            }
-            
-            // Mid cores (if available)
-            if (midCores.isNotEmpty()) {
-                item {
-                    val maxFreq = midCores.maxOfOrNull { it.maxFreqKhz } ?: 0
-                    val coreIds = midCores.map { it.id }.joinToString(", ")
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
-                            "Mid Cores", 
-                            "${midCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
-                        ),
-                        isLastItem = false
-                    )
-                }
-            }
-            
-            // LITTLE cores
-            if (littleCores.isNotEmpty()) {
-                item {
-                    val maxFreq = littleCores.maxOfOrNull { it.maxFreqKhz } ?: 0
-                    val coreIds = littleCores.map { it.id }.joinToString(", ")
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
-                            "LITTLE Cores", 
-                            "${littleCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
-                        ),
-                        isLastItem = false
-                    )
-                }
-            }
-            
-            // Cluster Topology - custom display with multi-line text on right
-            item {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 150)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 150)) { it / 2 }
                 ) {
-                    Row(
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
                     ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = "Cluster Topology",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            modifier = Modifier.weight(0.4f)
+                            text = "CPU Architecture",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
+                        
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Cores", deviceInfo.totalCores.toString()),
+                            isLastItem = true
+                        )
+                    }
+                }
+            }
+            }
+            
+            // Cluster Topology
+            item {
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 250)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 250)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
                         Text(
-                            text = deviceInfo.clusterTopology,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            modifier = Modifier
-                                .weight(0.6f)
-                                .padding(start = 16.dp),
-                            textAlign = androidx.compose.ui.text.style.TextAlign.End,
-                            softWrap = true
+                            text = "Core Configuration",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
+
+                        // BIG cores
+                        if (bigCores.isNotEmpty()) {
+                            val maxFreq = bigCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                            val coreIds = bigCores.map { it.id }.joinToString(", ")
+                            com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                                    "BIG Cores", 
+                                    "${bigCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                                ),
+                                isLastItem = false
+                            )
+                        }
+                        
+                        // Mid cores (if available)
+                        if (midCores.isNotEmpty()) {
+                            val maxFreq = midCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                            val coreIds = midCores.map { it.id }.joinToString(", ")
+                            com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                                    "Mid Cores", 
+                                    "${midCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                                ),
+                                isLastItem = false
+                            )
+                        }
+                        
+                        // LITTLE cores
+                        if (littleCores.isNotEmpty()) {
+                            val maxFreq = littleCores.maxOfOrNull { it.maxFreqKhz } ?: 0
+                            val coreIds = littleCores.map { it.id }.joinToString(", ")
+                            com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(
+                                    "LITTLE Cores", 
+                                    "${littleCores.size} cores (${maxFreq/1000}MHz) - IDs: $coreIds"
+                                ),
+                                isLastItem = false
+                            )
+                        }
+
+                        // Topology text
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Topology",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.weight(0.4f)
+                                )
+                                Text(
+                                    text = deviceInfo.clusterTopology,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier
+                                        .weight(0.6f)
+                                        .padding(start = 16.dp),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.End,
+                                    softWrap = true
+                                )
+                            }
+                        }
                     }
-                    Divider(
-                        modifier = Modifier.padding(top = 8.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant
-                    )
                 }
             }
-            
-            // CPU Frequencies Section Header
-            item {
-                Text(
-                    text = "CPU Frequencies",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
             }
             
-            // Real-time CPU Frequencies items
-            if (coreFrequencies.isNotEmpty()) {
-                coreFrequencies.forEach { (coreIndex, freqPair) ->
-                    val (currentFreq, maxFreq) = freqPair
-                    val currentFreqMhz = if (currentFreq > 0) "${currentFreq / 1000} MHz" else "Offline"
-                    val maxFreqMhz = if (maxFreq > 0) "${maxFreq / 1000} MHz" else "N/A"
-                    
-                    item {
+            // CPU Frequencies Section
+            item {
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 350)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 350)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Real-time Frequencies",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // Real-time CPU Frequencies items
+                        if (coreFrequencies.isNotEmpty()) {
+                            coreFrequencies.forEach { (coreIndex, freqPair) ->
+                                val (currentFreq, maxFreq) = freqPair
+                                val currentFreqMhz = if (currentFreq > 0) "${currentFreq / 1000} MHz" else "Offline"
+                                val maxFreqMhz = if (maxFreq > 0) "${maxFreq / 1000} MHz" else "N/A"
+                                
+                                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Core $coreIndex", "$currentFreqMhz / $maxFreqMhz"),
+                                    isLastItem = coreIndex == coreFrequencies.size - 1
+                                )
+                            }
+                        } else {
+                            // Fallback to static frequencies
+                            val sortedKeys = deviceInfo.cpuFrequencies.keys.sorted()
+                            sortedKeys.forEachIndexed { index, core ->
+                                val freq = deviceInfo.cpuFrequencies[core] ?: ""
+                                com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Core $core", freq),
+                                    isLastItem = index == sortedKeys.size - 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            }
+            
+            // Processor Details Section
+            item {
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 450)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 450)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Processor Details",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Core $coreIndex", "$currentFreqMhz / $maxFreqMhz"),
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC Name", deviceInfo.socName),
                             isLastItem = false
                         )
-                    }
-                }
-            } else {
-                // Fallback to static frequencies if real-time reading fails
-                deviceInfo.cpuFrequencies.forEach { (core, freq) ->
-                    item {
                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Core $core", freq),
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Architecture", deviceInfo.cpuArchitecture),
                             isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Manufacturer", deviceInfo.manufacturer),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Board", deviceInfo.board),
+                            isLastItem = true
                         )
                     }
                 }
             }
+        }
+
             
-            // Processor Details Section Header
-            item {
-                Text(
-                    text = "Processor Details",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
-            }
-            
-            // Get detailed CPU information from native bridge
-            val cpuNative = com.ivarna.finalbenchmark2.utils.CpuNativeBridge()
-            val details = cpuNative.getCpuDetails()
-            
-            // Add processor details
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("SoC Name", details.socName),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("ABI", details.abi),
-                    isLastItem = false
-                )
-            }
-            item {
-                com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                    itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("ARM Neon", if(details.hasNeon) "Yes" else "No"),
-                    isLastItem = false
-                )
-            }
-            
-            // Add cache configuration
-            if (details.caches.isNotEmpty()) {
-                // Cache Configuration Section Header
-                item {
-                    Text(
-                        text = "Cache Configuration",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier
-                            .padding(top = 16.dp, bottom = 8.dp)
-                    )
-                }
-                
-                details.caches.forEach { cache ->
-                    // Format: "L1 Instruction" -> "64KB"
-                    val name = "L${cache.level} ${cache.type.replaceFirstChar { it.uppercase() }}"
-                    item {
-                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(name, cache.size),
-                            isLastItem = false
-                        )
-                    }
-                }
-            }
-            
+
             // CPU Governor Section
             item {
-                Text(
-                    text = "CPU Governor",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 16.dp, bottom = 8.dp)
-                )
-            }
-            
-            // Add CPU governor information
-            item {
-                val governor = cpuFreqUtils.getCurrentCpuGovernor()
-                if (governor != null) {
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Current Governor", governor),
-                        isLastItem = false
-                    )
-                } else {
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Current Governor", "Not available"),
-                        isLastItem = false
-                    )
+                AnimatedVisibility(
+                    visible = visible,
+                    enter = fadeIn(animationSpec = tween(500, delayMillis = 550)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 550)) { it / 2 }
+                ) {
+                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                    ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = "Power Management",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+                        
+                        val governor = cpuFreqUtils.getCurrentCpuGovernor()
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Current Governor", governor ?: "Not available"),
+                            isLastItem = true
+                        )
+                    }
                 }
             }
         }
     }
+}
 }
 
 @Composable
@@ -757,6 +845,11 @@ fun GpuTab(
         // Use the cached gpuInfoUtils instance
         value = gpuInfoUtils.getGpuInfo()
     }
+
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
     
     Column(
         modifier = Modifier
@@ -778,37 +871,57 @@ fun GpuTab(
         )
         
         // GPU Utilization Graph
-        GpuUtilizationGraph(
-            dataPoints = gpuHistory,
-            modifier = Modifier.fillMaxWidth(),
-            requiresRoot = true
-        )
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(500)) + 
+                    slideInVertically(animationSpec = tween(500, delayMillis = 50)) { it / 2 }
+        ) {
+            GpuUtilizationGraph(
+                        dataPoints = gpuHistory,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp),
+                        requiresRoot = true
+                    )
+        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // GPU Frequency Card - Real-time frequency monitoring
-        GpuFrequencyCard(
-            modifier = Modifier.fillMaxWidth(),
-            viewModel = gpuViewModel
-        )
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(500, delayMillis = 150)) + 
+                    slideInVertically(animationSpec = tween(500, delayMillis = 150)) { it / 2 }
+        ) {
+            GpuFrequencyCard(
+                modifier = Modifier.fillMaxWidth(),
+                viewModel = gpuViewModel
+            )
+        }
         
         Spacer(modifier = Modifier.height(16.dp))
         
         // GPU Info Content based on state
-        when (gpuInfoState) {
-            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
-                DeviceInfoCard("GPU Information") {
-                    InfoRow("Status", "Loading GPU information...")
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(500, delayMillis = 250)) + 
+                    slideInVertically(animationSpec = tween(500, delayMillis = 250)) { it / 2 }
+        ) {
+            when (gpuInfoState) {
+                is com.ivarna.finalbenchmark2.utils.GpuInfoState.Loading -> {
+                    DeviceInfoCard("GPU Information") {
+                        InfoRow("Status", "Loading GPU information...")
+                    }
                 }
-            }
-            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
-                val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
-                GpuInfoContent(gpuInfo, gpuFrequencyState)
-            }
-            is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
-                DeviceInfoCard("GPU Information") {
-                    InfoRow("Status", "Error loading GPU info")
-                    InfoRow("Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                is com.ivarna.finalbenchmark2.utils.GpuInfoState.Success -> {
+                    val gpuInfo = (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Success).gpuInfo
+                    GpuInfoContent(gpuInfo, gpuFrequencyState)
+                }
+                is com.ivarna.finalbenchmark2.utils.GpuInfoState.Error -> {
+                    DeviceInfoCard("GPU Information") {
+                        InfoRow("Status", "Error loading GPU info")
+                        InfoRow("Error", (gpuInfoState as com.ivarna.finalbenchmark2.utils.GpuInfoState.Error).message)
+                    }
                 }
             }
         }
@@ -817,23 +930,25 @@ fun GpuTab(
 
 @Composable
 fun GpuInfoContent(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo, gpuFrequencyState: com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState = com.ivarna.finalbenchmark2.utils.GpuFrequencyReader.GpuFrequencyState.NotSupported) {
-    // GPU Overview Card
-    GpuOverviewCard(gpuInfo, gpuFrequencyState)
-    
-    Spacer(modifier = Modifier.height(16.dp))
-    
-    // OpenGL Information Card
-    OpenGLInfoCard(gpuInfo.openGLInfo)
-    
-    Spacer(modifier = Modifier.height(16.dp))
-    
-    // Vulkan Information Card
-    VulkanInfoCard(gpuInfo.vulkanInfo)
-    
-    Spacer(modifier = Modifier.height(16.dp))
-    
-    // Advanced Capabilities Card
-    AdvancedCapabilitiesCard(gpuInfo.openGLInfo?.capabilities)
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // GPU Overview Card
+        GpuOverviewCard(gpuInfo, gpuFrequencyState)
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // OpenGL Information Card
+        OpenGLInfoCard(gpuInfo.openGLInfo)
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Vulkan Information Card
+        VulkanInfoCard(gpuInfo.vulkanInfo)
+        
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // Advanced Capabilities Card
+        AdvancedCapabilitiesCard(gpuInfo.openGLInfo?.capabilities)
+    }
 }
 
 @Composable
@@ -842,12 +957,9 @@ fun GpuOverviewCard(gpuInfo: com.ivarna.finalbenchmark2.utils.GpuInfo, gpuFreque
     val frequencyInfo = gpuInfo.frequencyInfo
     var expanded by remember { mutableStateOf(false) }
     
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
         onClick = { expanded = !expanded }
     ) {
         Column(
@@ -965,12 +1077,9 @@ fun OpenGLInfoCard(openGLInfo: com.ivarna.finalbenchmark2.utils.OpenGLInfo?) {
     var expanded by remember { mutableStateOf(false) }
     var extensionsExpanded by remember { mutableStateOf(false) }
     
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
         onClick = { expanded = !expanded }
     ) {
         Column(
@@ -1083,12 +1192,9 @@ fun VulkanInfoCard(vulkanInfo: com.ivarna.finalbenchmark2.utils.VulkanInfo?) {
     var extensionsExpanded by remember { mutableStateOf(false) }
     var featuresExpanded by remember { mutableStateOf(false) }
     
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
         onClick = { expanded = !expanded }
     ) {
         Column(
@@ -1338,12 +1444,9 @@ fun AdvancedCapabilitiesCard(capabilities: com.ivarna.finalbenchmark2.utils.Open
     
     var expanded by remember { mutableStateOf(false) }
     
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
         onClick = { expanded = !expanded }
     ) {
         Column(
@@ -1393,6 +1496,11 @@ fun ScreenTab(context: android.content.Context) {
     // Cache DisplayUtils and display info to prevent recreation on every recomposition
     val displayUtils = remember(context) { DisplayUtils(context) }
     val displayInfo = remember(displayUtils) { displayUtils.getDisplayInfo() }
+
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
     
     Column(
         modifier = Modifier
@@ -1414,29 +1522,44 @@ fun ScreenTab(context: android.content.Context) {
         )
         
         // Card 1: Display Metrics
-        DisplayMetricsCard(displayInfo)
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(500)) + 
+                    slideInVertically(animationSpec = tween(500, delayMillis = 50)) { it / 2 }
+        ) {
+            DisplayMetricsCard(displayInfo)
+        }
                 
         Spacer(modifier = Modifier.height(16.dp))
         
         // Card 2: Capabilities
-        DisplayCapabilitiesCard(displayInfo)
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(500, delayMillis = 150)) + 
+                    slideInVertically(animationSpec = tween(500, delayMillis = 150)) { it / 2 }
+        ) {
+            DisplayCapabilitiesCard(displayInfo)
+        }
                 
         Spacer(modifier = Modifier.height(16.dp))
         
         // Card 3: System State
-        DisplaySystemStateCard(displayInfo)
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn(animationSpec = tween(500, delayMillis = 250)) + 
+                    slideInVertically(animationSpec = tween(500, delayMillis = 250)) { it / 2 }
+        ) {
+            DisplaySystemStateCard(displayInfo)
+        }
     }
 }
 
 
 @Composable
 fun DisplayMetricsCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo) {
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1509,12 +1632,9 @@ fun DisplayMetricsCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo
 
 @Composable
 fun DisplayCapabilitiesCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo) {
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1610,12 +1730,9 @@ fun DisplayCapabilitiesCard(displayInfo: com.ivarna.finalbenchmark2.utils.Displa
 
 @Composable
 fun DisplaySystemStateCard(displayInfo: com.ivarna.finalbenchmark2.utils.DisplayInfo) {
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -1809,9 +1926,14 @@ fun OsTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, osViewModel: 
 
 @Composable
 fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: DeviceViewModel = androidx.lifecycle.viewmodel.compose.viewModel()) {
+    val context = LocalContext.current
+    var visible by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
     val memoryHistory by viewModel.memoryHistory.collectAsState()
     val systemInfoSummary by viewModel.systemInfoSummary.collectAsState()
-    val context = LocalContext.current
+
     
     // Fetch system process information when the tab is loaded
     LaunchedEffect(Unit) {
@@ -1838,66 +1960,84 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
             )
         }
         
-        // Memory Usage Graph
+    // Memory Usage Graph
         item {
-            MemoryUsageGraph(
-                dataPoints = memoryHistory,
-                modifier = Modifier.fillMaxWidth()
-            )
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500)) + 
+                        slideInVertically(animationSpec = tween(500, delayMillis = 50)) { it / 2 }
+            ) {
+                MemoryUsageGraph(
+                            dataPoints = memoryHistory,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+            }
         }
         
         // System Summary Card
         item {
-            SummaryCard(
-                summary = systemInfoSummary,
-                modifier = Modifier.fillMaxWidth()
-            )
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500, delayMillis = 150)) + 
+                        slideInVertically(animationSpec = tween(500, delayMillis = 150)) { it / 2 }
+            ) {
+                SummaryCard(
+                    summary = systemInfoSummary,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
         
         // RAM Information Card
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500, delayMillis = 250)) + 
+                        slideInVertically(animationSpec = tween(500, delayMillis = 250)) { it / 2 }
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
                 ) {
-                    Text(
-                        text = "RAM Information",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    
-                    // RAM items
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytesInMB(deviceInfo.totalRam)),
-                        isLastItem = false
-                    )
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytesInMB(deviceInfo.availableRam)),
-                        isLastItem = false
-                    )
-                    
-                    // Swap information
-                    if (deviceInfo.totalSwap > 0) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "RAM Information",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        // RAM items
                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Swap", formatBytesInMB(deviceInfo.totalSwap)),
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total RAM", formatBytesInMB(deviceInfo.totalRam)),
                             isLastItem = false
                         )
                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Used Swap", formatBytesInMB(deviceInfo.usedSwap)),
-                            isLastItem = true
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Available RAM", formatBytesInMB(deviceInfo.availableRam)),
+                            isLastItem = false
                         )
-                    } else {
-                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Swap", "Not available"),
-                            isLastItem = true
-                        )
+                        
+                        // Swap information
+                        if (deviceInfo.totalSwap > 0) {
+                            com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Swap", formatBytesInMB(deviceInfo.totalSwap)),
+                                isLastItem = false
+                            )
+                            com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Used Swap", formatBytesInMB(deviceInfo.usedSwap)),
+                                isLastItem = true
+                            )
+                        } else {
+                            com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                                itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Swap", "Not available"),
+                                isLastItem = true
+                            )
+                        }
                     }
                 }
             }
@@ -1905,45 +2045,61 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
         
         // Storage Information Card
         item {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500, delayMillis = 350)) + 
+                        slideInVertically(animationSpec = tween(500, delayMillis = 350)) { it / 2 }
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
+                com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
                 ) {
-                    Text(
-                        text = "Storage Information",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    
-                    // Storage items
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
-                        isLastItem = false
-                    )
-                    com.ivarna.finalbenchmark2.ui.components.InformationRow(
-                        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Free Storage", formatBytes(deviceInfo.freeStorage)),
-                        isLastItem = true
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Storage Information",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        
+                        // Storage items
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Total Storage", formatBytes(deviceInfo.totalStorage)),
+                            isLastItem = false
+                        )
+                        com.ivarna.finalbenchmark2.ui.components.InformationRow(
+                            itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Free Storage", formatBytes(deviceInfo.freeStorage)),
+                            isLastItem = true
+                        )
+                    }
                 }
             }
         }
         
-        // Process Table Header
+        // Process Table
         item {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(vertical = 12.dp, horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500, delayMillis = 450)) + 
+                            slideInVertically(animationSpec = tween(500, delayMillis = 450)) { it / 2 }
             ) {
+                com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.3f))
+                                .padding(vertical = 12.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                 Text(
                     text = "App",
                     modifier = Modifier.weight(2f),
@@ -1953,7 +2109,7 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
                 )
                 Text(
                     text = "PID",
-                    modifier = Modifier.weight(0.8f),
+                    modifier = Modifier.weight(0.7f),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurface
@@ -1966,18 +2122,16 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
-                    text = "RAM (MB)",
-                    modifier = Modifier.weight(0.8f),
+                    text = "RAM",
+                    modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
                     textAlign = TextAlign.End,
-                    color = MaterialTheme.colorScheme.onSurface
                 )
             }
-        }
         
         // Process Items
-        items(systemInfoSummary.processes) { process ->
+        systemInfoSummary.processes.forEach { process ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1989,18 +2143,21 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
                     modifier = Modifier.weight(2f),
                     fontSize = 14.sp,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = process.pid.toString(),
-                    modifier = Modifier.weight(0.8f),
+                    modifier = Modifier.weight(0.7f),
                     fontSize = 14.sp,
+                    maxLines = 1,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = process.state,
                     modifier = Modifier.weight(1f),
                     fontSize = 14.sp,
+                    maxLines = 1,
                     color = when (process.state) {
                         "Foreground" -> Color.Green
                         "Service" -> Color.Blue
@@ -2010,21 +2167,29 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
                 )
                 Text(
                     text = "${process.ramUsage} MB",
-                    modifier = Modifier.weight(0.8f),
+                    modifier = Modifier.weight(1f),
                     fontSize = 14.sp,
+                    maxLines = 1,
                     textAlign = TextAlign.End,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
             
-            HorizontalDivider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-            )
+                    HorizontalDivider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha=0.3f)
+                    )
+                }
+            }
+        }
         }
     }
 }
+}
+
+
 
 @Composable
 fun SensorsTab(context: android.content.Context) {
@@ -2195,4 +2360,20 @@ fun DeviceInfoCard(title: String, content: @Composable () -> Unit) {
             content()
         }
     }
+}
+
+@Composable
+fun InfoRow(label: String, value: String) {
+    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(label, value),
+        isLastItem = false
+    )
+}
+
+@Composable
+fun LongInfoRow(label: String, value: String) {
+    com.ivarna.finalbenchmark2.ui.components.InformationRow(
+        itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text(label, value),
+        isLastItem = false
+    )
 }

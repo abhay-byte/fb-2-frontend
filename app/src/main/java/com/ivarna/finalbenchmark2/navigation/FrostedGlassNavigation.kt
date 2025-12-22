@@ -8,9 +8,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.compose.foundation.border
+import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import dev.chrisbanes.haze.hazeChild
@@ -31,24 +38,36 @@ fun FrostedGlassNavigationBar(
     val blurBackgroundColor = remember(surfaceColor) {
         // Use a semi-transparent version of the surface color for the blur effect
         // This ensures the haze material adapts to both light and dark themes
-        surfaceColor.copy(alpha = 0.85f)
+        surfaceColor.copy(alpha = 0.6f)
     }
 
     Box(
         modifier = modifier
+            .padding(horizontal = 24.dp, vertical = 24.dp)
             .fillMaxWidth()
-            .height(80.dp) // Standard NavigationBar height
+            .height(72.dp)
+            .shadow(
+                elevation = 8.dp,
+                shape = RoundedCornerShape(percent = 50),
+                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+            )
+            .clip(RoundedCornerShape(percent = 50))
             .hazeChild(state = hazeState) {
                 // Apply haze effect to the entire navigation bar area
                 backgroundColor = blurBackgroundColor
                 blurRadius = 20.dp
                 noiseFactor = 0.1f
             }
+            .border(
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                shape = RoundedCornerShape(percent = 50)
+            )
     ) {
         NavigationBar(
             containerColor = Color.Transparent, // Must be transparent to see blur
             contentColor = onSurfaceColor, // Set content color to match theme
             tonalElevation = 0.dp,
+            windowInsets = WindowInsets(0),
             modifier = Modifier
                 .fillMaxWidth()
         ) {
@@ -57,6 +76,9 @@ fun FrostedGlassNavigationBar(
 
                 NavigationBarItem(
                     selected = isSelected,
+                    colors = NavigationBarItemDefaults.colors(
+                        indicatorColor = Color.Transparent
+                    ),
                     onClick = {
                         if (currentRoute != item.route) {
                             navController.navigate(item.route) {
@@ -69,34 +91,57 @@ fun FrostedGlassNavigationBar(
                         }
                     },
                     icon = {
-                        when (item.route) {
-                            "device" -> Icon(
-                                painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.mobile_24),
-                                contentDescription = item.label,
-                                tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                            "history" -> Icon(
-                                painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.history_24),
-                                contentDescription = item.label,
-                                tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
-                            else -> Icon(
-                                item.icon,
-                                contentDescription = item.label,
-                                tint = if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                            )
+                        Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                            if (isSelected) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(
+                                            brush = Brush.radialGradient(
+                                                colors = listOf(
+                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
+                                                    Color.Transparent
+                                                )
+                                            )
+                                        )
+                                )
+                            }
+                            
+                            val iconTint = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                            // Using Primary for icon because the glow is background. 
+                            // If glow is transparent-ish, Primary tint looks like "lit up".
+                            // If glow is strong, use onPrimary. 
+                            // User said: "only icon should lit up". "Add underglow".
+                            // Image 2 shows Black icon on bright glow.
+                            // My glow is primary (colored). 
+                            // I will stick to Primary tint for the icon itself to ensure it looks "lit", 
+                            // or onPrimary if primary is dark. 
+                            // Let's use MaterialTheme.colorScheme.primary for the "lit up" look + Glow.
+                            // Actually, if background is Primary(0.5), Primary icon might blend.
+                            // Let's use `onSurface` (White) or `primary` (Bright).
+                            // I'll use `primary` for consistency with "lit up".
+
+                            when (item.route) {
+                                "device" -> Icon(
+                                    painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.mobile_24),
+                                    contentDescription = item.label,
+                                    tint = iconTint
+                                )
+                                "history" -> Icon(
+                                    painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.history_24),
+                                    contentDescription = item.label,
+                                    tint = iconTint
+                                )
+                                else -> Icon(
+                                    item.icon,
+                                    contentDescription = item.label,
+                                    tint = iconTint
+                                )
+                            }
                         }
                     },
                     label = {

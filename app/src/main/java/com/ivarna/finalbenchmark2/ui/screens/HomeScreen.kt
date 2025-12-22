@@ -749,18 +749,22 @@ fun HomeScreen(
                     } // Close AnimatedVisibility
 
                         // Floating Settings Icon in Top Right Corner
-                        IconButton(
-                                onClick = onNavigateToSettings,
-                                modifier =
-                                        Modifier.align(Alignment.TopEnd)
-                                                .padding(16.dp)
-                                                .background(
-                                                        color =
-                                                                MaterialTheme.colorScheme
-                                                                        .surfaceVariant,
-                                                        shape = CircleShape
-                                                )
-                                                .padding(4.dp)
+                        Box(
+                                modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(16.dp)
+                                        .size(48.dp)
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                                        .border(
+                                                BorderStroke(
+                                                        1.dp,
+                                                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+                                                ),
+                                                CircleShape
+                                        )
+                                        .clickable(onClick = onNavigateToSettings),
+                                contentAlignment = Alignment.Center
                         ) {
                                 Icon(
                                         imageVector = Icons.Rounded.Settings,

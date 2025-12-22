@@ -19,6 +19,8 @@ import com.ivarna.finalbenchmark2.R
 import com.ivarna.finalbenchmark2.ui.components.BodySensorsPermissionRequest
 import com.ivarna.finalbenchmark2.ui.viewmodels.SensorViewModel
 import com.ivarna.finalbenchmark2.utils.SensorUtils
+import com.ivarna.finalbenchmark2.ui.components.GlassCard
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun SensorsTabContent(sensorViewModel: SensorViewModel = viewModel()) {
@@ -58,14 +60,11 @@ fun SensorsTabContent(sensorViewModel: SensorViewModel = viewModel()) {
             )
             
             // Sensor Capabilities Summary Card
-            Card(
+            GlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                shape = RoundedCornerShape(24.dp)
             ) {
                 Column(
                     modifier = Modifier
@@ -127,12 +126,9 @@ fun SensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiSta
 
 @Composable
 fun StandardSensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiState) {
-    Card(
+    GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier
@@ -257,12 +253,9 @@ fun StandardSensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.Sen
 
 @Composable
 fun HeartRateSensorCard(sensorState: com.ivarna.finalbenchmark2.ui.viewmodels.SensorUiState) {
-    Card(
+    GlassCard(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Column(
             modifier = Modifier

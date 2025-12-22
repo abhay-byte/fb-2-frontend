@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @Composable
 fun ContextualPermissionRequest(
@@ -54,9 +55,9 @@ fun ContextualPermissionRequest(
                 Card(
                         colors =
                                 CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                        containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
                                 ),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        shape = RoundedCornerShape(24.dp),
                         modifier = Modifier.fillMaxWidth()
                 ) {
                         Column(
@@ -80,7 +81,13 @@ fun ContextualPermissionRequest(
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(vertical = 8.dp)
                                 )
-                                Button(onClick = { launcher.launch(permission) }) {
+                                Button(
+                                        onClick = { launcher.launch(permission) },
+                                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary,
+                                                contentColor = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                ) {
                                         Text("Grant Access")
                                 }
                         }

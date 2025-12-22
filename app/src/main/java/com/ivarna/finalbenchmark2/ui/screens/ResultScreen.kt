@@ -572,60 +572,48 @@ fun ResultScreen(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Tab Row with Glassmorphism
-                        Card(
+                        // Glassmorphic Tab Row
+                        com.ivarna.finalbenchmark2.ui.components.GlassCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
-                            shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                            ),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                            shape = RoundedCornerShape(50)
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                                MaterialTheme.colorScheme.surface.copy(alpha = 0.1f)
-                                            )
-                                        )
-                                    )
-                            ) {
-                                TabRow(
-                                    selectedTabIndex = pagerState.currentPage,
-                                    containerColor = Color.Transparent,
-                                    contentColor = MaterialTheme.colorScheme.primary,
-                                    divider = {},
-                                    indicator = { tabPositions ->
+                            TabRow(
+                                selectedTabIndex = pagerState.currentPage,
+                                containerColor = Color.Transparent,
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                divider = {},
+                                indicator = { tabPositions ->
+                                    if (pagerState.currentPage < tabPositions.size) {
                                         TabRowDefaults.SecondaryIndicator(
                                             Modifier.tabIndicatorOffset(tabPositions[pagerState.currentPage]),
                                             color = MaterialTheme.colorScheme.primary,
-                                            height = 2.dp
+                                            height = 3.dp // Matched height to DeviceScreen (3.dp)
                                         )
                                     }
-                                ) {
-                                    tabs.forEachIndexed { index, title ->
-                                        Tab(
-                                            selected = pagerState.currentPage == index,
-                                            onClick = {
-                                                coroutineScope.launch {
-                                                    pagerState.animateScrollToPage(index)
-                                                }
-                                            },
-                                            text = { 
-                                                Text(
-                                                    text = title,
-                                                    fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium,
-                                                    fontSize = 16.sp
-                                                ) 
+                                }
+                            ) {
+                                tabs.forEachIndexed { index, title ->
+                                    Tab(
+                                        selected = pagerState.currentPage == index,
+                                        onClick = {
+                                            coroutineScope.launch {
+                                                pagerState.animateScrollToPage(index)
                                             }
-                                        )
-                                    }
+                                        },
+                                        text = { 
+                                            Text(
+                                                text = title,
+                                                fontWeight = if (pagerState.currentPage == index) FontWeight.Bold else FontWeight.Medium,
+                                                fontSize = 14.sp, // Slightly adjusted for better fit with pill shape
+                                                color = if (pagerState.currentPage == index) 
+                                                    MaterialTheme.colorScheme.primary 
+                                                else 
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                            ) 
+                                        }
+                                    )
                                 }
                             }
                         }

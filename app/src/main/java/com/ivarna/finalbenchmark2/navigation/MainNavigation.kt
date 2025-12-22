@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
@@ -70,27 +71,18 @@ fun MainNavigation(
 
     Scaffold(
             modifier = modifier,
-            bottomBar = {
-                if (showBottomBar) {
-                    FrostedGlassNavigationBar(
-                            items = bottomNavigationItems,
-                            navController = navController,
-                            hazeState = hazeState // Pass the HazeState
-                    )
-                }
-            }
+            bottomBar = {} // Empty bottomBar to prevent reservation of space
     ) { innerPadding ->
         Box(
                 modifier =
                         Modifier.fillMaxSize()
-                                .haze(
-                                        state = hazeState
-                                ) // Apply haze to content that should be blurred
         ) {
             NavHost(
                     navController = navController,
                     startDestination = startDestination,
-                    modifier = Modifier.padding(innerPadding)
+                    modifier = Modifier
+                        .padding(innerPadding)
+                        .haze(state = hazeState)
             ) {
                 composable("welcome") {
                     OnboardingPagerScreen(
@@ -241,6 +233,18 @@ fun MainNavigation(
                             onBack = { navController.popBackStack() }
                     )
                 }
+            }
+
+            // Floating Navigation Bar Overlay
+            if (showBottomBar) {
+                FrostedGlassNavigationBar(
+                    items = bottomNavigationItems,
+                    navController = navController,
+                    hazeState = hazeState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = innerPadding.calculateBottomPadding())
+                )
             }
         }
     }
