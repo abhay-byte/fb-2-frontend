@@ -1,8 +1,8 @@
-v0.5 - CPU Benchmark & Documentation Updates
-
-• Optimized matrix multiplication (350%→750% CPU usage)
-• Updated reference Mops & scoring factors (8 Gen 3 baseline)
-• Systematized workload tiers (mid=0.5×flagship, slow=0.25×mid, test=0.1×slow)
-• Fixed algorithm docs (Fibonacci=Polynomial, Hash=SHA-256-like)
-• Fixed delete functionality & comparison screen scoring
-• Added thermal delays & centralized scoring factors
+v0.5.1 - UI Polish & New Features
+• NEW: CPU Comparison Page - Compare devices side-by-side
+• UX: Unified sleek page transitions (Fade+Scale)
+• UI: Refined Benchmark Dial & added Time Estimation
+• Fixed navigation failure on screen rotation
+• Optimized Matrix Ops & Scoring factors (8 Gen 3 baseline)
+• Improved thermal management & workload tiers
+• polished Result Screen spacing & visuals
