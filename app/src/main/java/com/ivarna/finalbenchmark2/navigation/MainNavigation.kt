@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
@@ -95,7 +96,41 @@ fun MainNavigation(
                     )
                 }
 
-                composable("home") {
+                composable(
+                    route = "home",
+                    enterTransition = {
+                        androidx.compose.animation.fadeIn(
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        ) + androidx.compose.animation.scaleIn(
+                            initialScale = 0.95f,
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        )
+                    },
+                    exitTransition = {
+                        androidx.compose.animation.fadeOut(
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        ) + androidx.compose.animation.scaleOut(
+                            targetScale = 0.95f,
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        )
+                    },
+                    popEnterTransition = {
+                        androidx.compose.animation.fadeIn(
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        ) + androidx.compose.animation.scaleIn(
+                            initialScale = 0.95f,
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        )
+                    },
+                    popExitTransition = {
+                        androidx.compose.animation.fadeOut(
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        ) + androidx.compose.animation.scaleOut(
+                            targetScale = 0.95f,
+                            animationSpec = androidx.compose.animation.core.tween(300)
+                        )
+                    }
+                ) {
                     val historyRepository = remember {
                         HistoryRepository(
                             AppDatabase.getDatabase(context).benchmarkDao()
@@ -121,7 +156,25 @@ fun MainNavigation(
                         }
                     )
                 }
-                composable("cpu-comparison/{deviceData}") { backStackEntry ->
+                composable(
+                    route = "cpu-comparison/{deviceData}",
+                    enterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    exitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popEnterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popExitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    }
+                ) { backStackEntry ->
                     val encodedData = backStackEntry.arguments?.getString("deviceData") ?: "{}"
                     val decodedData = try {
                         java.net.URLDecoder.decode(encodedData, "UTF-8")
@@ -140,7 +193,25 @@ fun MainNavigation(
                         onBackClick = { navController.popBackStack() }
                     )
                 }
-                composable("history") {
+                composable(
+                    route = "history",
+                    enterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    exitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popEnterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popExitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    }
+                ) {
                     val historyViewModel =
                             com.ivarna.finalbenchmark2.di.DatabaseInitializer
                                     .createHistoryViewModel(context)
@@ -181,7 +252,25 @@ fun MainNavigation(
                             historyRepository = historyRepository
                     )
                 }
-                composable("result/{summaryJson}") { backStackEntry ->
+                composable(
+                    route = "result/{summaryJson}",
+                    enterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    exitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popEnterTransition = {
+                        androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleIn(initialScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    },
+                    popExitTransition = {
+                        androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(300)) +
+                        androidx.compose.animation.scaleOut(targetScale = 0.95f, animationSpec = androidx.compose.animation.core.tween(300))
+                    }
+                ) { backStackEntry ->
                     val encodedSummaryJson =
                             backStackEntry.arguments?.getString("summaryJson") ?: "{}"
                     // URL-decode the JSON to handle special characters properly
@@ -235,14 +324,34 @@ fun MainNavigation(
                 }
             }
 
-            // Floating Navigation Bar Overlay
-            if (showBottomBar) {
+            // Floating Navigation Bar Overlay with Elegant Animation
+            androidx.compose.animation.AnimatedVisibility(
+                visible = showBottomBar,
+                enter = androidx.compose.animation.slideInVertically(
+                    initialOffsetY = { it }, // Slide in from bottom
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 600,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                    )
+                ) + androidx.compose.animation.fadeIn(
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 600)
+                ),
+                exit = androidx.compose.animation.slideOutVertically(
+                    targetOffsetY = { it }, // Slide out to bottom
+                    animationSpec = androidx.compose.animation.core.tween(
+                        durationMillis = 600,
+                        easing = androidx.compose.animation.core.FastOutSlowInEasing
+                    )
+                ) + androidx.compose.animation.fadeOut(
+                    animationSpec = androidx.compose.animation.core.tween(durationMillis = 600)
+                ),
+                modifier = Modifier.align(Alignment.BottomCenter).zIndex(1f)
+            ) {
                 FrostedGlassNavigationBar(
                     items = bottomNavigationItems,
                     navController = navController,
                     hazeState = hazeState,
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
                         .padding(bottom = innerPadding.calculateBottomPadding())
                 )
             }

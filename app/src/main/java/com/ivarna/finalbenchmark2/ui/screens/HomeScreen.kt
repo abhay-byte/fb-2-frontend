@@ -745,6 +745,8 @@ fun HomeScreen(
                                         textAlign = TextAlign.Center,
                                         modifier = Modifier.padding(top = 8.dp)
                                 )
+                                
+                                Spacer(modifier = Modifier.height(120.dp)) // Bottom padding for floating nav bar
                         }
                     } // Close AnimatedVisibility
 

@@ -77,7 +77,11 @@ fun FrostedGlassNavigationBar(
                 NavigationBarItem(
                     selected = isSelected,
                     colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = Color.Transparent
+                        indicatorColor = Color.Transparent,
+                        selectedIconColor = MaterialTheme.colorScheme.primary,
+                        unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectedTextColor = MaterialTheme.colorScheme.primary,
+                        unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                     ),
                     onClick = {
                         if (currentRoute != item.route) {
@@ -91,70 +95,56 @@ fun FrostedGlassNavigationBar(
                         }
                     },
                     icon = {
-                        Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
-                            if (isSelected) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                        .background(
-                                            brush = Brush.radialGradient(
-                                                colors = listOf(
-                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
-                                                    Color.Transparent
-                                                )
-                                            )
-                                        )
-                                )
+                        Column(
+                            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Box(contentAlignment = androidx.compose.ui.Alignment.Center) {
+                                // Glow effect removed as per user request
+                                
+                                val iconTint = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+
+                                when (item.route) {
+                                    "device" -> Icon(
+                                        painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.mobile_24),
+                                        contentDescription = item.label,
+                                        tint = iconTint,
+                                        modifier = Modifier.size(24.dp) // Ensure fixed size to prevent scaling
+                                    )
+                                    "history" -> Icon(
+                                        painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.history_24),
+                                        contentDescription = item.label,
+                                        tint = iconTint,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    else -> Icon(
+                                        item.icon,
+                                        contentDescription = item.label,
+                                        tint = iconTint,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
                             }
                             
-                            val iconTint = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                            // Using Primary for icon because the glow is background. 
-                            // If glow is transparent-ish, Primary tint looks like "lit up".
-                            // If glow is strong, use onPrimary. 
-                            // User said: "only icon should lit up". "Add underglow".
-                            // Image 2 shows Black icon on bright glow.
-                            // My glow is primary (colored). 
-                            // I will stick to Primary tint for the icon itself to ensure it looks "lit", 
-                            // or onPrimary if primary is dark. 
-                            // Let's use MaterialTheme.colorScheme.primary for the "lit up" look + Glow.
-                            // Actually, if background is Primary(0.5), Primary icon might blend.
-                            // Let's use `onSurface` (White) or `primary` (Bright).
-                            // I'll use `primary` for consistency with "lit up".
+                            Spacer(modifier = Modifier.height(2.dp)) // Close spacing
 
-                            when (item.route) {
-                                "device" -> Icon(
-                                    painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.mobile_24),
-                                    contentDescription = item.label,
-                                    tint = iconTint
-                                )
-                                "history" -> Icon(
-                                    painter = painterResource(id = com.ivarna.finalbenchmark2.R.drawable.history_24),
-                                    contentDescription = item.label,
-                                    tint = iconTint
-                                )
-                                else -> Icon(
-                                    item.icon,
-                                    contentDescription = item.label,
-                                    tint = iconTint
-                                )
-                            }
+                            Text(
+                                text = item.label,
+                                style = MaterialTheme.typography.labelSmall, // Small text
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
+                            )
                         }
                     },
-                    label = {
-                        Text(
-                            text = item.label,
-                            color = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            }
-                        )
-                    },
-                    alwaysShowLabel = true
+                    label = { }, // Empty label as we handle it manually
+                    alwaysShowLabel = true // Keep true so the item takes space, but content is empty
                 )
             }
         }

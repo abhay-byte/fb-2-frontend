@@ -99,6 +99,7 @@ fun SensorsTabContent(sensorViewModel: SensorViewModel = viewModel()) {
             // Sensor List
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
+                contentPadding = PaddingValues(bottom = 120.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)

@@ -265,7 +265,7 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                     is HistoryScreenState.Success -> {
                         LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(bottom = 24.dp), // Bottom padding for list
+                                contentPadding = PaddingValues(bottom = 120.dp), // Bottom padding for list
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
                             items(state.results) { result ->

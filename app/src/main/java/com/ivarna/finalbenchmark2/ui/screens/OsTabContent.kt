@@ -68,7 +68,7 @@ fun OsTabContent(viewModel: OsViewModel) {
         }
         
         // Add bottom padding spacer to prevent content from being flush with navigation bar
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(120.dp))
     }
 }
 

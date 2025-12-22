@@ -266,6 +266,7 @@ fun InfoTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel: 
         // Scrollable list for all device info
         LazyColumn(
             verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(bottom = 120.dp),
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -790,19 +791,17 @@ fun CpuTab(
             }
         }
 
-            
-
-            // CPU Governor Section
-            item {
-                AnimatedVisibility(
-                    visible = visible,
-                    enter = fadeIn(animationSpec = tween(500, delayMillis = 550)) + 
-                            slideInVertically(animationSpec = tween(500, delayMillis = 550)) { it / 2 }
+        // CPU Governor Section
+        item {
+            AnimatedVisibility(
+                visible = visible,
+                enter = fadeIn(animationSpec = tween(500, delayMillis = 550)) + 
+                        slideInVertically(animationSpec = tween(500, delayMillis = 550)) { it / 2 }
+            ) {
+                com.ivarna.finalbenchmark2.ui.components.GlassCard(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
                 ) {
-                    com.ivarna.finalbenchmark2.ui.components.GlassCard(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
-                    ) {
                     Column(modifier = Modifier.padding(20.dp)) {
                         Text(
                             text = "Power Management",
@@ -812,6 +811,7 @@ fun CpuTab(
                         )
                         
                         val governor = cpuFreqUtils.getCurrentCpuGovernor()
+                        
                         com.ivarna.finalbenchmark2.ui.components.InformationRow(
                             itemValue = com.ivarna.finalbenchmark2.domain.model.ItemValue.Text("Current Governor", governor ?: "Not available"),
                             isLastItem = true
@@ -820,9 +820,14 @@ fun CpuTab(
                 }
             }
         }
+        
+        item {
+            Spacer(modifier = Modifier.height(120.dp)) // Bottom padding for floating nav bar
+        }
     }
 }
 }
+
 
 @Composable
 fun GpuTab(
@@ -925,6 +930,8 @@ fun GpuTab(
                 }
             }
         }
+        
+        Spacer(modifier = Modifier.height(120.dp))
     }
 }
 
@@ -1551,6 +1558,8 @@ fun ScreenTab(context: android.content.Context) {
         ) {
             DisplaySystemStateCard(displayInfo)
         }
+
+        Spacer(modifier = Modifier.height(120.dp))
     }
 }
 
@@ -1944,7 +1953,7 @@ fun MemoryTab(deviceInfo: com.ivarna.finalbenchmark2.utils.DeviceInfo, viewModel
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(top = 16.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Title

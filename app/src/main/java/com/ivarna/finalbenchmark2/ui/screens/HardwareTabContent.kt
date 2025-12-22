@@ -108,6 +108,7 @@ fun HardwareTabContent(viewModel: HardwareViewModel) {
         } else {
                 LazyColumn(
                         modifier = Modifier.fillMaxSize().padding(16.dp),
+                        contentPadding = PaddingValues(bottom = 120.dp),
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                         item { BatteryCard(batterySpecs) }
