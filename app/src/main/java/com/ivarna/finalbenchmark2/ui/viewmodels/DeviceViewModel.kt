@@ -157,7 +157,7 @@ class DeviceViewModel : ViewModel() {
     }
     
     private fun startCpuMonitoring() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             while (true) {
                 try {
                     // Get current CPU utilization
@@ -190,7 +190,7 @@ class DeviceViewModel : ViewModel() {
     
     // NEW: Start power monitoring with improved real-time updates
     private fun startPowerMonitoring() {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             while (true) {
                 try {
                     // Get current power consumption
@@ -225,7 +225,7 @@ class DeviceViewModel : ViewModel() {
     
     // NEW: Start memory monitoring
     private fun startMemoryMonitoring(context: Context) {
-        viewModelScope.launch {
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             while (true) {
                 try {
                     // Get current memory utilization
@@ -271,6 +271,9 @@ class DeviceViewModel : ViewModel() {
     }
     
     fun updateDeviceInfo(context: Context) {
-        _deviceInfo.value = DeviceInfoCollector.getDeviceInfo(context)
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            val info = DeviceInfoCollector.getDeviceInfo(context)
+            _deviceInfo.value = info
+        }
     }
 }
