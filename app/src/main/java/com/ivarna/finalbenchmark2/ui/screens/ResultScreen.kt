@@ -88,196 +88,133 @@ fun ResultScreen(
         val coroutineScope = rememberCoroutineScope()
         var showDeleteDialog by remember { mutableStateOf(false) }
 
-        val summary =
-                remember(summaryJson) {
-                        try {
-                                Log.d("ResultScreen", "Raw JSON: $summaryJson")
+        var summaryState by remember { mutableStateOf<BenchmarkSummary?>(null) }
+        
+        LaunchedEffect(summaryJson) {
+            launch(kotlinx.coroutines.Dispatchers.IO) {
+                try {
+                    Log.d("ResultScreen", "Starting async parsing of JSON")
 
-                                if (summaryJson.isBlank()) {
-                                        Log.e("ResultScreen", "Received empty JSON string!")
-                                        throw IllegalArgumentException("Empty JSON string")
-                                }
+                    if (summaryJson.isBlank()) {
+                        Log.e("ResultScreen", "Received empty JSON string!")
+                        throw IllegalArgumentException("Empty JSON string")
+                    }
 
-                                val jsonObject = JSONObject(summaryJson)
-                                val detailedResults = mutableListOf<BenchmarkResult>()
+                    val jsonObject = JSONObject(summaryJson)
+                    val detailedResults = mutableListOf<BenchmarkResult>()
 
-                                // Parse performance metrics JSON
-                                val performanceMetricsJson =
-                                        jsonObject.optString("performance_metrics", "{}")
-
-                                // Parse benchmark_id if available (for history items)
-                                val parsedBenchmarkId = jsonObject.optLong("benchmark_id", -1L)
-                                val actualBenchmarkId = if (parsedBenchmarkId > 0) parsedBenchmarkId else benchmarkId
-
-                                // Parse detailed results if available
-                                val detailedResultsArray =
-                                        jsonObject.optJSONArray("detailed_results")
-                                if (detailedResultsArray != null) {
-                                        for (i in 0 until detailedResultsArray.length()) {
-                                                val resultObj =
-                                                        detailedResultsArray.getJSONObject(i)
-                                                val result =
-                                                        BenchmarkResult(
-                                                                name =
-                                                                        resultObj.optString(
-                                                                                "name",
-                                                                                "Unknown"
-                                                                        ),
-                                                                executionTimeMs =
-                                                                        resultObj.optDouble(
-                                                                                "executionTimeMs",
-                                                                                0.0
-                                                                        ),
-                                                                opsPerSecond =
-                                                                        resultObj.optDouble(
-                                                                                "opsPerSecond",
-                                                                                0.0
-                                                                        ),
-                                                                isValid =
-                                                                        resultObj.optBoolean(
-                                                                                "isValid",
-                                                                                false
-                                                                        ),
-                                                                metricsJson =
-                                                                        resultObj.optString(
-                                                                                "metricsJson",
-                                                                                "{}"
-                                                                        )
-                                                        )
-                                                detailedResults.add(result)
-                                        }
-                                }
-
-                                // Get device info
-                                val deviceInfo = DeviceInfoCollector.getDeviceInfo(context)
-                                val cpuGovernor =
-                                        try {
-                                                val process =
-                                                        Runtime.getRuntime()
-                                                                .exec(
-                                                                        "cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor"
-                                                                )
-                                                process.inputStream.bufferedReader().readLine()
-                                                        ?: "Unknown"
-                                        } catch (e: Exception) {
-                                                "Unknown"
-                                        }
-
-                                // Get GPU info using GpuInfoUtils
-                                val gpuInfoUtils = GpuInfoUtils(context)
-                                val gpuInfoState = runBlocking { gpuInfoUtils.getGpuInfo() }
-
-                                var gpuName = "Unknown"
-                                var gpuVendor = "Unknown"
-                                var gpuDriver = "Unknown"
-                                var vulkanSupported = false
-                                var vulkanVersion: String? = null
-
-                                if (gpuInfoState is GpuInfoState.Success) {
-                                        val gpuInfo = gpuInfoState.gpuInfo
-                                        gpuName = gpuInfo.basicInfo.name
-                                        gpuVendor = gpuInfo.basicInfo.vendor
-                                        gpuDriver = gpuInfo.basicInfo.openGLVersion
-                                        vulkanSupported = gpuInfo.vulkanInfo?.supported ?: false
-                                        vulkanVersion =
-                                                if (vulkanSupported) {
-                                                        gpuInfo.vulkanInfo?.apiVersion
-                                                                ?: gpuInfo.basicInfo.vulkanVersion
-                                                } else {
-                                                        null
-                                                }
-                                }
-
-                                val deviceSummary =
-                                        BenchmarkDeviceSummary(
-                                                deviceName =
-                                                        "${deviceInfo.manufacturer} ${deviceInfo.deviceModel}",
-                                                os =
-                                                        "Android ${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})",
-                                                kernel = deviceInfo.kernelVersion,
-                                                cpuName = deviceInfo.socName,
-                                                cpuCores = deviceInfo.totalCores,
-                                                cpuArchitecture = deviceInfo.cpuArchitecture,
-                                                cpuGovernor = cpuGovernor,
-                                                gpuName = gpuName,
-                                                gpuVendor = gpuVendor,
-                                                gpuDriver = gpuDriver,
-                                                vulkanSupported = vulkanSupported,
-                                                vulkanVersion = vulkanVersion,
-                                                batteryLevel = deviceInfo.batteryCapacity,
-                                                batteryTemp = deviceInfo.batteryTemperature,
-                                                totalRam = deviceInfo.totalRam,
-                                                totalSwap = deviceInfo.totalSwap,
-                                                completedTimestamp = System.currentTimeMillis()
-                                        )
-
-                                BenchmarkSummary(
-                                        singleCoreScore =
-                                                jsonObject.optDouble("single_core_score", 0.0),
-                                        multiCoreScore =
-                                                jsonObject.optDouble("multi_core_score", 0.0),
-                                        finalScore = jsonObject.optDouble("final_score", 0.0),
-                                        normalizedScore =
-                                                jsonObject.optDouble("normalized_score", 0.0),
-                                        detailedResults = detailedResults,
-                                        deviceSummary = deviceSummary,
-                                        timestamp =
-                                                jsonObject.optLong(
-                                                        "timestamp",
-                                                        System.currentTimeMillis()
-                                                ),
-                                        // Handle performance_metrics - could be string or object
-                                        performanceMetricsJson =
-                                                run {
-                                                        val metricsValue =
-                                                                jsonObject.opt(
-                                                                        "performance_metrics"
-                                                                )
-                                                        Log.d(
-                                                                "ResultScreen",
-                                                                "performance_metrics type: ${metricsValue?.javaClass?.simpleName}"
-                                                        )
-                                                        Log.d(
-                                                                "ResultScreen",
-                                                                "performance_metrics value: $metricsValue"
-                                                        )
-
-                                                        val result =
-                                                                when {
-                                                                        metricsValue == null -> "{}"
-                                                                        metricsValue is String ->
-                                                                                metricsValue
-                                                                                        .ifBlank {
-                                                                                                "{}"
-                                                                                        }
-                                                                        metricsValue is
-                                                                                org.json.JSONObject ->
-                                                                                metricsValue
-                                                                                        .toString()
-                                                                        else ->
-                                                                                metricsValue
-                                                                                        .toString()
-                                                                }
-
-                                                        Log.d(
-                                                                "ResultScreen",
-                                                                "Final performanceMetricsJson: ${result.take(200)}"
-                                                        )
-                                                        result
-                                                }
+                    // Parse detailed results
+                    val detailedResultsArray = jsonObject.optJSONArray("detailed_results")
+                    if (detailedResultsArray != null) {
+                        for (i in 0 until detailedResultsArray.length()) {
+                            val resultObj = detailedResultsArray.getJSONObject(i)
+                            detailedResults.add(
+                                BenchmarkResult(
+                                    name = resultObj.optString("name", "Unknown"),
+                                    executionTimeMs = resultObj.optDouble("executionTimeMs", 0.0),
+                                    opsPerSecond = resultObj.optDouble("opsPerSecond", 0.0),
+                                    isValid = resultObj.optBoolean("isValid", false),
+                                    metricsJson = resultObj.optString("metricsJson", "{}")
                                 )
-                        } catch (e: Exception) {
-                                Log.e("ResultScreen", "Error parsing summary JSON: ${e.message}", e)
-                                BenchmarkSummary(
-                                        singleCoreScore = 0.0,
-                                        multiCoreScore = 0.0,
-                                        finalScore = 0.0,
-                                        normalizedScore = 0.0,
-                                        detailedResults = emptyList(),
-                                        deviceSummary = null
-                                )
+                            )
                         }
+                    }
+
+                    // Get device info
+                    val deviceInfo = DeviceInfoCollector.getDeviceInfo(context)
+                    
+                    // CPU Governor (Shell Command - Slow)
+                    val cpuGovernor = try {
+                        val process = Runtime.getRuntime().exec("cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor")
+                        process.inputStream.bufferedReader().readText().trim().takeIf { it.isNotEmpty() } ?: "Unknown"
+                    } catch (e: Exception) {
+                        "Unknown"
+                    }
+
+                    // GPU Info (Suspected blocker - Heavy synchronous call now on IO thread)
+                    val gpuInfoUtils = GpuInfoUtils(context)
+                    val gpuInfoState = gpuInfoUtils.getGpuInfo()
+
+                    var gpuName = "Unknown"
+                    var gpuVendor = "Unknown"
+                    var gpuDriver = "Unknown"
+                    var vulkanSupported = false
+                    var vulkanVersion: String? = null
+
+                    if (gpuInfoState is GpuInfoState.Success) {
+                        val gpuInfo = gpuInfoState.gpuInfo
+                        gpuName = gpuInfo.basicInfo.name
+                        gpuVendor = gpuInfo.basicInfo.vendor
+                        gpuDriver = gpuInfo.basicInfo.openGLVersion
+                        vulkanSupported = gpuInfo.vulkanInfo?.supported ?: false
+                        vulkanVersion = if (vulkanSupported) {
+                            gpuInfo.vulkanInfo?.apiVersion ?: gpuInfo.basicInfo.vulkanVersion
+                        } else {
+                            null
+                        }
+                    }
+
+                    val deviceSummary = BenchmarkDeviceSummary(
+                        deviceName = "${deviceInfo.manufacturer} ${deviceInfo.deviceModel}",
+                        os = "Android ${deviceInfo.androidVersion} (API ${deviceInfo.apiLevel})",
+                        kernel = deviceInfo.kernelVersion,
+                        cpuName = deviceInfo.socName,
+                        cpuCores = deviceInfo.totalCores,
+                        cpuArchitecture = deviceInfo.cpuArchitecture,
+                        cpuGovernor = cpuGovernor,
+                        gpuName = gpuName,
+                        gpuVendor = gpuVendor,
+                        gpuDriver = gpuDriver,
+                        vulkanSupported = vulkanSupported,
+                        vulkanVersion = vulkanVersion,
+                        batteryLevel = deviceInfo.batteryCapacity,
+                        batteryTemp = deviceInfo.batteryTemperature,
+                        totalRam = deviceInfo.totalRam,
+                        totalSwap = deviceInfo.totalSwap,
+                        completedTimestamp = System.currentTimeMillis()
+                    )
+
+                    // Parse Score metrics
+                    val performanceMetricsJson = jsonObject.opt("performance_metrics")?.toString() ?: "{}"
+                    
+                    val parsedSummary = BenchmarkSummary(
+                        singleCoreScore = jsonObject.optDouble("single_core_score", 0.0),
+                        multiCoreScore = jsonObject.optDouble("multi_core_score", 0.0),
+                        finalScore = jsonObject.optDouble("final_score", 0.0),
+                        normalizedScore = jsonObject.optDouble("normalized_score", 0.0),
+                        detailedResults = detailedResults,
+                        deviceSummary = deviceSummary,
+                        timestamp = jsonObject.optLong("timestamp", System.currentTimeMillis()),
+                        performanceMetricsJson = performanceMetricsJson
+                    )
+                    
+                    summaryState = parsedSummary
+                    
+                } catch (e: Exception) {
+                    Log.e("ResultScreen", "Error parsing summary JSON async: ${e.message}", e)
+                    // Fallback empty summary
+                    summaryState = BenchmarkSummary(0.0, 0.0, 0.0, 0.0) 
                 }
+            }
+        }
+        
+        // Show Loading State while parsing
+        if (summaryState == null) {
+            FinalBenchmark2Theme {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(MaterialTheme.colorScheme.background),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                }
+            }
+            return
+        }
+
+        val summary = summaryState!!
+
 
         // Share benchmark function
         val shareBenchmark: () -> Unit = {
