@@ -829,31 +829,16 @@ fun PerformanceOptimizationsCard(
 ) {
         var isExpanded by remember { mutableStateOf(false) }
 
-        Card(
-                modifier =
-                        Modifier.fillMaxWidth().padding(vertical = 8.dp).clickable {
-                                isExpanded = !isExpanded
-                        },
-                shape = RoundedCornerShape(24.dp),
-                colors =
-                        CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-                        ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
-        ) {
-            Box(
+        com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-                            )
-                        )
-                    )
-            ) {
+                    .padding(vertical = 8.dp),
+                shape = RoundedCornerShape(24.dp),
+                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+                delayMillis = 400,
+                onClick = { isExpanded = !isExpanded }
+        ) {
                 Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
                         // Header Row
                         Row(
@@ -1062,7 +1047,6 @@ fun PerformanceOptimizationsCard(
                                 }
                         }
                 }
-            }
         }
 }
 
@@ -1163,16 +1147,14 @@ fun DetailIconPair(icon: ImageVector, value: String, label: String) {
 
 @Composable
 fun BenchmarkTipsCard() {
-        Card(
+        com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
                 modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 8.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f)
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f)),
-                elevation = CardDefaults.cardElevation(0.dp)
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.15f),
+                borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.2f),
+                delayMillis = 500
         ) {
                 Row(
                         modifier = Modifier

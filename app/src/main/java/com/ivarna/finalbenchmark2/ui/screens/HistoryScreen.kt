@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -234,10 +235,11 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
                                     contentPadding = PaddingValues(bottom = 120.dp), // Bottom padding for list
                                     verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
-                                items(state.results) { result ->
+                                itemsIndexed(state.results) { index, result ->
                                     BenchmarkHistoryItem(
                                             result = result,
                                             timestampFormatter = formatter,
+                                            delayMillis = index * 50, // Staggered delay
                                             onItemClick = {
                                                 // Convert detailed results to JSON using Gson
                                                 val gson = Gson()
@@ -277,20 +279,19 @@ fun HistoryScreen(viewModel: HistoryViewModel, navController: NavController) {
 fun BenchmarkHistoryItem(
         result: HistoryUiModel,
         timestampFormatter: SimpleDateFormat,
+        delayMillis: Int = 0,
         onItemClick: () -> Unit = {}
 ) {
     // Glass Card for History Item
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp) // Side padding for the card
-                .clickable { onItemClick() },
+                .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Translucent
-            ),
-            elevation = CardDefaults.cardElevation(0.dp), // No shadow for glass effect
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), // Maintain original translucent look
+            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+            delayMillis = delayMillis,
+            onClick = onItemClick
     ) {
         Box(
             modifier = Modifier

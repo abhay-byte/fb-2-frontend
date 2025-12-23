@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -203,10 +204,11 @@ private fun CpuRankingList(
         contentPadding = PaddingValues(bottom = 120.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        items(rankings) { item ->
+        itemsIndexed(rankings) { index, item ->
             RankingItemCard(
                 item = item,
-                onClick = { onItemClick(item) }
+                onClick = { onItemClick(item) },
+                delayMillis = index * 50 // Staggered delay: 50ms per item
             )
         }
     }
@@ -215,7 +217,8 @@ private fun CpuRankingList(
 @Composable
 private fun RankingItemCard(
     item: RankingItem,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    delayMillis: Int = 0
 ) {
     val topScoreMax = 1200
     val scoreProgress = (item.normalizedScore.toFloat() / topScoreMax).coerceIn(0f, 1f)
@@ -246,15 +249,15 @@ private fun RankingItemCard(
         MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
     }
 
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp)
-            .clickable { onClick() },
+            .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
-        elevation = CardDefaults.cardElevation(0.dp),
-        border = BorderStroke(1.dp, borderColor)
+        containerColor = containerColor,
+        borderColor = borderColor,
+        delayMillis = delayMillis,
+        onClick = onClick
     ) {
         Box(
             modifier = Modifier

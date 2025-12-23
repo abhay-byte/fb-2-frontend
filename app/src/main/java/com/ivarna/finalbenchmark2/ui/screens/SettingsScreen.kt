@@ -272,7 +272,7 @@ fun SettingsScreen(
                                 }
 
                                 // Theme Settings Card
-                                GlassSettingCard {
+                                GlassSettingCard(delayMillis = 100) {
                                     Column(modifier = Modifier.padding(20.dp)) {
                                         Text(
                                             text = "Theme Settings",
@@ -356,7 +356,7 @@ fun SettingsScreen(
                                 val powerConsumptionPrefs = remember { PowerConsumptionPreferences(context) }
                                 var selectedMultiplier by remember { mutableStateOf(powerConsumptionPrefs.getMultiplier()) }
 
-                                GlassSettingCard {
+                                GlassSettingCard(delayMillis = 200) {
                                     Column(modifier = Modifier.padding(20.dp)) {
                                         Text(
                                             text = "Power Consumption Settings",
@@ -439,7 +439,7 @@ fun SettingsScreen(
                                 }
 
                                 // Onboarding Settings Card
-                                GlassSettingCard {
+                                GlassSettingCard(delayMillis = 300) {
                                     Column(modifier = Modifier.padding(20.dp)) {
                                         Text(
                                             text = "App Tour & Setup",
@@ -498,56 +498,19 @@ fun SettingsScreen(
 @Composable
 fun GlassSettingCard(
     modifier: Modifier = Modifier,
+    delayMillis: Int = 0,
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    val shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
-    val colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
+    com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+        delayMillis = delayMillis,
+        onClick = onClick,
+        content = content
     )
-    val border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
-    val elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
-
-    if (onClick != null) {
-        Card(
-            onClick = onClick,
-            modifier = modifier.fillMaxWidth(),
-            shape = shape,
-            colors = colors,
-            elevation = elevation,
-            border = border
-        ) {
-            GlassCardContent(content)
-        }
-    } else {
-        Card(
-            modifier = modifier.fillMaxWidth(),
-            shape = shape,
-            colors = colors,
-            elevation = elevation,
-            border = border
-        ) {
-            GlassCardContent(content)
-        }
-    }
-}
-
-@Composable
-private fun GlassCardContent(content: @Composable () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                brush = androidx.compose.ui.graphics.Brush.verticalGradient(
-                    colors = listOf(
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.1f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.05f)
-                    )
-                )
-            )
-    ) {
-        content()
-    }
 }
 
 // Helper function to open URLs
@@ -569,7 +532,7 @@ fun AboutSection() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
                 // Card 1: App Info (FinalBenchmark 2 with logo_2.png and circular dark background)
-                GlassSettingCard {
+                GlassSettingCard(delayMillis = 400) {
                         Column(
                                 modifier = Modifier.fillMaxWidth().padding(24.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
@@ -642,7 +605,7 @@ fun AboutSection() {
                 }
 
                 // Card 2: Special Thanks
-                GlassSettingCard {
+                GlassSettingCard(delayMillis = 500) {
                         Column(modifier = Modifier.fillMaxWidth().padding(24.dp)) {
                                 Text(
                                         text = "Special Thanks",
@@ -714,6 +677,7 @@ fun AboutSection() {
 
                 // Card 4: My Abhay Raj Card (with me.png)
 GlassSettingCard(
+    delayMillis = 600,
     onClick = { openUrl(context, "https://github.com/abhay-byte") }
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
@@ -774,7 +738,7 @@ GlassSettingCard(
 }
                 // Card 5: Connect With Me (with proper social media icons)
 // Card 5: Connect With Me (with proper social media icons)
-GlassSettingCard {
+GlassSettingCard(delayMillis = 700) {
     Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
         Text(
             text = "Connect With Me",
