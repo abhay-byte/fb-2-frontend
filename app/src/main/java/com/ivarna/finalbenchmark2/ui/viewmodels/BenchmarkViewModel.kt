@@ -59,7 +59,8 @@ data class BenchmarkUiState(
                 emptyList(), // CHANGED: from allTestStates to testStates for clarity
         val workloadPreset: String =
                 "Auto", // ADDED: Track the current workload preset for UI display
-        val estimatedTimeRemaining: String = "--:--"
+        val estimatedTimeRemaining: String = "--:--",
+        val elapsedTime: String = "00:00" // ADDED: Elapsed time
 )
 
 // Old data class kept for compatibility
@@ -127,7 +128,9 @@ class BenchmarkViewModel(
         private var isBenchmarkRunning = false
         
         // Countdown state
+
         private var currentCountdownSeconds = 0
+        private var startTimeMillis = 0L
 
         init {
                 // Start the system monitoring loop
@@ -198,16 +201,47 @@ class BenchmarkViewModel(
                                                     
                                                     // If explicit "Wait..." needed when 0 but still running:
                                                     if (currentCountdownSeconds == 0) {
-                                                        timeRemainingStr = "Finalizing..."
+                                                        // Only say "Finalizing" if we are actually at the very end (last 5%)
+                                                        if (currentState.progress > 0.95f) {
+                                                            timeRemainingStr = "Finalizing..."
+                                                        } else {
+                                                            // Time ran out but still working
+                                                            timeRemainingStr = "Processing..."
+                                                        }
+                                                    }
+                                                    
+                                                    // Elapsed Time Logic
+                                                    if (startTimeMillis > 0) {
+                                                        val elapsedSecs = ((System.currentTimeMillis() - startTimeMillis) / 1000)
+                                                        val eMin = elapsedSecs / 60
+                                                        val eSec = elapsedSecs % 60
+                                                        val elapsedStr = String.format(Locale.US, "%02d:%02d", eMin, eSec)
+                                                        
+                                                        currentState.copy(
+                                                            systemStats = stats,
+                                                            estimatedTimeRemaining = timeRemainingStr,
+                                                            elapsedTime = elapsedStr
+                                                        )
+                                                    } else {
+                                                         currentState.copy(
+                                                            systemStats = stats,
+                                                            estimatedTimeRemaining = timeRemainingStr
+                                                        )
                                                     }
                                                 } else if (currentState.progress == 1f) {
+                                                    // Finished
                                                     timeRemainingStr = "00:00"
+                                                    currentState.copy(
+                                                        systemStats = stats,
+                                                        estimatedTimeRemaining = timeRemainingStr
+                                                    )
+                                                } else {
+                                                    // Idle
+                                                    currentState.copy(
+                                                        systemStats = stats,
+                                                        estimatedTimeRemaining = timeRemainingStr
+                                                    )
                                                 }
-
-                                                currentState.copy(
-                                                    systemStats = stats,
-                                                    estimatedTimeRemaining = timeRemainingStr
-                                                )
                                         }
 
                                         delay(1000)
@@ -256,11 +290,12 @@ class BenchmarkViewModel(
 
                                 // Initialize Countdown
                                 currentCountdownSeconds = when (preset.lowercase()) {
-                                    "flagship" -> 180 // 3 min
-                                    "mid" -> 90      // 1.5 min
-                                    "slow" -> 45     // 45 sec
+                                    "flagship" -> 200 // 3 min 20s
+                                    "mid" -> 120      // 2 min
+                                    "slow" -> 60     // 1 min (Bumped from 45s)
                                     else -> 120      // 2 min default
                                 }
+                                startTimeMillis = System.currentTimeMillis()
 
                                 // Initial Warm-up Phase
                                 _isWarmingUp.value = true

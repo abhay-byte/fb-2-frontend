@@ -161,7 +161,7 @@ fun BenchmarkScreen(
             // Strict centering logic
             val singleCoreCount = uiState.testStates.count { !it.name.startsWith("Multi-Core", ignoreCase = true) }
             
-            // Calculate list index (No dots):
+            // Calculate list index (Offset 0 per user request):
             // Header Single (index 0)
             // Single Items (indices 1 to 1+SingleCount-1)
             // Spacer (index 1+SingleCount)
@@ -169,12 +169,13 @@ fun BenchmarkScreen(
             // Multi Items (indices 1+SingleCount+2 to End)
             
             val listIndex = if (activeIndex < singleCoreCount) {
-                // Header (1) + activeIndex
-                1 + activeIndex 
+                // User requested offset 0 or -1. Using 0 (activeIndex).
+                // This effectively targets the item *before* the active one (or header).
+                maxOf(0, activeIndex)
             } else {
-                // Header S (1) + SingleCount + Spacer (1) + Header M (1) + (activeIndex - SingleCount)
-                // = 3 + activeIndex
-                3 + activeIndex
+                // Header S (1) + SingleCount + Spacer (1) + Header M (1) + (activeIndex - SingleCount) - 1 (Offset)
+                // = 2 + activeIndex
+                2 + activeIndex
             }
 
             val viewportHeight = scrollState.layoutInfo.viewportSize.height
@@ -327,7 +328,10 @@ fun BenchmarkScreen(
 
                     // Time Remaining Text (Below Dial)
                     if (uiState.isRunning || isWarmingUp) {
-                        GlassTimerPill(timeText = uiState.estimatedTimeRemaining)
+                        GlassTimerPill(
+                            timeText = uiState.estimatedTimeRemaining,
+                            elapsedTime = uiState.elapsedTime
+                        )
                         Spacer(modifier = Modifier.height(24.dp))
                     }
                 }

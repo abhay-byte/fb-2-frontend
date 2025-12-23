@@ -33,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GlassTimerPill(timeText: String) {
+fun GlassTimerPill(timeText: String, elapsedTime: String) {
     Box(
         modifier = Modifier
             .padding(bottom = 16.dp)
@@ -45,7 +45,7 @@ fun GlassTimerPill(timeText: String) {
             modifier = Modifier
                 .matchParentSize()
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-                .blur(30.dp) // Blur only the background layer
+                .blur(30.dp)
         )
         
         // Layer 2: Border
@@ -55,22 +55,46 @@ fun GlassTimerPill(timeText: String) {
                 .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)), RoundedCornerShape(20.dp))
         )
 
-        // Layer 3: Content (Crisp, invalidating blur)
+        // Layer 3: Content
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .align(Alignment.Center)
                 .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
+            // ELAPSED SECTION
             Icon(
                 imageVector = Icons.Outlined.Timer,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(14.dp)
             )
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "Estimated: ",
+                text = "Elapsed: ",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = elapsedTime,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Monospace
+            )
+
+            // DIVIDER
+            Spacer(modifier = Modifier.width(12.dp))
+            Box(modifier = Modifier
+                .width(1.dp)
+                .height(12.dp)
+                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // REMAINING SECTION
+            Text(
+                text = "Rem: ",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -79,7 +103,6 @@ fun GlassTimerPill(timeText: String) {
             AnimatedContent(
                 targetState = timeText,
                 transitionSpec = {
-                    // Slide up and fade in
                     (slideInVertically { height -> height } + fadeIn())
                         .togetherWith(slideOutVertically { height -> -height } + fadeOut())
                 },
