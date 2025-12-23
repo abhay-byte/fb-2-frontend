@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -190,11 +191,17 @@ fun BenchmarkScreen(
             // Animate scroll with an offset to center the item
             // scrollToItem(index, offset): offset is pixels from the start of the viewport.
             // Target exact center (50% down)
+            val density = LocalDensity.current
             val viewportHeight = scrollState.layoutInfo.viewportSize.height
             
             // Only scroll if layout is ready and we have a valid height
             if (viewportHeight > 0) {
-                val targetOffset = (viewportHeight / 2)
+            	// Estimate item height (roughly 60dp for a row)
+            	val estimatedItemHeightPx = with(density) { 60.dp.toPx() }
+            
+                // Target center of item to center of viewport
+                // Offset = (ViewportCenter) - (ItemHalfHeight)
+                val targetOffset = (viewportHeight / 2) - (estimatedItemHeightPx / 2).toInt()
                 
                 scrollState.animateScrollToItem(
                     index = listIndex,
