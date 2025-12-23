@@ -181,14 +181,7 @@ fun HomeScreen(
                             )
                         )
                 ) {
-                        // Entrance Animation
-                        var isVisible by remember { mutableStateOf(false) }
-                        LaunchedEffect(Unit) { isVisible = true }
-                        
-                        AnimatedVisibility(
-                            visible = isVisible,
-                            enter = fadeIn(animationSpec = tween(500)) + slideInHorizontally(animationSpec = tween(500)) { fullWidth -> fullWidth / 3 } + expandVertically(animationSpec = tween(500))
-                        ) {
+
                             // Main scrollable content
                             Column(
                                     modifier =
@@ -748,7 +741,7 @@ fun HomeScreen(
                                 
                                 Spacer(modifier = Modifier.height(120.dp)) // Bottom padding for floating nav bar
                         }
-                    } // Close AnimatedVisibility
+
 
                         // Floating Settings Icon in Top Right Corner
                         Box(
