@@ -189,14 +189,18 @@ fun BenchmarkScreen(
 
             // Animate scroll with an offset to center the item
             // scrollToItem(index, offset): offset is pixels from the start of the viewport.
-            // Target upper-middle area (1/3rd down) to be safe
+            // Target exact center (50% down)
             val viewportHeight = scrollState.layoutInfo.viewportSize.height
-            val targetOffset = (viewportHeight / 3)
             
-            scrollState.animateScrollToItem(
-                index = listIndex,
-                scrollOffset = targetOffset 
-            )
+            // Only scroll if layout is ready and we have a valid height
+            if (viewportHeight > 0) {
+                val targetOffset = (viewportHeight / 2)
+                
+                scrollState.animateScrollToItem(
+                    index = listIndex,
+                    scrollOffset = targetOffset 
+                )
+            }
         }
     }
 
