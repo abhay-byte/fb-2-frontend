@@ -57,6 +57,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -317,18 +318,16 @@ fun HomeScreen(
                                 }
 
                                 // =========================================================
-                                // BENCHMARK CONTROLS (Moved to Top)
+                                // BENCHMARK CONTROLS
                                 // =========================================================
-                                Card(
+                                com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 16.dp),
                                     shape = RoundedCornerShape(24.dp),
-                                    colors = CardDefaults.cardColors(
-                                        containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f)
-                                    ),
-                                    elevation = CardDefaults.cardElevation(0.dp),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f))
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.5f),
+                                    borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f),
+                                    delayMillis = 0 // Immediate appearance
                                 ) {
                                     Column(
                                         modifier = Modifier.padding(16.dp),
@@ -366,95 +365,95 @@ fun HomeScreen(
                                             }
                                         }
 
-                                            // Start Benchmark Button - Glassmorphic Style
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(56.dp)
-                                                    .shadow(
-                                                        elevation = 8.dp,
-                                                        shape = RoundedCornerShape(28.dp),
-                                                        spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                                    )
-                                                    .clip(RoundedCornerShape(28.dp))
-                                                    .clickable {
-                                                        val activity = context as? com.ivarna.finalbenchmark2.MainActivity
-                                                        activity?.startAllOptimizations()
-                                                        val deviceTier = when (selectedWorkload) {
-                                                            "Low Accuracy - Fastest" -> "slow"
-                                                            "Mid Accuracy - Fast" -> "mid"
-                                                            "High Accuracy - Slow" -> "flagship"
-                                                            else -> "flagship"
-                                                        }
-                                                        onStartBenchmark(deviceTier)
-                                                    },
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                // Content Overlay
-                                                val infiniteTransition = rememberInfiniteTransition(label = "button_spin")
-                                                val angle by infiniteTransition.animateFloat(
-                                                    initialValue = 0f,
-                                                    targetValue = 360f,
-                                                    animationSpec = infiniteRepeatable(
-                                                        animation = tween(durationMillis = 4000, easing = LinearEasing),
-                                                        repeatMode = RepeatMode.Restart
-                                                    ),
-                                                    label = "spin_angle"
+                                        // Start Benchmark Button - Glassmorphic Style
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(56.dp)
+                                                .shadow(
+                                                    elevation = 8.dp,
+                                                    shape = RoundedCornerShape(28.dp),
+                                                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
                                                 )
-                                                
-                                                val primary = MaterialTheme.colorScheme.primary
-                                                val tertiary = MaterialTheme.colorScheme.tertiary
-                                                
-                                                // Rotating Background
-                                                // Rotating Background - Doc Implementation
-                                                Spacer(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .drawWithCache {
-                                                            val brush = Brush.sweepGradient(
-                                                                colors = listOf(
-                                                                    primary,
-                                                                    tertiary,
-                                                                    primary
-                                                                )
+                                                .clip(RoundedCornerShape(28.dp))
+                                                .clickable {
+                                                    val activity = context as? com.ivarna.finalbenchmark2.MainActivity
+                                                    activity?.startAllOptimizations()
+                                                    val deviceTier = when (selectedWorkload) {
+                                                        "Low Accuracy - Fastest" -> "slow"
+                                                        "Mid Accuracy - Fast" -> "mid"
+                                                        "High Accuracy - Slow" -> "flagship"
+                                                        else -> "flagship"
+                                                    }
+                                                    onStartBenchmark(deviceTier)
+                                                },
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            // Content Overlay
+                                            val infiniteTransition = rememberInfiniteTransition(label = "button_spin")
+                                            val angle by infiniteTransition.animateFloat(
+                                                initialValue = 0f,
+                                                targetValue = 360f,
+                                                animationSpec = infiniteRepeatable(
+                                                    animation = tween(durationMillis = 4000, easing = LinearEasing),
+                                                    repeatMode = RepeatMode.Restart
+                                                ),
+                                                label = "spin_angle"
+                                            )
+                                            
+                                            val primary = MaterialTheme.colorScheme.primary
+                                            val tertiary = MaterialTheme.colorScheme.tertiary
+                                            
+                                            // Rotating Background
+                                            // Rotating Background - Doc Implementation
+                                            Spacer(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .drawWithCache {
+                                                        val brush = Brush.sweepGradient(
+                                                            colors = listOf(
+                                                                primary,
+                                                                tertiary,
+                                                                primary
                                                             )
-                                                            onDrawBehind {
-                                                                val radius = size.maxDimension
-                                                                // pivot defaults to center
-                                                                rotate(degrees = angle) {
-                                                                    drawCircle(
-                                                                        brush = brush,
-                                                                        radius = radius
-                                                                    )
-                                                                }
+                                                        )
+                                                        onDrawBehind {
+                                                            val radius = size.maxDimension
+                                                            // pivot defaults to center
+                                                            rotate(degrees = angle) {
+                                                                drawCircle(
+                                                                    brush = brush,
+                                                                    radius = radius
+                                                                )
                                                             }
                                                         }
-                                                )
-                                                // Inner Content Mask - Creates the Border Effect
-                                                Box(
-                                                    modifier = Modifier
-                                                        .fillMaxSize()
-                                                        .padding(2.dp) // Border Width
-                                                        .clip(RoundedCornerShape(26.dp))
-                                                        .background(MaterialTheme.colorScheme.background),
-                                                    contentAlignment = Alignment.Center
-                                                ) {
-                                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Icon(
-                                                            painterResource(id = R.drawable.mobile_24),
-                                                            contentDescription = null,
-                                                            tint = MaterialTheme.colorScheme.onBackground,
-                                                            modifier = Modifier.size(24.dp)
-                                                        )
-                                                        Spacer(modifier = Modifier.width(8.dp))
-                                                        Text(
-                                                            "START BENCHMARK",
-                                                            fontWeight = FontWeight.Bold,
-                                                            fontSize = 16.sp,
-                                                            color = MaterialTheme.colorScheme.onBackground
-                                                        )
                                                     }
+                                            )
+                                            // Inner Content Mask - Creates the Border Effect
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(2.dp) // Border Width
+                                                    .clip(RoundedCornerShape(26.dp))
+                                                    .background(MaterialTheme.colorScheme.background),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        painterResource(id = R.drawable.mobile_24),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.onBackground,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(
+                                                        "START BENCHMARK",
+                                                        fontWeight = FontWeight.Bold,
+                                                        fontSize = 16.sp,
+                                                        color = MaterialTheme.colorScheme.onBackground
+                                                    )
                                                 }
+                                            }
                                         }
                                     }
                                 }
@@ -472,40 +471,61 @@ fun HomeScreen(
                                 if (isDataInitialized) {
                                     var isSystemStatsExpanded by remember { mutableStateOf(false) }
 
-                                    // Row of 3 Cards
+                                    // Row of 3 Cards with staggered animation
                                     Row(
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
                                         horizontalArrangement = Arrangement.spacedBy(12.dp) // Gap between cards
                                     ) {
-                                        // 1. Temperature Card
-                                        SmallStatCard(
-                                            modifier = Modifier.weight(1f),
-                                            icon = Icons.Rounded.Thermostat,
-                                            label = "TEMP",
-                                            value = "${if(cpuTemp > 0) cpuTemp else "--"}°C",
-                                            color = MaterialTheme.colorScheme.error,
-                                            onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
-                                        )
+                                        // 1. Temperature Card (Delayed 100ms)
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
+                                                delayMillis = 100,
+                                                shape = RoundedCornerShape(24.dp)
+                                            ) {
+                                                SmallStatCard(
+                                                    modifier = Modifier.fillMaxWidth(), // Inherit internal width from glass card
+                                                    icon = Icons.Rounded.Thermostat,
+                                                    label = "TEMP",
+                                                    value = "${if(cpuTemp > 0) cpuTemp else "--"}°C",
+                                                    color = MaterialTheme.colorScheme.error,
+                                                    onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
+                                                )
+                                            }
+                                        }
 
-                                        // 2. CPU Load Card
-                                        SmallStatCard(
-                                            modifier = Modifier.weight(1f),
-                                            icon = Icons.Rounded.Memory,
-                                            label = "CPU",
-                                            value = "${String.format("%.0f", cpuUtilization)}%",
-                                            color = MaterialTheme.colorScheme.primary,
-                                            onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
-                                        )
+                                        // 2. CPU Load Card (Delayed 200ms)
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
+                                                delayMillis = 200,
+                                                shape = RoundedCornerShape(24.dp)
+                                            ) {
+                                                SmallStatCard(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    icon = Icons.Rounded.Memory,
+                                                    label = "CPU",
+                                                    value = "${String.format("%.0f", cpuUtilization)}%",
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
+                                                )
+                                            }
+                                        }
 
-                                        // 3. Power Card
-                                        SmallStatCard(
-                                            modifier = Modifier.weight(1f),
-                                            icon = Icons.Rounded.Bolt,
-                                            label = "POWER",
-                                            value = "${String.format("%.1f", powerInfo.power)}W",
-                                            color = MaterialTheme.colorScheme.tertiary,
-                                            onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
-                                        )
+                                        // 3. Power Card (Delayed 300ms)
+                                        Box(modifier = Modifier.weight(1f)) {
+                                            com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
+                                                delayMillis = 300,
+                                                shape = RoundedCornerShape(24.dp)
+                                            ) {
+                                                SmallStatCard(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    icon = Icons.Rounded.Bolt,
+                                                    label = "POWER",
+                                                    value = "${String.format("%.1f", powerInfo.power)}W",
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    onClick = { isSystemStatsExpanded = !isSystemStatsExpanded }
+                                                )
+                                            }
+                                        }
                                     }
 
                                     // Detailed Stats (Expandable Section)
@@ -514,16 +534,14 @@ fun HomeScreen(
                                         enter = expandVertically(animationSpec = tween(300)) + fadeIn(),
                                         exit = shrinkVertically(animationSpec = tween(300)) + fadeOut()
                                     ) {
-                                        Card(
+                                        com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(bottom = 16.dp),
                                             shape = RoundedCornerShape(24.dp),
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
-                                            ),
-                                            elevation = CardDefaults.cardElevation(0.dp),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f),
+                                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+                                            delayMillis = 0 // Expand animation handles timing
                                         ) {
                                             Column(modifier = Modifier.padding(20.dp)) {
                                                 Text(
@@ -1540,6 +1558,19 @@ fun SmallStatCard(
     color: Color,
     onClick: () -> Unit
 ) {
+    // Icon Pop Animation
+    val iconScale = remember { androidx.compose.animation.core.Animatable(0.5f) }
+    LaunchedEffect(Unit) {
+        delay(100) // Slight delay for pop effect
+        iconScale.animateTo(
+            targetValue = 1f,
+            animationSpec = androidx.compose.animation.core.spring(
+                dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+                stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow
+            )
+        )
+    }
+
     Card(
         modifier = modifier
             .height(110.dp) // Fixed height for square-ish aspect ratio
@@ -1574,6 +1605,7 @@ fun SmallStatCard(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
+                        .scale(iconScale.value) // Apply scale animation
                         .clip(CircleShape)
                         .background(color.copy(alpha = 0.2f)),
                     contentAlignment = Alignment.Center
