@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -197,7 +198,8 @@ fun CpuComparisonScreen(
                     item {
                         ComparisonHeader(
                             userDevice = userDevice,
-                            selectedDevice = selectedDevice
+                            selectedDevice = selectedDevice,
+                            delayMillis = 0
                         )
                     }
                     
@@ -205,7 +207,8 @@ fun CpuComparisonScreen(
                     item {
                         MainScoreComparison(
                             userDevice = userDevice,
-                            selectedDevice = selectedDevice
+                            selectedDevice = selectedDevice,
+                            startDelay = 100
                         )
                     }
                     
@@ -220,12 +223,14 @@ fun CpuComparisonScreen(
                         )
                     }
                     
+                    val singleCoreBaseDelay = 400
                     val singleCoreBenchmarks = getSingleCoreBenchmarkItems(userDevice, selectedDevice)
-                    items(singleCoreBenchmarks) { benchmark ->
+                    itemsIndexed(singleCoreBenchmarks) { index, benchmark ->
                         BenchmarkComparisonCard(
                             benchmark = benchmark,
                             userDeviceName = userDevice?.name ?: "Your Device",
-                            selectedDeviceName = selectedDevice.name
+                            selectedDeviceName = selectedDevice.name,
+                            delayMillis = singleCoreBaseDelay + (index * 50)
                         )
                     }
                     
@@ -240,12 +245,14 @@ fun CpuComparisonScreen(
                         )
                     }
                     
+                    val multiCoreBaseDelay = singleCoreBaseDelay + (singleCoreBenchmarks.size * 50) + 100
                     val multiCoreBenchmarks = getMultiCoreBenchmarkItems(userDevice, selectedDevice)
-                    items(multiCoreBenchmarks) { benchmark ->
+                    itemsIndexed(multiCoreBenchmarks) { index, benchmark ->
                         BenchmarkComparisonCard(
                             benchmark = benchmark,
                             userDeviceName = userDevice?.name ?: "Your Device",
-                            selectedDeviceName = selectedDevice.name
+                            selectedDeviceName = selectedDevice.name,
+                            delayMillis = multiCoreBaseDelay + (index * 50)
                         )
                     }
                 }
@@ -257,16 +264,15 @@ fun CpuComparisonScreen(
 @Composable
 private fun ComparisonHeader(
     userDevice: RankingItem?,
-    selectedDevice: RankingItem
+    selectedDevice: RankingItem,
+    delayMillis: Int = 0
 ) {
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
-        elevation = CardDefaults.cardElevation(0.dp)
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+        delayMillis = delayMillis
     ) {
         Column(
             modifier = Modifier
@@ -432,7 +438,8 @@ private fun RowScope.DeviceColumn(
 @Composable
 private fun MainScoreComparison(
     userDevice: RankingItem?,
-    selectedDevice: RankingItem
+    selectedDevice: RankingItem,
+    startDelay: Int = 100
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp) // Less vertical spacing
@@ -443,7 +450,8 @@ private fun MainScoreComparison(
             userScore = userDevice?.singleCore ?: 0,
             selectedScore = selectedDevice.singleCore,
             userColor = MaterialTheme.colorScheme.primary,
-            selectedColor = MaterialTheme.colorScheme.secondary
+            selectedColor = MaterialTheme.colorScheme.secondary,
+            delayMillis = startDelay
         )
         
         // Multi-Core Score
@@ -452,7 +460,8 @@ private fun MainScoreComparison(
             userScore = userDevice?.multiCore ?: 0,
             selectedScore = selectedDevice.multiCore,
             userColor = MaterialTheme.colorScheme.primary,
-            selectedColor = MaterialTheme.colorScheme.secondary
+            selectedColor = MaterialTheme.colorScheme.secondary,
+            delayMillis = startDelay + 100
         )
         
         // Final Score
@@ -461,7 +470,8 @@ private fun MainScoreComparison(
             userScore = userDevice?.normalizedScore ?: 0,
             selectedScore = selectedDevice.normalizedScore,
             userColor = MaterialTheme.colorScheme.primary,
-            selectedColor = MaterialTheme.colorScheme.secondary
+            selectedColor = MaterialTheme.colorScheme.secondary,
+            delayMillis = startDelay + 200
         )
     }
 }
@@ -472,7 +482,8 @@ private fun ScoreComparisonCard(
     userScore: Int,
     selectedScore: Int,
     userColor: Color,
-    selectedColor: Color
+    selectedColor: Color,
+    delayMillis: Int = 0
 ) {
     val maxScore = maxOf(userScore, selectedScore, 1)
     val userProgress by animateFloatAsState(
@@ -492,14 +503,12 @@ private fun ScoreComparisonCard(
         (scoreDiff.toFloat() / selectedScore * 100).toInt()
     } else if (userScore > 0) 100 else 0
     
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
-        elevation = CardDefaults.cardElevation(0.dp)
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f),
+        delayMillis = delayMillis
     ) {
         Column(
             modifier = Modifier
@@ -783,7 +792,8 @@ private fun getMultiCoreBenchmarkItems(
 private fun BenchmarkComparisonCard(
     benchmark: BenchmarkComparisonItem,
     userDeviceName: String,
-    selectedDeviceName: String
+    selectedDeviceName: String,
+    delayMillis: Int = 0
 ) {
     val userWins = benchmark.userScore > benchmark.selectedScore
     val maxScore = maxOf(benchmark.userScore, benchmark.selectedScore, 1.0)
@@ -799,14 +809,12 @@ private fun BenchmarkComparisonCard(
         label = "benchmarkSelectedProgress"
     )
     
-    Card(
+    com.ivarna.finalbenchmark2.ui.components.AnimatedGlassCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp), // More squared
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f)),
-        elevation = CardDefaults.cardElevation(0.dp)
+        shape = RoundedCornerShape(12.dp),
+        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f),
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f),
+        delayMillis = delayMillis
     ) {
         Column(
             modifier = Modifier
