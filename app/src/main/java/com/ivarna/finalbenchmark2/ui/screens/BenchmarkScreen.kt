@@ -179,16 +179,24 @@ fun BenchmarkScreen(
             // N+3..End: Multi items
             
             val listIndex = if (activeIndex < singleCoreCount) {
-                activeIndex + 1
+                // 6 dots + 1 header + itemIndex
+                activeIndex + 7 
             } else {
-                activeIndex + 3 // +1 (Header S) +1 (Spacer) +1 (Header M)
+                // 6 dots + 1 header + N single + 1 spacer + 1 header + (activeIndex - N)
+                // = activeIndex + 9
+                activeIndex + 9
             }
 
             // Animate scroll with an offset to center the item
-            // 300px offset roughly centers it on a typical 1080x2400 screen with top bars
+            // scrollToItem(index, offset): offset is pixels from the start of the viewport.
+            // To center: offset = (ViewportHeight / 2) - (ApproxItemHalfHeight)
+            val viewportHeight = scrollState.layoutInfo.viewportSize.height
+            val estimatedItemHeightPx = 150 
+            val targetOffset = (viewportHeight / 2) - (estimatedItemHeightPx / 2)
+            
             scrollState.animateScrollToItem(
                 index = listIndex,
-                scrollOffset = -500 // Displace up to push item down to center
+                scrollOffset = targetOffset 
             )
         }
     }

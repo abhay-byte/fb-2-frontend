@@ -307,7 +307,9 @@ fun MainNavigation(
                             onBenchmarkComplete = { summaryJson ->
                                 // URL-encode the JSON to handle special characters properly
                                 val encodedJson = java.net.URLEncoder.encode(summaryJson, "UTF-8")
-                                navController.navigate("result/$encodedJson")
+                                navController.navigate("result/$encodedJson") {
+                                    popUpTo("home") { inclusive = false }
+                                }
                             },
                             onBenchmarkStart = { activity?.startAllOptimizations() },
                             onBenchmarkEnd = { activity?.stopAllOptimizations() },
@@ -346,7 +348,6 @@ fun MainNavigation(
                             },
                             onBackToHome = {
                                 navController.popBackStack()
-                                navController.navigate("home")
                             },
                             onShowDetailedResults = { detailedResults ->
                                 // URL-encode the JSON to handle special characters properly
