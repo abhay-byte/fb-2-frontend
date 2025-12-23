@@ -125,6 +125,9 @@ class BenchmarkViewModel(
 
         // Guard to prevent double-execution on screen rotation
         private var isBenchmarkRunning = false
+        
+        // Countdown state
+        private var currentCountdownSeconds = 0
 
         init {
                 // Start the system monitoring loop
@@ -183,31 +186,19 @@ class BenchmarkViewModel(
                                                 // Calculate Estimated Time Remaining
                                                 var timeRemainingStr = currentState.estimatedTimeRemaining
                                                 if (currentState.isRunning) {
-                                                    val completed = currentState.testStates.filter { it.status == TestStatus.COMPLETED }
-                                                    val remaining = currentState.testStates.filter { it.status != TestStatus.COMPLETED }
+                                                    // Countdown Logic: Decrement
+                                                    if (currentCountdownSeconds > 0) {
+                                                        currentCountdownSeconds--
+                                                    }
                                                     
-                                                    if (remaining.isNotEmpty()) {
-                                                        val avgTimeMs = if (completed.isNotEmpty()) {
-                                                            completed.map { it.durationMs }.average()
-                                                        } else {
-                                                            // Better initial guess based on preset
-                                                            when (currentState.workloadPreset.lowercase()) {
-                                                                "flagship" -> 9000.0 // ~3 min total (High end 1.5m, Low end 6m -> Geom Mean ~3m)
-                                                                "mid" -> 4500.0
-                                                                "slow" -> 1500.0
-                                                                else -> 2000.0
-                                                            } 
-                                                        }
-                                                        
-                                                        val totalRemainingMs = (avgTimeMs * remaining.size).toLong()
-                                                        
-                                                        // Smoother display: round up to next second
-                                                        val totalSeconds = (totalRemainingMs + 999) / 1000
-                                                        val seconds = totalSeconds % 60
-                                                        val minutes = totalSeconds / 60
-                                                        timeRemainingStr = String.format("%02d:%02d", minutes, seconds)
-                                                    } else {
-                                                        timeRemainingStr = "00:00"
+                                                    // Format: MM:SS
+                                                    val minutes = currentCountdownSeconds / 60
+                                                    val seconds = currentCountdownSeconds % 60
+                                                    timeRemainingStr = String.format(Locale.US, "%02d:%02d", minutes, seconds)
+                                                    
+                                                    // If explicit "Wait..." needed when 0 but still running:
+                                                    if (currentCountdownSeconds == 0) {
+                                                        timeRemainingStr = "Finalizing..."
                                                     }
                                                 } else if (currentState.progress == 1f) {
                                                     timeRemainingStr = "00:00"
@@ -262,6 +253,14 @@ class BenchmarkViewModel(
 
                                 // Start performance monitoring for metrics collection
                                 performanceMonitor.start()
+
+                                // Initialize Countdown
+                                currentCountdownSeconds = when (preset.lowercase()) {
+                                    "flagship" -> 180 // 3 min
+                                    "mid" -> 90      // 1.5 min
+                                    "slow" -> 45     // 45 sec
+                                    else -> 120      // 2 min default
+                                }
 
                                 // Initial Warm-up Phase
                                 _isWarmingUp.value = true

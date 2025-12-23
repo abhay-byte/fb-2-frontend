@@ -161,12 +161,20 @@ fun BenchmarkScreen(
             // Strict centering logic
             val singleCoreCount = uiState.testStates.count { !it.name.startsWith("Multi-Core", ignoreCase = true) }
             
-            // Calculate list index:
-            // 6 dots (0-5) + Header (6) + Single (7...) or Multi offset
+            // Calculate list index (No dots):
+            // Header Single (index 0)
+            // Single Items (indices 1 to 1+SingleCount-1)
+            // Spacer (index 1+SingleCount)
+            // Header Multi (index 1+SingleCount+1)
+            // Multi Items (indices 1+SingleCount+2 to End)
+            
             val listIndex = if (activeIndex < singleCoreCount) {
-                7 + activeIndex 
+                // Header (1) + activeIndex
+                1 + activeIndex 
             } else {
-                9 + activeIndex
+                // Header S (1) + SingleCount + Spacer (1) + Header M (1) + (activeIndex - SingleCount)
+                // = 3 + activeIndex
+                3 + activeIndex
             }
 
             val viewportHeight = scrollState.layoutInfo.viewportSize.height
@@ -336,12 +344,7 @@ fun BenchmarkScreen(
                     val singleCoreTests = uiState.testStates.filter { !it.name.startsWith("Multi-Core", ignoreCase = true) }
                     val multiCoreTests = uiState.testStates.filter { it.name.startsWith("Multi-Core", ignoreCase = true) }
 
-                    // Dots at start
-                    items(6) { 
-                        Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
-                            WheelSpacerDot() 
-                        }
-                    }
+                    // Dots removed here
 
                     // Single Core Section
                     if (singleCoreTests.isNotEmpty()) {
@@ -376,12 +379,7 @@ fun BenchmarkScreen(
                         }
                     }
 
-                    // Dots at end
-                    items(6) { 
-                        Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
-                            WheelSpacerDot() 
-                        }
-                    }
+                    // Dots removed here
                 }
             }
 
