@@ -20,6 +20,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -155,7 +157,7 @@ fun HomeScreen(
 
                         powerInfo = powerUtils.getPowerConsumptionInfo()
 
-                        delay(100) // 1 second update rate
+                        delay(1000) // 1 second update rate
                 }
         }
 
@@ -1553,71 +1555,73 @@ fun SmallStatCard(
         )
     }
 
-    Card(
+    // Use Box/Column directly instead of nested Card to avoid double-backgrounds
+    // The visual container is provided by the parent AnimatedGlassCard
+    Column(
         modifier = modifier
             .height(110.dp) // Fixed height for square-ish aspect ratio
-            .clickable { onClick() },
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
-        elevation = CardDefaults.cardElevation(0.dp)
+            .clickable { onClick() }
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.05f),
+                        color.copy(alpha = 0.05f) // Very subtle tint
+                    )
+                ),
+                shape = RoundedCornerShape(24.dp) // Match parent shape
+            )
+            .padding(10.dp), // Reduced padding to prevent cutoff
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        // Icon Container
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                            color.copy(alpha = 0.1f) // Subtle tint of the stat color
-                        )
-                    )
-                )
+                .size(40.dp) // Slightly larger touch/visual target
+                .scale(iconScale.value)
+                .clip(CircleShape)
+                .background(color.copy(alpha = 0.15f)) // Glassy icon bg
+                .border(1.dp, color.copy(alpha = 0.1f), CircleShape),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Icon Container
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .scale(iconScale.value) // Apply scale animation
-                        .clip(CircleShape)
-                        .background(color.copy(alpha = 0.2f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = null,
-                        tint = color,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = value,
-                    style = MaterialTheme.typography.titleMedium, // Reasonable size
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1
-                )
-
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    letterSpacing = 1.sp
-                )
-            }
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = color,
+                modifier = Modifier.size(20.dp)
+            )
         }
+
+        Spacer(modifier = Modifier.height(8.dp)) // Reduced spacer
+
+        // Animated Value Update
+        AnimatedContent(
+            targetState = value,
+            transitionSpec = {
+                (fadeIn(animationSpec = tween(300)) + 
+                 scaleIn(initialScale = 0.8f, animationSpec = tween(300, easing = androidx.compose.animation.core.FastOutSlowInEasing)))
+                    .togetherWith(fadeOut(animationSpec = tween(200))) 
+            },
+            label = "stat_value_update"
+        ) { targetValue ->
+            Text(
+                text = targetValue,
+                style = MaterialTheme.typography.titleMedium.copy(fontSize = 18.sp),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                softWrap = false
+            )
+        }
+
+        Spacer(modifier = Modifier.height(2.dp)) // Reduced spacer
+
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+            letterSpacing = 1.2.sp
+        )
     }
 }

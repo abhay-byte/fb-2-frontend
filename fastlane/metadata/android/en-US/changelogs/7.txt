@@ -1,5 +1,6 @@
 UI & UX Improvements:
 - New Focus Card design for active benchmarks
+- Updated Home Screen stats cards with glassmorphism & smooth animations
 - Smoother auto-scroll animation
 - Visual cleanup and refined list layout
 
