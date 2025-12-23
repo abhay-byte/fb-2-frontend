@@ -13,9 +13,9 @@ Repo: https://github.com/abhay-byte/finalbenchmark-platform
 Binaries: https://github.com/abhay-byte/finalbenchmark-platform/releases/download/v%v/app-release.apk
 
 Builds:
-  - versionName: 0.3
+  - versionName: '0.3'
     versionCode: 4
-    commit: 068f6d2f7853be03bd6bcee7f6004c1066ae9792
+    commit: 305ffe7d8acf7e0af71830c8a73fd80275920134
     subdir: app
     sudo:
       - apt-get update
