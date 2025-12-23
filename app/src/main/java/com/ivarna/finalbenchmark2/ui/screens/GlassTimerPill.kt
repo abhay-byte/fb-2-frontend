@@ -24,6 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -31,19 +34,33 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun GlassTimerPill(timeText: String) {
-    Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f), // Glassy background
-        shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+    Box(
         modifier = Modifier
             .padding(bottom = 16.dp)
             .height(40.dp)
             .clip(RoundedCornerShape(20.dp))
-            .blur(30.dp, edgeTreatment = androidx.compose.ui.draw.BlurredEdgeTreatment.Unbounded) // Apply background blur effect if supported (Android 12+)
     ) {
+        // Layer 1: Blurred Background
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+                .blur(30.dp) // Blur only the background layer
+        )
+        
+        // Layer 2: Border
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)), RoundedCornerShape(20.dp))
+        )
+
+        // Layer 3: Content (Crisp, invalidating blur)
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            modifier = Modifier
+                .align(Alignment.Center)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
             Icon(
                 imageVector = Icons.Outlined.Timer,
@@ -59,12 +76,12 @@ fun GlassTimerPill(timeText: String) {
             )
             
             // Animated Number
-            androidx.compose.animation.AnimatedContent(
+            AnimatedContent(
                 targetState = timeText,
                 transitionSpec = {
                     // Slide up and fade in
-                    (androidx.compose.animation.slideInVertically { height -> height } + androidx.compose.animation.fadeIn())
-                        .togetherWith(androidx.compose.animation.slideOutVertically { height -> -height } + androidx.compose.animation.fadeOut())
+                    (slideInVertically { height -> height } + fadeIn())
+                        .togetherWith(slideOutVertically { height -> -height } + fadeOut())
                 },
                 label = "TimerAnimation"
             ) { targetTime ->
@@ -73,7 +90,7 @@ fun GlassTimerPill(timeText: String) {
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                    fontFamily = FontFamily.Monospace
                 )
             }
         }

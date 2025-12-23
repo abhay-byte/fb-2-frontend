@@ -2,9 +2,11 @@ package com.ivarna.finalbenchmark2.ui.screens
 
 import android.app.Application
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -101,8 +103,6 @@ fun BenchmarkScreen(
     val context = LocalContext.current
     val application = context.applicationContext as Application
     
-    // Custom Factory to inject dependencies properly
-    // Custom Factory to inject dependencies properly
     val viewModel: BenchmarkViewModel = viewModel(
         factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
@@ -120,7 +120,6 @@ fun BenchmarkScreen(
     val scrollState = rememberLazyListState()
     
     // Listen for completion events from ViewModel
-    // This survives configuration changes because ViewModel survives, and we re-subscribe here
     LaunchedEffect(viewModel) {
         viewModel.completionEvent.collect { summaryJson ->
             onBenchmarkComplete(summaryJson)
@@ -155,44 +154,27 @@ fun BenchmarkScreen(
     }
 
     // Handle Scroll to active item - Center it!
-    // Handle Scroll to active item - Center it!
     val density = LocalDensity.current
     val activeIndex = uiState.testStates.indexOfFirst { it.status == TestStatus.RUNNING }
     LaunchedEffect(activeIndex) {
         if (activeIndex >= 0) {
-            // REDO: Auto-scroll Logic
-            // We want strict centering.
-            
-            // Calculate Correct List Index:
-            // 6 dots at start (indices 0-5)
-            // Header Single (index 6)
-            // Single Items (indices 7 to 7+SingleCount-1)
-            // Spacer (index 7+SingleCount)
-            // Header Multi (index 7+SingleCount+1)
-            // Multi Items (indices 7+SingleCount+2 to End)
-            
+            // Strict centering logic
             val singleCoreCount = uiState.testStates.count { !it.name.startsWith("Multi-Core", ignoreCase = true) }
             
+            // Calculate list index:
+            // 6 dots (0-5) + Header (6) + Single (7...) or Multi offset
             val listIndex = if (activeIndex < singleCoreCount) {
-                // It's a single core item.
-                // Index = 6 (dots) + 1 (header) + activeIndex
                 7 + activeIndex 
             } else {
-                // It's a multi core item.
-                // Index = 6 (dots) + 1 (header) + SingleCount + 1 (Spacer) + 1 (Header) + (activeIndex - SingleCount)
-                // = 9 + activeIndex
                 9 + activeIndex
             }
 
             val viewportHeight = scrollState.layoutInfo.viewportSize.height
-            
-            // Only scroll if layout is ready and we have a valid height
             if (viewportHeight > 0) {
-            	// Estimate item height (roughly 72dp for the new glass row + padding)
+            	// Estimate item height
             	val estimatedItemHeightPx = with(density) { 72.dp.toPx() }
             
                 // Target center of item to center of viewport
-                // Offset = (ViewportCenter) - (ItemHalfHeight)
                 val targetOffset = (viewportHeight / 2) - (estimatedItemHeightPx / 2).toInt()
                 
                 scrollState.animateScrollToItem(
@@ -209,23 +191,19 @@ fun BenchmarkScreen(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            // Subtle Theme Gradient Overlay - IMPROVED for Starry Background visibility
+            // Subtle Theme Gradient Overlay
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(
                         Brush.verticalGradient(
                             colors = listOf(
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.05f), // Reduced opacity
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.05f),
                                 MaterialTheme.colorScheme.background
                             )
                         )
                     )
             )
-
-            // Gradient overlay
-            // Box(modifier = Modifier...) // Already moved or kept if needed.
-            // Removing StarryBackground as requested.
 
             // Main Content
             Column(
@@ -249,7 +227,6 @@ fun BenchmarkScreen(
                             letterSpacing = 2.sp
                         )
                         
-                        // Map internal keys to human-readable titles matches HomeScreen
                         val configTitle = when (preset.lowercase()) {
                             "slow" -> "Low Accuracy - Fastest"
                             "mid" -> "Mid Accuracy - Fast"
@@ -270,7 +247,7 @@ fun BenchmarkScreen(
                             onClick = { 
                                 viewModel.stopBenchmark()
                                 onBenchmarkEnd()
-                                onNavBack() // Navigate back
+                                onNavBack()
                             },
                             color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f),
                             shape = CircleShape,
@@ -320,11 +297,10 @@ fun BenchmarkScreen(
                                 label = "alpha"
                             )
 
-                            // 2. Status Text ("PROCESSING", "WARMING UP") - "bellow text processing"
+                            // 2. Status Text
                             Text(
                                 text = when {
                                     isWarmingUp -> "WARMING UP"
-                                    // Show PROCESSING if running OR if we have intermediate progress (to handle state edge cases)
                                     uiState.isRunning || (uiState.progress > 0f && uiState.progress < 1f) -> "PROCESSING"
                                     else -> "READY"
                                 },
@@ -342,7 +318,6 @@ fun BenchmarkScreen(
                     }
 
                     // Time Remaining Text (Below Dial)
-                    // Time Remaining Text (Below Dial)
                     if (uiState.isRunning || isWarmingUp) {
                         GlassTimerPill(timeText = uiState.estimatedTimeRemaining)
                         Spacer(modifier = Modifier.height(24.dp))
@@ -352,10 +327,10 @@ fun BenchmarkScreen(
                 // Timeline List
                 LazyColumn(
                     state = scrollState,
-                    contentPadding = PaddingValues(bottom = 150.dp, top = 24.dp), // Added top padding
+                    contentPadding = PaddingValues(bottom = 150.dp, top = 24.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .weight(1f) // Ensure it takes up remaining space correctly
+                        .weight(1f)
                         .onGloballyPositioned { listCoordinates = it }
                 ) {
                     val singleCoreTests = uiState.testStates.filter { !it.name.startsWith("Multi-Core", ignoreCase = true) }
@@ -371,7 +346,6 @@ fun BenchmarkScreen(
                     // Single Core Section
                     if (singleCoreTests.isNotEmpty()) {
                         item { 
-                            // Header also curves
                             Box(modifier = Modifier.wheelCurve(scrollState, listCoordinates)) {
                                 SectionHeader("SINGLE CORE OPERATIONS") 
                             }
@@ -445,7 +419,7 @@ fun ReactorProgress(progress: Float) {
         val center = Offset(size.width / 2, size.height / 2)
         val radius = size.width / 2
 
-        // Outer Glow Ring (Static) using Surface Variant color for subtle look
+        // Outer Glow Ring
         drawCircle(
             color = outlineColor.copy(alpha = 0.1f),
             radius = radius,
@@ -468,7 +442,7 @@ fun ReactorProgress(progress: Float) {
             style = Stroke(width = 20f, cap = StrokeCap.Round)
         )
 
-        // Spinner Ring (Animated)
+        // Spinner Ring
         if (progress > 0 && progress < 1f) {
             rotate(degrees = rotation) {
                 drawArc(
@@ -494,7 +468,7 @@ fun WheelSpacerDot() {
         modifier = Modifier
             .fillMaxWidth()
             .height(24.dp)
-            .padding(start = 2.dp), // Touch left edge
+            .padding(start = 2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(
@@ -550,118 +524,101 @@ fun TimelineTestRow(test: TestState) {
     val isRunning = test.status == TestStatus.RUNNING
     val isCompleted = test.status == TestStatus.COMPLETED
     
+    // Focus Mode:
+    // Running: High opacity, Glass Card, Scaled up slightly
+    // Completed: Medium opacity, clean
+    // Pending: Low opacity (faded out)
+    
+    val rowAlpha = if (isRunning) 1f else if (isCompleted) 0.8f else 0.4f
+    
+    // Animate scale for the active focus effect
+    val targetScale = if (isRunning) 1.05f else 1f
+    val scale by animateFloatAsState(
+        targetValue = targetScale,
+        animationSpec = tween(300, easing = FastOutSlowInEasing),
+        label = "rowScale"
+    )
+
     // Glassy Highlight for Running State
-    val rowModifier = if (isRunning) {
-        Modifier
+    Box(
+        modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp, horizontal = 12.dp) // Add spacing for the card
+            .padding(vertical = 4.dp, horizontal = if (isRunning) 12.dp else 24.dp) // Indent inactive items
+            .graphicsLayer {
+                alpha = rowAlpha
+                scaleX = scale
+                scaleY = scale
+            }
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.15f)) // Glass tint
-            .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f), RoundedCornerShape(16.dp))
-    } else {
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp) // Maintain vertical spacing
-            .background(Color.Transparent)
-    }
-
-    // Animation for running state
-    val infiniteTransition = rememberInfiniteTransition(label = "running_text")
-    val scale by if (isRunning) {
-        infiniteTransition.animateFloat(
-            initialValue = 1.0f,
-            targetValue = 1.05f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1000, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "scale"
-        )
-    } else {
-        remember { mutableStateOf(1.0f) }
-    }
-
-    val textAlpha by if (isRunning) {
-        infiniteTransition.animateFloat(
-            initialValue = 0.7f,
-            targetValue = 1.0f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(1000, easing = LinearEasing),
-                repeatMode = RepeatMode.Reverse
-            ),
-            label = "alpha"
-        )
-    } else {
-        remember { mutableStateOf(1.0f) }
-    }
-
-    Row(
-        modifier = rowModifier
-            .padding(start = 16.dp, top = 12.dp, bottom = 12.dp)
-            .padding(end = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .then(
+                if (isRunning) {
+                    Modifier
+                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)) // Glass tint
+                        .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                } else {
+                    Modifier
+                }
+            )
     ) {
-        // Status Icon
-        when {
-            isRunning -> {
-                RunningBenchmarkIndicator()
-            }
-            isCompleted -> {
-                Icon(
-                    imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Done",
-                    tint = MaterialTheme.colorScheme.primary, 
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-            else -> {
-                Icon(
-                    imageVector = Icons.Default.Pending,
-                    contentDescription = "Pending",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // Text and Time grouped together
         Row(
             modifier = Modifier
-                .weight(1f)
-                .then(
-                    if (isRunning) {
-                        Modifier.scale(scale)
-                    } else Modifier
-                ),
+                .fillMaxWidth()
+                .padding(start = 16.dp, top = 16.dp, bottom = 16.dp)
+                .padding(end = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = test.name,
-                style = MaterialTheme.typography.bodyLarge,
-                color = if (isRunning) 
-                            MaterialTheme.colorScheme.primary.copy(alpha = textAlpha) 
-                        else if (isCompleted) 
-                            MaterialTheme.colorScheme.onBackground 
-                        else 
-                            MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
-                fontWeight = if (isRunning) FontWeight.ExtraBold else if (isCompleted) FontWeight.Medium else FontWeight.Normal,
-                maxLines = 1,
-                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false) // Don't force fill, take what's needed for name
-            )
+            // Status Icon
+            when {
+                isRunning -> {
+                    RunningBenchmarkIndicator()
+                }
+                isCompleted -> {
+                    Icon(
+                        imageVector = Icons.Default.CheckCircle,
+                        contentDescription = "Done",
+                        tint = MaterialTheme.colorScheme.primary, 
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+                else -> {
+                    Icon(
+                        imageVector = Icons.Default.Pending,
+                        contentDescription = "Pending",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
-            // Duration or Score next to title
-            if (test.timeText.isNotEmpty()) {
-                Spacer(modifier = Modifier.width(12.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Text and Time
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = test.timeText,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isRunning) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                    fontFamily = MaterialTheme.typography.labelSmall.fontFamily,
-                    fontWeight = FontWeight.Bold
+                    text = test.name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (isRunning) 
+                                MaterialTheme.colorScheme.primary 
+                            else 
+                                MaterialTheme.colorScheme.onBackground,
+                    fontWeight = if (isRunning) FontWeight.ExtraBold else FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false)
                 )
+
+                if (test.timeText.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = test.timeText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.8f),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -692,7 +649,7 @@ fun RunningBenchmarkIndicator() {
                     )
                 ),
                 startAngle = 0f,
-                sweepAngle = 270f, // "Semi" circle feel (3/4 actually, but fits implied intent of arc)
+                sweepAngle = 270f,
                 useCenter = false,
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
             )
