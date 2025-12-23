@@ -1,16 +1,14 @@
-Version 1.0.7 Update:
+UI & UX Improvements:
+- New Focus Card design for active benchmarks
+- Smoother auto-scroll animation
+- Visual cleanup and refined list layout
 
-🚀 UI & UX Improvements:
-- New "Focus Card" design for active benchmarks
-- Smoother auto-scroll animation for benchmark list (Active item centered)
-- Visual cleanup: Removed spacer dots and refined list layout
+Timer Enhancements:
+- Smarter countdown timer with auto-extension
+- Added Elapsed Time display
+- Fixed premature status messages
 
-⏱️ Timer Enhancements:
-- Smarter countdown timer: Automatically extends time if needed
-- Added "Elapsed Time" display alongside countdown
-- Fixed premature "Finalizing..." status message
-
-⚡ Performance Fixes:
+Performance Fixes:
 - Optimized Result Screen loading speed
-- Fixed Bottom Navigation Bar animation when viewing results
+- Fixed Bottom Navigation Bar animation
 - General stability improvements
