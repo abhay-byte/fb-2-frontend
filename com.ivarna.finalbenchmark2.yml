@@ -28,5 +28,5 @@ AllowedAPKSigningKeys: 30af78540ad3cb4be11f8b200cba396c61c0457eba253fda1d0932a65
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '0.5.1'
+CurrentVersion: 0.5.1
 CurrentVersionCode: 6
