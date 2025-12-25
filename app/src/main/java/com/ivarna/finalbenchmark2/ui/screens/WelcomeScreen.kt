@@ -96,7 +96,7 @@ fun WelcomeScreen(onNextClicked: () -> Unit, modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.fillMaxWidth().padding(16.dp)
                     )
                 }
             }
