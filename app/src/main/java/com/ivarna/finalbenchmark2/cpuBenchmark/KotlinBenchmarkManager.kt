@@ -243,7 +243,8 @@ class KotlinBenchmarkManager(
                   }
 
                   if (result.success) {
-                      val score = result.throughput * 10
+                      val multiplier = SCORING_FACTORS[benchmark] ?: 2.0
+                      val score = result.throughput * multiplier
                       Log.d(TAG, "AI Result - $testName: Throughput=${result.throughput}, Time=${result.inferenceTimeMs}, Score=$score")
                       
                       results.add(BenchmarkResult(

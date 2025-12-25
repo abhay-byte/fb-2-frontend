@@ -1179,7 +1179,10 @@ fun BenchmarkResultItem(result: BenchmarkResult, isAi: Boolean = false) {
                                         text = cleanName,
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.ExtraBold,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.weight(1f).padding(end = 8.dp)
                                 )
                                 Text(
                                         text = String.format("%.1f", individualScore),
