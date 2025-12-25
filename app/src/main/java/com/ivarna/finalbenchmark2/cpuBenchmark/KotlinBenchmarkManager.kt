@@ -279,6 +279,7 @@ class KotlinBenchmarkManager(
              }
 
              val summaryJson = JSONObject().apply {
+                 put("type", "AI")
                  put("single_core_score", 0.0)
                  put("multi_core_score", 0.0) // Not applicable for AI in this simplified view
                  put("final_score", totalScore)

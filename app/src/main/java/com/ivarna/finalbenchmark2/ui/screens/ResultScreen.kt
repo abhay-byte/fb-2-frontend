@@ -777,91 +777,93 @@ fun SummaryTab(summary: BenchmarkSummary) {
                     }
                 }
 
-                // Efficiency Card - High-Fidelity Glassmorphism
-                item {
-                        val mpRatio = if (summary.singleCoreScore > 0) {
-                                summary.multiCoreScore / summary.singleCoreScore
-                        } else {
-                                1.0
-                        }
-                        
-                        AnimatedEntranceContainer(index = 2) {
-                            Card(
-                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
-                                    shape = RoundedCornerShape(24.dp),
-                                    colors = CardDefaults.cardColors(
-                                            containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.12f)
-                                    ),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f))
-                            ) {
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(
-                                                Brush.horizontalGradient(
-                                                    listOf(
-                                                        MaterialTheme.colorScheme.tertiary.copy(alpha = 0.08f),
-                                                        Color.Transparent
+                // Efficiency Card - High-Fidelity Glassmorphism (CPU Only)
+                if (summary.type == "CPU") {
+                    item {
+                            val mpRatio = if (summary.singleCoreScore > 0) {
+                                    summary.multiCoreScore / summary.singleCoreScore
+                            } else {
+                                    1.0
+                            }
+                            
+                            AnimatedEntranceContainer(index = 2) {
+                                Card(
+                                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp),
+                                        shape = RoundedCornerShape(24.dp),
+                                        colors = CardDefaults.cardColors(
+                                                containerColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.12f)
+                                        ),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.tertiary.copy(alpha = 0.25f))
+                                ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    Brush.horizontalGradient(
+                                                        listOf(
+                                                            MaterialTheme.colorScheme.tertiary.copy(alpha = 0.08f),
+                                                            Color.Transparent
+                                                        )
                                                     )
                                                 )
-                                            )
-                                    ) {
-                                        Row(
-                                                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
-                                                horizontalArrangement = Arrangement.SpaceBetween,
-                                                verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                                        Box(
-                                                                modifier = Modifier
-                                                                        .size(48.dp)
-                                                                        .clip(CircleShape)
-                                                                        .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)),
-                                                                contentAlignment = Alignment.Center
-                                                        ) {
-                                                                Icon(
-                                                                        imageVector = Icons.Rounded.Speed,
-                                                                        contentDescription = null,
-                                                                        tint = MaterialTheme.colorScheme.tertiary,
-                                                                        modifier = Modifier.size(26.dp)
-                                                                )
-                                                        }
-                                                        Spacer(modifier = Modifier.width(16.dp))
-                                                        Column {
-                                                                Text(
-                                                                        text = "MULTI-CORE SCALING",
-                                                                        style = MaterialTheme.typography.labelSmall,
-                                                                        fontWeight = FontWeight.Black,
-                                                                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f),
-                                                                        letterSpacing = 1.sp
-                                                                )
-                                                                Text(
-                                                                        text = if (mpRatio > 4) "Excellent Parallelism" else "Standard Scaling",
-                                                                        style = MaterialTheme.typography.bodySmall,
-                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                                                )
-                                                        }
-                                                }
-                                                Column(horizontalAlignment = Alignment.End) {
-                                                    Text(
-                                                            text = String.format("%.2fx", mpRatio),
-                                                            style = MaterialTheme.typography.titleLarge,
+                                            Row(
+                                                    modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 20.dp),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                                            Box(
+                                                                    modifier = Modifier
+                                                                            .size(48.dp)
+                                                                            .clip(CircleShape)
+                                                                            .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.15f)),
+                                                                    contentAlignment = Alignment.Center
+                                                            ) {
+                                                                    Icon(
+                                                                            imageVector = Icons.Rounded.Speed,
+                                                                            contentDescription = null,
+                                                                            tint = MaterialTheme.colorScheme.tertiary,
+                                                                            modifier = Modifier.size(26.dp)
+                                                                    )
+                                                            }
+                                                            Spacer(modifier = Modifier.width(16.dp))
+                                                            Column {
+                                                                    Text(
+                                                                            text = "MULTI-CORE SCALING",
+                                                                            style = MaterialTheme.typography.labelSmall,
+                                                                            fontWeight = FontWeight.Black,
+                                                                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.8f),
+                                                                            letterSpacing = 1.sp
+                                                                    )
+                                                                    Text(
+                                                                            text = if (mpRatio > 4) "Excellent Parallelism" else "Standard Scaling",
+                                                                            style = MaterialTheme.typography.bodySmall,
+                                                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                                                    )
+                                                            }
+                                                    }
+                                                    Column(horizontalAlignment = Alignment.End) {
+                                                        Text(
+                                                                text = String.format("%.2fx", mpRatio),
+                                                                style = MaterialTheme.typography.titleLarge,
+                                                                fontWeight = FontWeight.Black,
+                                                                color = MaterialTheme.colorScheme.tertiary
+                                                        )
+                                                        Text(
+                                                            text = "FACTOR",
+                                                            style = MaterialTheme.typography.labelSmall,
+                                                            fontSize = 8.sp,
                                                             fontWeight = FontWeight.Black,
-                                                            color = MaterialTheme.colorScheme.tertiary
-                                                    )
-                                                    Text(
-                                                        text = "FACTOR",
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontSize = 8.sp,
-                                                        fontWeight = FontWeight.Black,
-                                                        color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
-                                                    )
-                                                }
+                                                            color = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.5f)
+                                                        )
+                                                    }
+                                            }
                                         }
-                                    }
+                                }
                             }
-                        }
+                    }
                 }
 
                 // Device Info - High-Fidelity Glassmorphism
@@ -981,6 +983,34 @@ fun LongSummaryInfoRow(label: String, value: String) {
 
 @Composable
 fun DetailedDataTab(summary: BenchmarkSummary) {
+    if (summary.type == "AI") {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
+        ) {
+            // Performance Monitoring Section (Optional/Shared)
+            item {
+                AnimatedEntranceContainer(index = 0) {
+                    PerformanceMonitoringSection(
+                            performanceMetricsJson = summary.performanceMetricsJson
+                    )
+                }
+            }
+
+            // AI Benchmarks Section
+            item {
+                AnimatedEntranceContainer(index = 1) {
+                    BenchmarkSection(
+                            title = "AI Benchmarks",
+                            score = summary.finalScore,
+                            results = summary.detailedResults,
+                            isAi = true
+                    )
+                }
+            }
+        }
+    } else {
+        // Default CPU Logic
         val singleCoreResults =
                 remember(summary.detailedResults) {
                         summary.detailedResults.filter { it.name.startsWith("Single-Core") }
@@ -1025,10 +1055,11 @@ fun DetailedDataTab(summary: BenchmarkSummary) {
                         }
                 }
         }
+    }
 }
 
 @Composable
-fun BenchmarkSection(title: String, score: Double, results: List<BenchmarkResult>) {
+fun BenchmarkSection(title: String, score: Double, results: List<BenchmarkResult>, isAi: Boolean = false) {
         var expanded by remember { mutableStateOf(true) }
 
         Card(
@@ -1058,9 +1089,13 @@ fun BenchmarkSection(title: String, score: Double, results: List<BenchmarkResult
                                                 .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                                             contentAlignment = Alignment.Center
                                         ) {
+                                            val icon = when {
+                                                isAi -> Icons.Rounded.AutoAwesome
+                                                results.firstOrNull()?.name?.startsWith("Single") == true -> Icons.Rounded.Person
+                                                else -> Icons.Rounded.Star
+                                            }
                                             Icon(
-                                                imageVector = if (results.firstOrNull()?.name?.startsWith("Single") == true) 
-                                                    Icons.Rounded.Person else Icons.Rounded.Star,
+                                                imageVector = icon,
                                                 contentDescription = null,
                                                 tint = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.size(20.dp)
@@ -1094,7 +1129,7 @@ fun BenchmarkSection(title: String, score: Double, results: List<BenchmarkResult
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     results.forEach { result ->
-                                        BenchmarkResultItem(result)
+                                        BenchmarkResultItem(result, isAi)
                                     }
                                 }
                         }
@@ -1103,15 +1138,28 @@ fun BenchmarkSection(title: String, score: Double, results: List<BenchmarkResult
 }
 
 @Composable
-fun BenchmarkResultItem(result: BenchmarkResult) {
+fun BenchmarkResultItem(result: BenchmarkResult, isAi: Boolean = false) {
         val cleanName = result.name.replace("Single-Core ", "").replace("Multi-Core ", "")
-        val mopsPerSecond = result.opsPerSecond / 1_000_000.0
         val timeInSeconds = result.executionTimeMs / 1000.0
 
-        val isSingleCore = result.name.startsWith("Single-Core")
-        val scalingFactors = KotlinBenchmarkManager.SCORING_FACTORS
-        val benchmarkName = BenchmarkName.fromString(result.name)
-        val individualScore = benchmarkName?.let { scalingFactors[it]?.times(result.opsPerSecond) } ?: 0.0
+        val displayThroughput: String
+        val individualScore: Double
+
+        if (isAi) {
+             // For AI, opsPerSecond is tokens/sec or operations/sec
+             displayThroughput = String.format("%.2f ops/s", result.opsPerSecond)
+             // Use pre-calculated score if available, or calculate using factor 2.0
+             val scalingFactors = KotlinBenchmarkManager.SCORING_FACTORS
+             val benchmarkName = BenchmarkName.fromString(result.name)
+             individualScore = benchmarkName?.let { scalingFactors[it]?.times(result.opsPerSecond) } ?: (result.opsPerSecond * 2.0)
+        } else {
+             // For CPU, opsPerSecond is usually raw ops, converted to Mops/s
+             displayThroughput = String.format("%.2f Mops/s", result.opsPerSecond / 1_000_000.0)
+             
+             val scalingFactors = KotlinBenchmarkManager.SCORING_FACTORS
+             val benchmarkName = BenchmarkName.fromString(result.name)
+             individualScore = benchmarkName?.let { scalingFactors[it]?.times(result.opsPerSecond) } ?: 0.0
+        }
 
         Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -1157,7 +1205,7 @@ fun BenchmarkResultItem(result: BenchmarkResult) {
                                     )
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                            text = String.format("%.2f Mops/s", mopsPerSecond),
+                                            text = displayThroughput,
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f)
                                     )
