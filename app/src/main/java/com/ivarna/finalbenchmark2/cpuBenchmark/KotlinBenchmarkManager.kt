@@ -13,11 +13,22 @@ import kotlinx.coroutines.delay
 import org.json.JSONArray
 import org.json.JSONObject
 
-class KotlinBenchmarkManager {
-        private val _benchmarkEvents = MutableSharedFlow<BenchmarkEvent>()
+import android.content.Context
+import com.ivarna.finalbenchmark2.aiBenchmark.AiBenchmarkManager
+import com.ivarna.finalbenchmark2.aiBenchmark.ModelRepository
+import java.io.File
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import android.graphics.Bitmap
+
+class KotlinBenchmarkManager(
+    private val context: Context? = null,
+    private val aiManager: AiBenchmarkManager? = null
+) {
+        private val _benchmarkEvents = MutableSharedFlow<BenchmarkEvent>(replay = 1)
         val benchmarkEvents: SharedFlow<BenchmarkEvent> = _benchmarkEvents.asSharedFlow()
 
-        private val _benchmarkComplete = MutableSharedFlow<String>()
+        private val _benchmarkComplete = MutableSharedFlow<String>(replay = 1)
         val benchmarkComplete: SharedFlow<String> = _benchmarkComplete.asSharedFlow()
 
         companion object {
@@ -55,11 +66,12 @@ class KotlinBenchmarkManager {
                 BenchmarkName.N_QUEENS to 2.011e-7/3.2,                // 20 / 66.18e6 ops/s
                 
                 // AI Scoring Factors (Placeholder / TBD - Target similar point range)
-                BenchmarkName.LLM_INFERENCE to 1.0e-5,
-                BenchmarkName.IMAGE_CLASSIFICATION to 1.0e-5,
-                BenchmarkName.OBJECT_DETECTION to 1.0e-5,
-                BenchmarkName.TEXT_EMBEDDING to 1.0e-5,
-                BenchmarkName.SPEECH_TO_TEXT to 1.0e-5
+                // AI Scoring Factors (Target ~100 points per test for typical mid-range 50 TPS)
+                BenchmarkName.LLM_INFERENCE to 2.0,
+                BenchmarkName.IMAGE_CLASSIFICATION to 2.0,
+                BenchmarkName.OBJECT_DETECTION to 2.0,
+                BenchmarkName.TEXT_EMBEDDING to 2.0,
+                BenchmarkName.SPEECH_TO_TEXT to 2.0
         )
 
         }
@@ -130,14 +142,14 @@ class KotlinBenchmarkManager {
                 )
         }
 
-        suspend fun runBenchmarks(deviceTier: String = "Flagship", type: String = "CPU") {
+        suspend fun runBenchmarks(deviceTier: String = "Flagship", category: BenchmarkCategory = BenchmarkCategory.CPU) {
                 Log.d(
                         TAG,
-                        "SINGLE_SOURCE_OF_TRUTH: Starting benchmark execution with device tier: $deviceTier, Type: $type"
+                        "SINGLE_SOURCE_OF_TRUTH: Starting benchmark execution with device tier: $deviceTier, Category: $category"
                 )
 
-                if (type == "AI") {
-                    Log.d(TAG, "Running AI Benchmarks (Placeholder)")
+                if (category == BenchmarkCategory.AI) {
+                    Log.d(TAG, "Running AI Benchmarks")
                     runAiBenchmarks(deviceTier)
                 } else {
                     Log.d(TAG, "Running CPU Benchmarks")
@@ -148,30 +160,112 @@ class KotlinBenchmarkManager {
         private suspend fun runAiBenchmarks(deviceTier: String) {
              // Placeholder for AI benchmarks
              // Simulate work for now to prevent crashes until actual implementation
-             val aiTests = BenchmarkName.getByCategory(BenchmarkCategory.AI)
              val categoryName = BenchmarkCategory.AI.name
 
              runTestWorkload() // Warmup
 
              val results = mutableListOf<BenchmarkResult>()
              
-             aiTests.forEach { testNameEnum ->
-                 val testName = testNameEnum.displayName()
-                 emitBenchmarkStart(testName, categoryName)
-                 delay(1000) // Simulate work
-                 val result = BenchmarkResult(
-                     name = testName,
-                     executionTimeMs = 1000.0,
-                     opsPerSecond = 1000000.0, // Dummy score
-                     isValid = true,
-                     metricsJson = "{}"
-                 )
-                 results.add(result)
-                 emitBenchmarkComplete(testName, categoryName, 1000, 1000000.0)
+            if (context == null || aiManager == null) {
+                Log.e(TAG, "AI Benchmark failed: Context or AiManager is null")
+                return
+            }
+
+            val modelsDir = File(context.filesDir, "models")
+            Log.d(TAG, "AI Benchmark: Looking for models in ${modelsDir.absolutePath}")
+            val filesCallback = modelsDir.listFiles()
+            if (filesCallback != null) {
+                Log.d(TAG, "Files found in models dir: ${filesCallback.joinToString { it.name }}")
+            } else {
+                Log.e(TAG, "Models directory is empty or does not exist!")
+            }
+
+            val aiBenchmarks = BenchmarkName.getByCategory(BenchmarkCategory.AI)
+             
+             aiBenchmarks.forEach { benchmark ->
+                val testName = benchmark.displayName()
+
+                // Determine filename based on benchmark type
+                val fileName = when(benchmark) {
+                    BenchmarkName.IMAGE_CLASSIFICATION -> ModelRepository.MOBILENET_FILENAME
+                    BenchmarkName.OBJECT_DETECTION -> ModelRepository.EFFICIENTDET_FILENAME
+                    // BenchmarkName.LLM_INFERENCE -> ModelRepository.GEMMA_FILENAME // Requires GenAI Edge SDK
+                    BenchmarkName.TEXT_EMBEDDING -> ModelRepository.MINILM_FILENAME
+                    BenchmarkName.SPEECH_TO_TEXT -> ModelRepository.WHISPER_FILENAME
+                    else -> ""
+                }
+
+                if (fileName.isEmpty()) {
+                    Log.d(TAG, "Skipping $testName (No filename mapped or not implemented)")
+                    // Add skipped result
+                    results.add(BenchmarkResult(testName, 0.0, 0.0, false, "{\"error\": \"Not implemented\"}"))
+                    // Emit fake start/complete to resolve UI Pending state
+                    emitBenchmarkStart(testName, categoryName)
+                    delay(100)
+                    emitBenchmarkComplete(testName, categoryName, 0, 0.0) 
+                    return@forEach
+                }
+
+                val modelFile = File(modelsDir, fileName)
+                Log.d(TAG, "Checking model file: ${modelFile.absolutePath}, exists=${modelFile.exists()}, size=${if(modelFile.exists()) modelFile.length() else 0}")
+
+                if (!modelFile.exists()) {
+                    Log.w(TAG, "Model file not found: $fileName")
+                     Log.d(TAG, "Skipping $testName (Model missing)")
+                     // Add skipped result
+                     results.add(BenchmarkResult(testName, 0.0, 0.0, false, "{\"error\": \"Model missing\"}"))
+                     // Emit fake start/complete to resolve UI Pending state
+                     emitBenchmarkStart(testName, categoryName)
+                     delay(100)
+                     emitBenchmarkComplete(testName, categoryName, 0, 0.0)
+                    return@forEach 
+                }
+                 
+                  emitBenchmarkStart(testName, categoryName)
+                  
+                  // Execute via AiBenchmarkManager
+                  val result = when(benchmark) {
+                    BenchmarkName.IMAGE_CLASSIFICATION -> {
+                         val dummyInput = aiManager.createDummyMobileNetInput()
+                         aiManager.runImageClassification(modelFile, dummyInput)
+                    }
+                    BenchmarkName.OBJECT_DETECTION -> {
+                         val dummyInput = aiManager.createDummyEfficientDetInput()
+                         aiManager.runObjectDetection(modelFile, dummyInput)
+                    }
+                    BenchmarkName.TEXT_EMBEDDING -> {
+                         aiManager.runTextEmbedding(modelFile)
+                    }
+                    BenchmarkName.SPEECH_TO_TEXT -> {
+                         aiManager.runAsr(modelFile)
+                    }
+                    else -> com.ivarna.finalbenchmark2.aiBenchmark.AiBenchmarkResult(modelFile.name, 0.0, 0.0, "Skipped", false, "Not implemented")
+                  }
+
+                  if (result.success) {
+                      val score = result.throughput * 10
+                      Log.d(TAG, "AI Result - $testName: Throughput=${result.throughput}, Time=${result.inferenceTimeMs}, Score=$score")
+                      
+                      results.add(BenchmarkResult(
+                          name = testName,
+                          executionTimeMs = result.inferenceTimeMs,
+                          opsPerSecond = result.throughput, 
+                          isValid = true,
+                          metricsJson = "{ \"acceleration\": \"${result.accelerationMode}\" }"
+                      ))
+                      emitBenchmarkComplete(testName, categoryName, result.inferenceTimeMs.toLong(), score, result.accelerationMode) 
+                  } else {
+                       Log.e(TAG, "Benchmark $testName failed: ${result.errorMessage}")
+                       results.add(BenchmarkResult(testName, 0.0, 0.0, false, "{\"error\": \"${result.errorMessage}\"}"))
+                       emitBenchmarkComplete(testName, categoryName, 0, 0.0)
+                  }
+
+                  delay(500)
              }
              
-             // Calculate generic score
-             val totalScore = results.sumOf { it.opsPerSecond } / 1000.0 // Simple sum for now
+             // Calculate generic score: Simple Sum * Factor (2.0)
+             // Typical TPS sum ~ 100-200. Score ~ 200-400.
+             val totalScore = results.sumOf { it.opsPerSecond } * 2.0
              
              val detailedResultsArray = JSONArray()
              results.forEach { result ->
@@ -696,7 +790,8 @@ class KotlinBenchmarkManager {
                 testName: String,
                 mode: String,
                 timeMs: Long,
-                score: Double
+                score: Double,
+                accelerationMode: String? = null
         ) {
                 _benchmarkEvents.emit(
                         BenchmarkEvent(
@@ -704,7 +799,8 @@ class KotlinBenchmarkManager {
                                 mode = mode,
                                 state = "COMPLETED",
                                 timeMs = timeMs,
-                                score = score
+                                score = score,
+                                accelerationMode = accelerationMode
                         )
                 )
         }

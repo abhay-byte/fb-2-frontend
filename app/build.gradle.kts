@@ -151,4 +151,15 @@ dependencies {
     androidTestImplementation(platform(libs.androidx.compose.bom))
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+
+    // AI/ML - TensorFlow Lite (Standard) & Acceleration
+    implementation("org.tensorflow:tensorflow-lite:2.16.1")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.16.1")
+    implementation("org.tensorflow:tensorflow-lite-gpu-api:2.16.1") // Often needed for delegate options
+    // Start with standard LiteRT and add QNN if we can confirm the repo.
+    // implementation("com.qualcomm.qti:qnn-runtime:2.34.0")
+    // implementation("com.qualcomm.qti:qnn-litert-delegate:2.34.0")
+    
+    // Networking
+    implementation("com.squareup.okhttp3:okhttp:4.10.0")
 }
