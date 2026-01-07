@@ -27,6 +27,11 @@ enum class BenchmarkName(val category: BenchmarkCategory) {
     TEXT_EMBEDDING(BenchmarkCategory.AI),
 
     SPEECH_TO_TEXT(BenchmarkCategory.AI),
+    IMAGE_CLASSIFICATION_MOBILENET_V1(BenchmarkCategory.AI),
+    OBJECT_DETECTION_YOLO_V8(BenchmarkCategory.AI),
+    TEXT_QA_USE(BenchmarkCategory.AI),
+    TEXT_CLASSIFICATION_MOBILEBERT(BenchmarkCategory.AI),
+    AUDIO_NOISE_SUPPRESSION_DTLN(BenchmarkCategory.AI),
 
     // GPU Native Benchmarks
     GPU_TRIANGLE_RENDERING(BenchmarkCategory.GPU),
@@ -87,6 +92,11 @@ enum class BenchmarkName(val category: BenchmarkCategory) {
             OBJECT_DETECTION -> "Object Detection (EfficientDet)"
             TEXT_EMBEDDING -> "Text Embedding (MiniLM)"
             SPEECH_TO_TEXT -> "Speech-to-Text (Whisper)"
+            IMAGE_CLASSIFICATION_MOBILENET_V1 -> "Image Classification (MobileNet V1)"
+            OBJECT_DETECTION_YOLO_V8 -> "Object Detection (YOLOv8)"
+            TEXT_QA_USE -> "Q&A (Universal Sentence Encoder)"
+            TEXT_CLASSIFICATION_MOBILEBERT -> "Text Classification (MobileBERT)"
+            AUDIO_NOISE_SUPPRESSION_DTLN -> "Noise Suppression (DTLN)"
 
             
             // GPU Native
@@ -155,6 +165,11 @@ enum class BenchmarkName(val category: BenchmarkCategory) {
                         cleanName.startsWith("Object Detection") -> "Object Detection (EfficientDet)"
                         cleanName.startsWith("Text Embedding") -> "Text Embedding (MiniLM)"
                         cleanName.startsWith("Speech-to-Text") -> "Speech-to-Text (Whisper)"
+                        cleanName.startsWith("Image Classification (MobileNet V1)") -> "Image Classification (MobileNet V1)"
+                        cleanName.startsWith("Object Detection (YOLOv8)") -> "Object Detection (YOLOv8)"
+                        cleanName.startsWith("Q&A") -> "Q&A (Universal Sentence Encoder)"
+                        cleanName.startsWith("Text Classification") -> "Text Classification (MobileBERT)"
+                        cleanName.startsWith("Noise Suppression") -> "Noise Suppression (DTLN)"
                         
                         // GPU Partial Matches
                         cleanName.startsWith("Triangle Rendering") -> "Triangle Rendering Stress Test"

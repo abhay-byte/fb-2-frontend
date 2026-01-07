@@ -30,6 +30,72 @@ class AiBenchmarkManager(private val context: Context) {
     }
 
     /**
+     * Returns workload parameters based on device tier.
+     * Tier: "test" (fastest), "slow" (budget), "mid" (mainstream), "flagship" (heavy)
+     */
+    fun getAiWorkloadParams(tier: String): com.ivarna.finalbenchmark2.cpuBenchmark.AiWorkloadParams {
+        return when (tier.lowercase()) {
+            "test" -> com.ivarna.finalbenchmark2.cpuBenchmark.AiWorkloadParams(
+                imageClassificationIterations = 1,
+                objectDetectionIterations = 1,
+                textEmbeddingIterations = 1,
+                asrIterations = 1,
+                llmIterations = 1,
+                mobileBertIterations = 1,
+                useQaIterations = 1,
+                dtlnIterations = 1,
+                yoloIterations = 1,
+                defaultWarmup = 0,
+                heavyModelWarmup = 0,
+                asrWarmup = 0
+            )
+            "slow" -> com.ivarna.finalbenchmark2.cpuBenchmark.AiWorkloadParams(
+                imageClassificationIterations = 2,
+                objectDetectionIterations = 2,
+                textEmbeddingIterations = 2,
+                asrIterations = 1,
+                llmIterations = 2,
+                mobileBertIterations = 2,
+                useQaIterations = 2,
+                dtlnIterations = 2,
+                yoloIterations = 2,
+                defaultWarmup = 1,
+                heavyModelWarmup = 0,
+                asrWarmup = 0
+            )
+            "mid" -> com.ivarna.finalbenchmark2.cpuBenchmark.AiWorkloadParams(
+                imageClassificationIterations = 5,
+                objectDetectionIterations = 5,
+                textEmbeddingIterations = 5,
+                asrIterations = 1, // Whisper is heavy 
+                llmIterations = 3,
+                mobileBertIterations = 5,
+                useQaIterations = 5,
+                dtlnIterations = 5,
+                yoloIterations = 5,
+                defaultWarmup = 2,
+                heavyModelWarmup = 1,
+                asrWarmup = 0
+            )
+            "flagship" -> com.ivarna.finalbenchmark2.cpuBenchmark.AiWorkloadParams(
+                imageClassificationIterations = 10,
+                objectDetectionIterations = 10,
+                textEmbeddingIterations = 10,
+                asrIterations = 2, 
+                llmIterations = 5,
+                mobileBertIterations = 10,
+                useQaIterations = 10,
+                dtlnIterations = 10,
+                yoloIterations = 10,
+                defaultWarmup = 2,
+                heavyModelWarmup = 2,
+                asrWarmup = 0
+            )
+            else -> com.ivarna.finalbenchmark2.cpuBenchmark.AiWorkloadParams()
+        }
+    }
+
+    /**
      * Runs a benchmark on a specific model file.
      * @param modelFile The .tflite model file (downloaded or asset)
      * @param inputData The input ByteBuffer for the model
@@ -44,7 +110,9 @@ class AiBenchmarkManager(private val context: Context) {
     suspend fun runImageClassification(
         modelFile: File,
         inputData: ByteBuffer,
-        useNpu: Boolean = true
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
     ): AiBenchmarkResult = withContext(Dispatchers.Default) {
         val outputBuffer = ByteBuffer.allocateDirect(1 * 1001 * 4).order(ByteOrder.nativeOrder())
         return@withContext runGenericInference(
@@ -52,7 +120,9 @@ class AiBenchmarkManager(private val context: Context) {
             inputData = inputData,
             outputBuffer = outputBuffer,
             useNpu = useNpu,
-            benchmarkName = "MobileNet V3"
+            benchmarkName = "MobileNet V3",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
         )
     }
 
@@ -69,9 +139,10 @@ class AiBenchmarkManager(private val context: Context) {
     suspend fun runObjectDetection(
         modelFile: File,
         inputData: ByteBuffer,
-        useNpu: Boolean = true
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
     ): AiBenchmarkResult = withContext(Dispatchers.Default) {
-        // EfficientDet has 4 outputs. We use a map to capture them.
         // EfficientDet has 4 outputs. We use a map to capture them.
         // Increasing buffer to 100 detections to prevent BufferOverflow if model outputs > 25
         val maxDetections = 100 
@@ -87,7 +158,9 @@ class AiBenchmarkManager(private val context: Context) {
             inputData = inputData,
             outputs = outputMap,
             useNpu = useNpu,
-            benchmarkName = "EfficientDet Lite0"
+            benchmarkName = "EfficientDet Lite0",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
         )
     }
 
@@ -98,7 +171,9 @@ class AiBenchmarkManager(private val context: Context) {
      */
     suspend fun runTextEmbedding(
         modelFile: File,
-        useNpu: Boolean = true
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
     ): AiBenchmarkResult = withContext(Dispatchers.Default) {
         val seqLen = 256
         val inputs = mapOf(
@@ -118,7 +193,9 @@ class AiBenchmarkManager(private val context: Context) {
             inputs = arrayOf(inputs[0]!!, inputs[1]!!, inputs[2]!!),
             outputs = outputMap,
             useNpu = useNpu,
-            benchmarkName = "MiniLM Text Embedding"
+            benchmarkName = "MiniLM Text Embedding",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
         )
     }
 
@@ -132,10 +209,11 @@ class AiBenchmarkManager(private val context: Context) {
      */
     suspend fun runAsr(
         modelFile: File,
-        useNpu: Boolean = true
+        useNpu: Boolean = true,
+        warmupIterations: Int = 0,
+        benchmarkIterations: Int = 1
     ): AiBenchmarkResult = withContext(Dispatchers.Default) {
         // Mel Spectrogram shape: [1, 80, 3000] Float32
-        // Size = 1 * 80 * 3000 * 4 bytes = 960,000 bytes
         val inputData = ByteBuffer.allocateDirect(1 * 80 * 3000 * 4).order(ByteOrder.nativeOrder())
         
         // Output: Tokens [1, 448]? Depends on model. allocating large buffer
@@ -146,7 +224,9 @@ class AiBenchmarkManager(private val context: Context) {
             inputData = inputData,
             outputBuffer = outputBuffer,
             useNpu = useNpu,
-            benchmarkName = "Whisper ASR"
+            benchmarkName = "Whisper ASR",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations 
         )
     }
 
@@ -159,7 +239,9 @@ class AiBenchmarkManager(private val context: Context) {
      */
     suspend fun runLlmInference(
         modelFile: File,
-        useNpu: Boolean = true
+        useNpu: Boolean = true,
+        warmupIterations: Int = 1,
+        benchmarkIterations: Int = 3
     ): AiBenchmarkResult = withContext(Dispatchers.Default) {
         val benchmarkName = "LLM Generation (Gemma)"
         
@@ -183,13 +265,15 @@ class AiBenchmarkManager(private val context: Context) {
             val prompt = "Write a short poem about coding."
             var totalTokens = 0
             var totalTimeNs = 0L
-            val iterations = 3
+            val iterations = benchmarkIterations
 
             // Warmup
-            try { 
-                llmInference.generateResponse("Warmup") 
-            } catch(e: Exception) { 
-                Log.w(TAG, "Warmup error (might be cold start): ${e.message}") 
+            repeat(warmupIterations) {
+                try { 
+                    llmInference.generateResponse("Warmup") 
+                } catch(e: Exception) { 
+                    Log.w(TAG, "Warmup error (might be cold start): ${e.message}") 
+                }
             }
 
             repeat(iterations) {
@@ -253,214 +337,129 @@ class AiBenchmarkManager(private val context: Context) {
             } catch (e: Exception) {}
         }
     }
+
+    /**
+     * Runs YOLOv8 Object Detection.
+     * Expected Input: [1, 640, 640, 3] Float32
+     * Expected Output: [1, 84, 8400] Float32 (Batch, Classes+Coords, Anchors)
+     */
+    suspend fun runYoloDetection(
+        modelFile: File,
+        inputData: ByteBuffer,
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
+    ): AiBenchmarkResult = withContext(Dispatchers.Default) {
+        // Output buffer size: 1 * 84 * 8400 * 4 bytes
+        // 84 = 80 classes + 4 coords
+        val outputSize = 1 * 84 * 8400 * 4 
+        val outputBuffer = ByteBuffer.allocateDirect(outputSize).order(ByteOrder.nativeOrder())
+        
+        return@withContext runGenericInference(
+            modelFile = modelFile,
+            inputData = inputData,
+            outputBuffer = outputBuffer,
+            useNpu = useNpu,
+            benchmarkName = "YOLOv8 Object Detection",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
+        )
+    }
+
+    /**
+     * Runs MobileBERT Text Classification / Embedding.
+     * Expected Inputs: 3 Tensors [1, 128] Int32 (Input IDs, Mask, Segment IDs)
+     */
+    suspend fun runMobileBert(
+        modelFile: File,
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
+    ): AiBenchmarkResult = withContext(Dispatchers.Default) {
+        val seqLen = 128 // MobileBERT standard
+        val inputs = mapOf(
+            0 to createDummyIntInput(seqLen), // input_ids
+            1 to createDummyIntInput(seqLen, 1), // attention_mask
+            2 to createDummyIntInput(seqLen, 0)  // token_type_ids
+        )
+        
+        // Output: Pooled [1, 512] Float32
+        val outputBuffer = ByteBuffer.allocateDirect(1 * 512 * 4).order(ByteOrder.nativeOrder())
+        val outputMap = mapOf(0 to outputBuffer)
+
+        return@withContext runGenericInferenceMultiInputOutput(
+            modelFile = modelFile,
+            inputs = arrayOf(inputs[0]!!, inputs[1]!!, inputs[2]!!),
+            outputs = outputMap,
+            useNpu = useNpu,
+            benchmarkName = "MobileBERT",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
+        )
+    }
+
+    /**
+     * Runs Universal Sentence Encoder QA.
+     * Expected Inputs: 3 Text Strings or similar.
+     * The model uses TFSentencepieceTokenizeOp which usually takes raw strings as input.
+     * Inputs: [Query, Context, Response]
+     */
+    suspend fun runUseQa(
+        modelFile: File,
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
+    ): AiBenchmarkResult = withContext(Dispatchers.Default) {
+        // USE QA expects String inputs when using the custom op tokenizer
+        val inputs: Array<Any> = arrayOf(
+            arrayOf("How does this benchmark work?"), // Query
+            arrayOf("This benchmark tests the AI capabilities of the device using TFLite."), // Context
+            arrayOf("It works by running models.") // ResponseCandidate
+        )
+        
+        // Output: Embeddings or probabilities
+        val outputBuffer = ByteBuffer.allocateDirect(1 * 100 * 4).order(ByteOrder.nativeOrder())
+        val outputMap = mapOf(0 to outputBuffer)
+
+        return@withContext runGenericInferenceMultiInputOutput(
+            modelFile = modelFile,
+            inputs = inputs, // Pass String arrays
+            outputs = outputMap,
+            useNpu = useNpu,
+            benchmarkName = "USE QA",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
+        )
+    }
     
-    // Shared generic runner for multiple inputs / multiple outputs
-    private suspend fun runGenericInferenceMultiInputOutput(
+    /**
+     * Runs DTLN (Dual-Signal Transformation LSTM Network) for Noise Suppression.
+     */
+    suspend fun runDtlnNoiseSuppression(
         modelFile: File,
-        inputs: Array<Any>,
-        outputs: Map<Int, Any>,
-        useNpu: Boolean,
-        benchmarkName: String
-    ): AiBenchmarkResult {
-        var interpreter: Interpreter? = null
-        var gpuDelegate: GpuDelegate? = null
-        var mode = AccelerationMode.CPU
-
-        try {
-            // 1. Hardware Acceleration Selection & Model Loading
-            // Strategy: Try NNAPI -> GPU -> CPU (XNNPACK)
-            // Crucial: Must create FRESH Interpreter.Options for each attempt
-            
-            if (useNpu && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-                // Attempt 1: NNAPI
-                try {
-                    Log.d(TAG, "[$benchmarkName] Attempting NNAPI Delegate...")
-                    val nnApiOptions = Interpreter.Options()
-                    val nnApiDelegate = NnApiDelegate(NnApiDelegate.Options().apply { setAllowFp16(true) })
-                    nnApiOptions.addDelegate(nnApiDelegate)
-                    
-                    interpreter = Interpreter(modelFile, nnApiOptions)
-                    mode = AccelerationMode.NPU
-                    Log.d(TAG, "[$benchmarkName] NNAPI Success!")
-                } catch (e: Exception) {
-                    Log.w(TAG, "[$benchmarkName] NNAPI failed: ${e.message}. Falling back to GPU...")
-                    interpreter = null // Reset
-
-                    // Attempt 2: GPU
-                    try {
-                        Log.d(TAG, "[$benchmarkName] Attempting GPU Delegate...")
-                        val gpuOptions = Interpreter.Options()
-                        gpuDelegate = GpuDelegate()
-                        gpuOptions.addDelegate(gpuDelegate)
-                        
-                        interpreter = Interpreter(modelFile, gpuOptions)
-                        mode = AccelerationMode.GPU
-                        Log.d(TAG, "[$benchmarkName] GPU Success!")
-                    } catch (e2: Exception) {
-                         Log.w(TAG, "[$benchmarkName] GPU failed: ${e2.message}. Falling back to CPU...", e2)
-                         interpreter?.close()
-                         interpreter = null
-                         
-                         // Attempt 3: CPU (XNNPACK) - Last Resort
-                         val cpuOptions = Interpreter.Options()
-                         cpuOptions.setUseXNNPACK(true)
-                         cpuOptions.setNumThreads(4)
-                         interpreter = Interpreter(modelFile, cpuOptions)
-                         mode = AccelerationMode.CPU
-                         Log.d(TAG, "[$benchmarkName] CPU Fallback Success!")
-                    }
-                }
-            } else {
-                 Log.d(TAG, "[$benchmarkName] NPU disabled/unsupported. Attempting GPU...")
-                 // Direct GPU Attempt if NPU not requested/supported
-                 try {
-                    val gpuOptions = Interpreter.Options()
-                    gpuDelegate = GpuDelegate()
-                    gpuOptions.addDelegate(gpuDelegate)
-                    interpreter = Interpreter(modelFile, gpuOptions)
-                    mode = AccelerationMode.GPU
-                 } catch (e: Exception) {
-                    Log.w(TAG, "[$benchmarkName] GPU failed. Falling back to CPU...", e)
-                    
-                    // Attempt 3: CPU (XNNPACK) - Last Resort
-                    val cpuOptions = Interpreter.Options()
-                    cpuOptions.setUseXNNPACK(true)
-                    cpuOptions.setNumThreads(4)
-                    interpreter = Interpreter(modelFile, cpuOptions)
-                    mode = AccelerationMode.CPU
-                 }
-            }
-
-            
-            // 1. Hardware Acceleration Selection & Model Loading
-            // ... (previous logic) ...
-            
-            // ... (Acceleration selection block ending at line 55ish of this function) ...
-            
-            // 2. Validate & Resize Inputs
-            val inputCount = interpreter!!.getInputTensorCount()
-            Log.d(TAG, "[$benchmarkName] Model expects $inputCount input tensors. Provided: ${inputs.size}")
-            
-            // Slice/Resize logic
-            val sourceInputs = if (inputs.size > inputCount) {
-                 Log.w(TAG, "[$benchmarkName] Trimming inputs from ${inputs.size} to $inputCount")
-                 inputs.sliceArray(0 until inputCount)
-            } else {
-                 inputs
-            }
-            
-            val actualInputs = Array(inputCount) { i ->
-                val tensor = interpreter.getInputTensor(i)
-                val shape = tensor.shape()
-                val dataType = tensor.dataType()
-                
-                var elementCount = 1
-                for (dim in shape) {
-                    val d = if (dim < 1) 1 else dim
-                    elementCount *= d
-                }
-                val expectedBytes = elementCount * dataType.byteSize()
-                
-                val providedInput = sourceInputs.getOrNull(i)
-                
-                if (providedInput is ByteBuffer && providedInput.capacity() != expectedBytes) {
-                    Log.w(TAG, "[$benchmarkName] Input $i size mismatch! Expected $expectedBytes bytes, got ${providedInput.capacity()}. Re-allocating dummy buffer.")
-                    // Create new dummy buffer of correct size
-                    val newBuffer = ByteBuffer.allocateDirect(expectedBytes).order(ByteOrder.nativeOrder())
-                    // Fill with 0 or random
-                    if (expectedBytes >= 4) {
-                         while(newBuffer.hasRemaining()) newBuffer.put(0.toByte())
-                    } else {
-                         // scalar
-                         newBuffer.put(0.toByte())
-                    }
-                    newBuffer.rewind()
-                    newBuffer
-                } else {
-                    providedInput ?: throw IllegalArgumentException("Missing input for index $i")
-                }
-            }
-            
-            // 3. Dynamic Output Buffer Allocation
-            // Instead of passing pre-allocated buffers, we inspect the interpreter's output tensors
-            val outputBuffers = mutableMapOf<Int, ByteBuffer>()
-            val outputCount = interpreter!!.getOutputTensorCount()
-            
-            Log.d(TAG, "[$benchmarkName] Model has $outputCount output tensors")
-            
-            for (i in 0 until outputCount) {
-                val tensor = interpreter.getOutputTensor(i)
-                val shape = tensor.shape() // IntArray
-                val dataType = tensor.dataType() // DataType
-                
-                // Calculate total bytes
-                var elementCount = 1
-                for (dim in shape) {
-                    val d = if (dim < 1) 1 else dim
-                    elementCount *= d
-                }
-                
-                val startBytes = elementCount * dataType.byteSize()
-                val safetyFactor = 1 
-                val totalBytes = startBytes * safetyFactor // Exact match
-                
-                Log.d(TAG, "[$benchmarkName] Output $i: Shape=${shape.contentToString()}, Type=$dataType, Bytes=$totalBytes")
-                
-                val buffer = ByteBuffer.allocateDirect(totalBytes).order(ByteOrder.nativeOrder())
-                outputBuffers[i] = buffer
-            }
-
-            // 4. Warmup
-            repeat(2) { 
-                interpreter.runForMultipleInputsOutputs(actualInputs, outputBuffers as Map<Int, Any>) 
-                actualInputs.forEach { if (it is ByteBuffer) it.rewind() }
-                outputBuffers.values.forEach { it.rewind() }
-            }
-            
-            // 5. Benchmark Loop
-            val times = LongArray(5)
-            repeat(5) { i ->
-                val start = System.nanoTime()
-                interpreter.runForMultipleInputsOutputs(actualInputs, outputBuffers as Map<Int, Any>)
-                times[i] = System.nanoTime() - start
-                
-                actualInputs.forEach { if (it is ByteBuffer) it.rewind() }
-                outputBuffers.values.forEach { it.rewind() }
-            }
-            
-            val avgTimeMs = times.average() / 1_000_000.0
-            val tps = 1000.0 / avgTimeMs
-
-            return AiBenchmarkResult(modelFile.name, avgTimeMs, tps, mode.name, true)
-        } catch (e: Exception) {
-            return AiBenchmarkResult(modelFile.name, 0.0, 0.0, "Failed", false, e.message)
-        } finally {
-            interpreter?.close()
-            gpuDelegate?.close()
-        }
-    }
-
-    private fun createDummyIntInput(size: Int, fillValue: Int? = null): ByteBuffer {
-        val buffer = ByteBuffer.allocateDirect(size * 4).order(ByteOrder.nativeOrder()) // Int32
-        val rand = java.util.Random()
-        for (i in 0 until size) {
-            buffer.putInt(fillValue ?: rand.nextInt(30000))
-        }
-        buffer.rewind()
-        return buffer
-    }
-
-
-
-    // Shared generic runner for single input/output
-    private suspend fun runGenericInference(
-        modelFile: File,
-        inputData: Any,
-        outputBuffer: Any,
-        useNpu: Boolean,
-        benchmarkName: String
-    ): AiBenchmarkResult {
-        return runGenericInferenceInternal(modelFile, inputData, outputBuffer, isMultiOutput = false, useNpu, benchmarkName)
+        useNpu: Boolean = true,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
+    ): AiBenchmarkResult = withContext(Dispatchers.Default) {
+        // Input: [1, 512] Float32
+        val blockSize = 512
+        val inputBuffer = ByteBuffer.allocateDirect(1 * blockSize * 4).order(ByteOrder.nativeOrder())
+        val random = java.util.Random()
+        while(inputBuffer.hasRemaining()) inputBuffer.putFloat(random.nextFloat())
+        inputBuffer.rewind()
+        
+        // Output: [1, 512] Float32
+        val outputBuffer = ByteBuffer.allocateDirect(1 * blockSize * 4).order(ByteOrder.nativeOrder())
+        
+        return@withContext runGenericInference(
+            modelFile = modelFile,
+            inputData = inputBuffer,
+            outputBuffer = outputBuffer,
+            useNpu = useNpu,
+            benchmarkName = "DTLN Noise Suppression",
+            warmupIterations = warmupIterations,
+            benchmarkIterations = benchmarkIterations
+        )
     }
 
     // Shared generic runner for single input / multiple outputs
@@ -469,9 +468,43 @@ class AiBenchmarkManager(private val context: Context) {
         inputData: Any,
         outputs: Map<Int, Any>,
         useNpu: Boolean,
-        benchmarkName: String
+        benchmarkName: String,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
     ): AiBenchmarkResult {
-        return runGenericInferenceInternal(modelFile, inputData, outputs, isMultiOutput = true, useNpu, benchmarkName)
+        return runGenericInferenceInternal(
+            modelFile, inputData, outputs, true, useNpu, benchmarkName, warmupIterations, benchmarkIterations
+        )
+    }
+
+    // Shared generic runner for multiple inputs / multiple outputs
+    private suspend fun runGenericInferenceMultiInputOutput(
+        modelFile: File,
+        inputs: Array<Any>,
+        outputs: Map<Int, Any>,
+        useNpu: Boolean,
+        benchmarkName: String,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
+    ): AiBenchmarkResult {
+        return runGenericInferenceInternal(
+             modelFile, inputs, outputs, true, useNpu, benchmarkName, warmupIterations, benchmarkIterations
+        )
+    }
+
+    // Shared generic runner for single input/output
+    private suspend fun runGenericInference(
+        modelFile: File,
+        inputData: Any,
+        outputBuffer: Any,
+        useNpu: Boolean,
+        benchmarkName: String,
+        warmupIterations: Int = 2,
+        benchmarkIterations: Int = 5
+    ): AiBenchmarkResult {
+        return runGenericInferenceInternal(
+            modelFile, inputData, outputBuffer, false, useNpu, benchmarkName, warmupIterations, benchmarkIterations
+        )
     }
 
     private suspend fun runGenericInferenceInternal(
@@ -480,7 +513,9 @@ class AiBenchmarkManager(private val context: Context) {
         outputData: Any,
         isMultiOutput: Boolean,
         useNpu: Boolean,
-        benchmarkName: String
+        benchmarkName: String,
+        warmupIterations: Int,
+        benchmarkIterations: Int
     ): AiBenchmarkResult {
         var interpreter: Interpreter? = null
         var gpuDelegate: GpuDelegate? = null
@@ -488,10 +523,6 @@ class AiBenchmarkManager(private val context: Context) {
 
         try {
             // 1. Hardware Acceleration Selection & Model Loading
-            // Strategy: Try NNAPI -> GPU -> CPU (XNNPACK)
-            // Crucial: Must create FRESH Interpreter.Options for each attempt to avoid 
-            // UnsupportedOperationException from delegates.clear() or polluted state.
-
             if (useNpu && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
                 // Attempt 1: NNAPI
                 try {
@@ -505,7 +536,7 @@ class AiBenchmarkManager(private val context: Context) {
                     Log.d(TAG, "[$benchmarkName] NNAPI Success!")
                 } catch (e: Exception) {
                     Log.w(TAG, "[$benchmarkName] NNAPI failed: ${e.message}. Falling back to GPU...")
-                    interpreter = null // Reset
+                    interpreter = null 
 
                     // Attempt 2: GPU
                     try {
@@ -519,7 +550,7 @@ class AiBenchmarkManager(private val context: Context) {
                         Log.d(TAG, "[$benchmarkName] GPU Success!")
                     } catch (e2: Exception) {
                          Log.w(TAG, "[$benchmarkName] GPU failed: ${e2.message}. Falling back to CPU...", e2)
-                         interpreter = null // Reset
+                         interpreter = null 
                          
                          // Attempt 3: CPU (XNNPACK)
                          val cpuOptions = Interpreter.Options()
@@ -531,66 +562,69 @@ class AiBenchmarkManager(private val context: Context) {
                     }
                 }
             } else {
-                 Log.d(TAG, "[$benchmarkName] Skipping NPU (disabled or old OS). Using CPU XNNPACK.")
-                 val cpuOptions = Interpreter.Options()
-                 cpuOptions.setUseXNNPACK(true)
-                 cpuOptions.setNumThreads(4)
-                 interpreter = Interpreter(modelFile, cpuOptions)
-                 mode = AccelerationMode.CPU
+                 Log.d(TAG, "[$benchmarkName] NPU disabled/unsupported. Attempting GPU...")
+                 try {
+                    val gpuOptions = Interpreter.Options()
+                    gpuDelegate = GpuDelegate()
+                    gpuOptions.addDelegate(gpuDelegate)
+                    interpreter = Interpreter(modelFile, gpuOptions)
+                    mode = AccelerationMode.GPU
+                 } catch (e: Exception) {
+                    Log.w(TAG, "[$benchmarkName] GPU failed. Falling back to CPU...", e)
+                    val cpuOptions = Interpreter.Options()
+                    cpuOptions.setUseXNNPACK(true)
+                    cpuOptions.setNumThreads(4)
+                    interpreter = Interpreter(modelFile, cpuOptions)
+                    mode = AccelerationMode.CPU
+                 }
             }
 
-            // 2. Dynamic Output Buffer Allocation
-            // Instead of passing pre-allocated buffers, we inspect the interpreter's output tensors
-            // and allocate buffers that exactly match the model's requirements.
+            // 2. Validate & Resize Inputs
+            val inputCount = interpreter!!.getInputTensorCount()
+            Log.d(TAG, "[$benchmarkName] Model expects $inputCount input tensors.")
             
+            // Note: For USE QA with String inputs (signature), we still pass the array. 
+            // Interpreter handles it if the inputs match. 
+            // We skip strict size validation if input is not ByteBuffer for flexibility.
+            
+            // 3. Dynamic Output Buffer Allocation
             val outputBuffers = mutableMapOf<Int, ByteBuffer>()
             val outputCount = interpreter.getOutputTensorCount()
             
-            Log.d(TAG, "[$benchmarkName] Model has $outputCount output tensors")
-            
             for (i in 0 until outputCount) {
                 val tensor = interpreter.getOutputTensor(i)
-                val shape = tensor.shape() // IntArray
-                val dataType = tensor.dataType() // DataType
+                val shape = tensor.shape()
+                val dataType = tensor.dataType()
                 
-                // Calculate total bytes
                 var elementCount = 1
                 for (dim in shape) {
-                    // Handle dynamic dimensions (signature usually -1, but shape() returns 1 typically for TFLite unless resized)
                     val d = if (dim < 1) 1 else dim
                     elementCount *= d
                 }
-                
-                val startBytes = elementCount * dataType.byteSize()
-                // Allocate a bit more safety margin if dynamic
-                val safetyFactor = 1 // exact match usually best for TFLite
-                val totalBytes = startBytes * safetyFactor
-                
-                Log.d(TAG, "[$benchmarkName] Output $i: Shape=${shape.contentToString()}, Type=$dataType, Bytes=$totalBytes")
-                
+                val totalBytes = elementCount * dataType.byteSize()
                 val buffer = ByteBuffer.allocateDirect(totalBytes).order(ByteOrder.nativeOrder())
                 outputBuffers[i] = buffer
             }
 
-            // 3. Warmup
-            repeat(2) {
+            // 4. Warmup
+            repeat(warmupIterations) {
                 if (isMultiOutput) {
-                     // For multi-output, we must pass the map of indices to buffers
-                     interpreter.runForMultipleInputsOutputs(arrayOf(inputData), outputBuffers as Map<Int, Any>)
+                     val inputsArg = if(inputData is Array<*>) inputData else arrayOf(inputData)
+                     interpreter.runForMultipleInputsOutputs(inputsArg, outputBuffers as Map<Int, Any>)
                 } else {
-                     // For single output, use index 0
                      interpreter.run(inputData, outputBuffers[0]!!)
                 }
                 if (inputData is ByteBuffer) inputData.rewind()
                 outputBuffers.values.forEach { it.rewind() }
             }
 
-            // 4. Benchmark Loop
-            val times = LongArray(5)
-            repeat(5) { i ->
+            // 5. Benchmark Loop
+            val times = LongArray(benchmarkIterations)
+            repeat(benchmarkIterations) { i ->
                 val start = System.nanoTime()
                 if (isMultiOutput) {
-                    interpreter.runForMultipleInputsOutputs(arrayOf(inputData), outputBuffers as Map<Int, Any>)
+                    val inputsArg = if(inputData is Array<*>) inputData else arrayOf(inputData)
+                    interpreter.runForMultipleInputsOutputs(inputsArg, outputBuffers as Map<Int, Any>)
                 } else {
                     interpreter.run(inputData, outputBuffers[0]!!)
                 }
@@ -601,8 +635,8 @@ class AiBenchmarkManager(private val context: Context) {
                 outputBuffers.values.forEach { it.rewind() }
             }
 
-            val avgTimeMs = times.average() / 1_000_000.0
-            val tps = 1000.0 / avgTimeMs
+            val avgTimeMs = if(benchmarkIterations > 0) (times.average() / 1_000_000.0) else 0.0
+            val tps = if (avgTimeMs > 0) 1000.0 / avgTimeMs else 0.0
 
             return AiBenchmarkResult(
                 modelName = benchmarkName,
@@ -625,32 +659,45 @@ class AiBenchmarkManager(private val context: Context) {
         }
     }
 
-    /**
-     * Helper to create a dummy bitmap-like buffer (Random Noise)
-     * MobileNet V3: [1, 224, 224, 3] Float32
-     */
-    fun createDummyMobileNetInput(): ByteBuffer {
-        val size = 1 * 224 * 224 * 3 * 4 // Float32
-        val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
-        val random = java.util.Random()
-        while (buffer.hasRemaining()) {
-            buffer.putFloat(random.nextFloat()) // 0.0 - 1.0 (Normalized)
+    private fun createDummyIntInput(size: Int, fillValue: Int? = null): ByteBuffer {
+        val buffer = ByteBuffer.allocateDirect(size * 4).order(ByteOrder.nativeOrder()) // Int32
+        val rand = java.util.Random()
+        for (i in 0 until size) {
+            buffer.putInt(fillValue ?: rand.nextInt(30000))
         }
         buffer.rewind()
         return buffer
     }
 
-    /**
-     * Helper to create dummy EfficientDet Input
-     * EfficientDet Lite0: [1, 320, 320, 3] Uint8
-     */
+    fun createDummyMobileNetInput(): ByteBuffer {
+        val size = 1 * 224 * 224 * 3 * 4 // Float32
+        val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        val random = java.util.Random()
+        while (buffer.hasRemaining()) {
+            buffer.putFloat(random.nextFloat()) 
+        }
+        buffer.rewind()
+        return buffer
+    }
+
     fun createDummyEfficientDetInput(): ByteBuffer {
-        val size = 1 * 320 * 320 * 3 * 1 // Uint8 (1 byte per channel)
+        val size = 1 * 320 * 320 * 3 * 1 // Uint8 
         val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
         val random = java.util.Random()
         val bytes = ByteArray(size)
         random.nextBytes(bytes)
         buffer.put(bytes)
+        buffer.rewind()
+        return buffer
+    }
+    
+    fun createDummyYoloInput(): ByteBuffer {
+        val size = 1 * 640 * 640 * 3 * 4 // Float32
+        val buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder())
+        val random = java.util.Random()
+        while (buffer.hasRemaining()) {
+            buffer.putFloat(random.nextFloat())
+        }
         buffer.rewind()
         return buffer
     }

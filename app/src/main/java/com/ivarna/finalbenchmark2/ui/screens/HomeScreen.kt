@@ -1737,7 +1737,7 @@ fun AiDownloadDialog(onDismiss: () -> Unit) {
         title = { Text("Download AI Models") },
         text = {
             Column {
-                Text("To run AI Benchmarks offline, we need to download the following models (~350MB total):\n\n• MobileNet V3 (Image Classification)\n• EfficientDet (Object Detection)\n• MiniLM (Text Embedding)\n• Whisper (Speech-to-Text)\n• Gemma 3 (LLM Inference)")
+                Text("To run AI Benchmarks offline, we need to download the following models (~450MB total):\n\n• MobileNet V3 (Image Classification)\n• MobileNet V1 (Legacy Classification)\n• YOLOv8 (Object Detection)\n• EfficientDet (Object Detection)\n• MiniLM (Text Embedding)\n• MobileBERT (Text Classification)\n• USE QA (Question Answering)\n• DTLN (Noise Suppression)\n• Whisper (Speech-to-Text)\n• Gemma 3 (LLM Inference)")
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 if (isDownloading) {
@@ -1761,14 +1761,6 @@ fun AiDownloadDialog(onDismiss: () -> Unit) {
                         isDownloading = true
                         scope.launch {
                             try {
-                                // 1. MobileNet (Approx 5%)
-                                downloadStatus = "Downloading MobileNet V3..."
-                                com.ivarna.finalbenchmark2.aiBenchmark.ModelDownloader.downloadModel(
-                                    context,
-                                    com.ivarna.finalbenchmark2.aiBenchmark.ModelRepository.MOBILENET_V3_URL,
-                                    com.ivarna.finalbenchmark2.aiBenchmark.ModelRepository.MOBILENET_FILENAME
-                                ) { p -> downloadProgress = p * 0.05f }
-                                
                                 val models = com.ivarna.finalbenchmark2.aiBenchmark.ModelRepository.models
                                 val totalModels = models.size
 

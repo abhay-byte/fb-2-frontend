@@ -1230,30 +1230,30 @@ fun BenchmarkResultItem(result: BenchmarkResult, isAi: Boolean = false) {
                                         modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp)
                                 )
                                 
-                                // Acceleration Badge
-                                if (result.accelerationMode != null) {
-                                    val badgeColor = when(result.accelerationMode) {
-                                        "NPU" -> Color(0xFF4CAF50) // Green
-                                        "GPU" -> Color(0xFFFF9800) // Orange
-                                        else -> Color.Gray
-                                    }
-                                    
+                                // Acceleration Mode Badge
+                                if (isAi && result.accelerationMode != null && result.accelerationMode.isNotEmpty()) {
                                     Box(
                                         modifier = Modifier
-                                            .padding(end = 8.dp)
-                                            .clip(RoundedCornerShape(4.dp))
-                                            .background(badgeColor.copy(alpha = 0.2f))
+                                            .background(
+                                                color = when(result.accelerationMode) {
+                                                    "NPU" -> MaterialTheme.colorScheme.tertiaryContainer
+                                                    "GPU" -> MaterialTheme.colorScheme.secondaryContainer
+                                                    else -> MaterialTheme.colorScheme.surfaceVariant
+                                                },
+                                                shape = RoundedCornerShape(4.dp)
+                                            )
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
                                         Text(
                                             text = result.accelerationMode,
                                             style = MaterialTheme.typography.labelSmall,
-                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.onSurface,
                                             fontSize = 9.sp,
-                                            color = badgeColor
+                                            fontWeight = FontWeight.Bold
                                         )
                                     }
                                 }
+
                                 Text(
                                         text = String.format("%.1f", individualScore),
                                         style = MaterialTheme.typography.titleSmall,

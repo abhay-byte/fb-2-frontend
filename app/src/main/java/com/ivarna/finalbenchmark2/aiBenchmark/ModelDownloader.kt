@@ -112,24 +112,50 @@ object ModelRepository {
     // Using widely available TFHub/storage links for MobileNetV3 and others as placeholders.
     // Note: User can replace these with their specific Qualcomm optimized versions.
     
+    // Base URL for V2 Models
+    // https://github.com/abhay-byte/ai-tf-models/releases/tag/models-v2
+    const val BASE_URL_V2 = "https://github.com/abhay-byte/ai-tf-models/releases/download/models-v2"
+
     // MobileNet V3 Small (Image Classification)
-    const val MOBILENET_V3_URL = "https://github.com/abhay-byte/ai-tf-models/releases/download/models-v1/mobilenet_v3_small.tflite"
+    const val MOBILENET_V3_URL = "$BASE_URL_V2/mobilenet_v3_small.tflite"
     const val MOBILENET_FILENAME = "mobilenet_v3_small.tflite" 
+
+    // MobileNet V1 (Image Classification - Legacy/Baseline)
+    const val MOBILENET_V1_URL = "$BASE_URL_V2/mobilenet_v1.tflite"
+    const val MOBILENET_V1_FILENAME = "mobilenet_v1.tflite"
     
     // Gemma 3 270M (LLM)
-    const val GEMMA_URL = "https://github.com/abhay-byte/ai-tf-models/releases/download/models-v1/gemma3-270m-it-q8.litertlm"
+    const val GEMMA_URL = "$BASE_URL_V2/gemma3-270m-it-q8.litertlm"
     const val GEMMA_FILENAME = "gemma3-270m-it-q8.litertlm"
 
     // EfficientDet Lite0 (Object Detection)
-    const val EFFICIENTDET_URL = "https://github.com/abhay-byte/ai-tf-models/releases/download/models-v1/efficientdet_lite0.tflite"
+    const val EFFICIENTDET_URL = "$BASE_URL_V2/efficientdet_lite0.tflite"
     const val EFFICIENTDET_FILENAME = "efficientdet_lite0.tflite"
 
+    // YOLOv8n (Object Detection - Modern)
+    // Using float16 variant for balance
+    const val YOLO_V8_URL = "$BASE_URL_V2/yolov8n_float16.tflite"
+    const val YOLO_V8_FILENAME = "yolov8n_float16.tflite"
+
     // MiniLM-L6 (Text Embedding)
-    const val MINILM_URL = "https://github.com/abhay-byte/ai-tf-models/releases/download/models-v1/all-MiniLM-L6-v2-quant.tflite"
+    const val MINILM_URL = "$BASE_URL_V2/all-MiniLM-L6-v2-quant.tflite"
     const val MINILM_FILENAME = "all-MiniLM-L6-v2-quant.tflite"
 
-    const val WHISPER_URL = "https://github.com/abhay-byte/ai-tf-models/releases/download/models-v1/whisper-tiny-en.tflite"
+    // Universal Sentence Encoder QA (Question Answering)
+    const val USE_QA_URL = "$BASE_URL_V2/universal_sentence_encoder_qa.tflite"
+    const val USE_QA_FILENAME = "universal_sentence_encoder_qa.tflite"
+
+    // MobileBERT (Text Classification / Feature Extraction)
+    const val MOBILEBERT_URL = "$BASE_URL_V2/mobilebert.tflite"
+    const val MOBILEBERT_FILENAME = "mobilebert.tflite"
+
+    // Whisper Tiny (Speech to Text)
+    const val WHISPER_URL = "$BASE_URL_V2/whisper-tiny-en.tflite"
     const val WHISPER_FILENAME = "whisper-tiny-en.tflite"
+
+    // DTLN (Audio Noise Suppression)
+    const val DTLN_URL = "$BASE_URL_V2/dtln_quantized.tflite"
+    const val DTLN_FILENAME = "dtln_quantized.tflite"
 
     data class ModelInfo(
         val url: String, 
@@ -139,10 +165,15 @@ object ModelRepository {
     )
 
     val models = listOf(
-        ModelInfo(MOBILENET_V3_URL, MOBILENET_FILENAME, "MobileNet V3", "~5MB"),
-        ModelInfo(EFFICIENTDET_URL, EFFICIENTDET_FILENAME, "EfficientDet", "~7MB"),
-        ModelInfo(MINILM_URL, MINILM_FILENAME, "MiniLM", "~80MB"),
+        ModelInfo(MOBILENET_V3_URL, MOBILENET_FILENAME, "MobileNet V3", "~10MB"),
+        ModelInfo(MOBILENET_V1_URL, MOBILENET_V1_FILENAME, "MobileNet V1", "~16MB"),
+        ModelInfo(EFFICIENTDET_URL, EFFICIENTDET_FILENAME, "EfficientDet", "~4MB"),
+        ModelInfo(YOLO_V8_URL, YOLO_V8_FILENAME, "YOLOv8n", "~6MB"),
+        ModelInfo(MINILM_URL, MINILM_FILENAME, "MiniLM", "~22MB"),
+        ModelInfo(USE_QA_URL, USE_QA_FILENAME, "USE QA", "~6MB"),
+        ModelInfo(MOBILEBERT_URL, MOBILEBERT_FILENAME, "MobileBERT", "~96MB"),
         ModelInfo(WHISPER_URL, WHISPER_FILENAME, "Whisper Tiny", "~40MB"),
+        ModelInfo(DTLN_URL, DTLN_FILENAME, "DTLN Noise Suppression", "~1MB"),
         ModelInfo(GEMMA_URL, GEMMA_FILENAME, "Gemma 3 LLM", "~300MB")
     )
 }

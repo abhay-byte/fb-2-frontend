@@ -181,6 +181,9 @@ class KotlinBenchmarkManager(
             }
 
             val aiBenchmarks = BenchmarkName.getByCategory(BenchmarkCategory.AI)
+            
+            // Get Workload Params
+            val aiParams = aiManager.getAiWorkloadParams(deviceTier)
              
              aiBenchmarks.forEach { benchmark ->
                 val testName = benchmark.displayName()
@@ -192,6 +195,14 @@ class KotlinBenchmarkManager(
                     BenchmarkName.LLM_INFERENCE -> ModelRepository.GEMMA_FILENAME 
                     BenchmarkName.TEXT_EMBEDDING -> ModelRepository.MINILM_FILENAME
                     BenchmarkName.SPEECH_TO_TEXT -> ModelRepository.WHISPER_FILENAME
+                    
+                    // New V2 Mappings
+                    BenchmarkName.IMAGE_CLASSIFICATION_MOBILENET_V1 -> ModelRepository.MOBILENET_V1_FILENAME
+                    BenchmarkName.OBJECT_DETECTION_YOLO_V8 -> ModelRepository.YOLO_V8_FILENAME
+                    BenchmarkName.TEXT_QA_USE -> ModelRepository.USE_QA_FILENAME
+                    BenchmarkName.TEXT_CLASSIFICATION_MOBILEBERT -> ModelRepository.MOBILEBERT_FILENAME
+                    BenchmarkName.AUDIO_NOISE_SUPPRESSION_DTLN -> ModelRepository.DTLN_FILENAME
+                    
                     else -> ""
                 }
 
@@ -226,26 +237,119 @@ class KotlinBenchmarkManager(
                   val startTime = System.currentTimeMillis()
 
                   // Execute via AiBenchmarkManager
-                  val result = when(benchmark) {
-                    BenchmarkName.IMAGE_CLASSIFICATION -> {
-                         val dummyInput = aiManager.createDummyMobileNetInput()
-                         aiManager.runImageClassification(modelFile, dummyInput)
+                  // Execute Benchmark with Logging
+                val result = try {
+                    Log.d("FinalBenchmark", "Starting AI Benchmark: $testName with model $fileName")
+                    
+                    when(benchmark) {
+                        BenchmarkName.IMAGE_CLASSIFICATION -> {
+                             val dummyInput = aiManager.createDummyMobileNetInput()
+                             aiManager.runImageClassification(
+                                 modelFile, 
+                                 dummyInput, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.imageClassificationIterations
+                             )
+                        }
+                        BenchmarkName.OBJECT_DETECTION -> {
+                             val dummyInput = aiManager.createDummyEfficientDetInput()
+                             aiManager.runObjectDetection(
+                                 modelFile, 
+                                 dummyInput, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.objectDetectionIterations
+                             )
+                        }
+                        BenchmarkName.TEXT_EMBEDDING -> {
+                             aiManager.runTextEmbedding(
+                                 modelFile, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.textEmbeddingIterations
+                             )
+                        }
+                        BenchmarkName.SPEECH_TO_TEXT -> {
+                             aiManager.runAsr(
+                                 modelFile, 
+                                 true, 
+                                 aiParams.asrWarmup, 
+                                 aiParams.asrIterations
+                             )
+                        }
+                        BenchmarkName.LLM_INFERENCE -> {
+                             aiManager.runLlmInference(
+                                 modelFile, 
+                                 true, 
+                                 aiParams.heavyModelWarmup, 
+                                 aiParams.llmIterations
+                             )
+                        }
+                        BenchmarkName.IMAGE_CLASSIFICATION_MOBILENET_V1 -> {
+                             val dummyInput = aiManager.createDummyMobileNetInput() 
+                             aiManager.runImageClassification(
+                                 modelFile, 
+                                 dummyInput, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.imageClassificationIterations
+                             )
+                        }
+                        BenchmarkName.OBJECT_DETECTION_YOLO_V8 -> {
+                             val dummyInput = aiManager.createDummyYoloInput()
+                             aiManager.runYoloDetection(
+                                 modelFile, 
+                                 dummyInput, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.yoloIterations
+                             )
+                        }
+                        BenchmarkName.TEXT_CLASSIFICATION_MOBILEBERT -> {
+                             aiManager.runMobileBert(
+                                 modelFile, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.mobileBertIterations
+                             )
+                        }
+                        BenchmarkName.TEXT_QA_USE -> {
+                             aiManager.runUseQa(
+                                 modelFile, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.useQaIterations
+                             )
+                        }
+                        BenchmarkName.AUDIO_NOISE_SUPPRESSION_DTLN -> {
+                             aiManager.runDtlnNoiseSuppression(
+                                 modelFile, 
+                                 true, 
+                                 aiParams.defaultWarmup, 
+                                 aiParams.dtlnIterations
+                             )
+                        }
+                        else -> com.ivarna.finalbenchmark2.aiBenchmark.AiBenchmarkResult(
+                            modelName = modelFile.name,
+                            inferenceTimeMs = 0.0,
+                            throughput = 0.0,
+                            accelerationMode = "Skipped",
+                            success = false,
+                            errorMessage = "Not implemented"
+                        )
                     }
-                    BenchmarkName.OBJECT_DETECTION -> {
-                         val dummyInput = aiManager.createDummyEfficientDetInput()
-                         aiManager.runObjectDetection(modelFile, dummyInput)
-                    }
-                    BenchmarkName.TEXT_EMBEDDING -> {
-                         aiManager.runTextEmbedding(modelFile)
-                    }
-                    BenchmarkName.SPEECH_TO_TEXT -> {
-                         aiManager.runAsr(modelFile)
-                    }
-                    BenchmarkName.LLM_INFERENCE -> {
-                         aiManager.runLlmInference(modelFile)
-                    }
-                    else -> com.ivarna.finalbenchmark2.aiBenchmark.AiBenchmarkResult(modelFile.name, 0.0, 0.0, "Skipped", false, "Not implemented")
-                  }
+                } catch (e: Exception) {
+                    Log.e("FinalBenchmark", "Error running AI Benchmark: $testName", e)
+                    com.ivarna.finalbenchmark2.aiBenchmark.AiBenchmarkResult(
+                        modelName = modelFile.name,
+                        inferenceTimeMs = 0.0,
+                        throughput = 0.0,
+                        accelerationMode = "Error",
+                        success = false,
+                        errorMessage = e.message ?: "Unknown error"
+                    )
+                }
                   
                   val endTime = System.currentTimeMillis()
                   val totalDurationMs = endTime - startTime
@@ -754,6 +858,7 @@ class KotlinBenchmarkManager(
                                                         )
                                                         put("isValid", result.isValid)
                                                         put("metricsJson", result.metricsJson)
+                                                        put("acceleration_mode", result.accelerationMode)
                                                 }
                                         )
                                 }
@@ -769,6 +874,7 @@ class KotlinBenchmarkManager(
                                                         )
                                                         put("isValid", result.isValid)
                                                         put("metricsJson", result.metricsJson)
+                                                        put("acceleration_mode", result.accelerationMode)
                                                 }
                                         )
                                 }

@@ -64,3 +64,24 @@ data class WorkloadParams(
         val jsonParsingIterations: Int = 100, // Reduced 10x for CPU-bound parsing
         val nqueensSize: Int = 10
 )
+
+/**
+ * Represents workload parameters for AI Benchmarks
+ * Allows scaling iterations based on device tier (Test, Slow, Mid, Flagship)
+ */
+data class AiWorkloadParams(
+    val imageClassificationIterations: Int = 5,
+    val objectDetectionIterations: Int = 5,
+    val textEmbeddingIterations: Int = 5,
+    val asrIterations: Int = 1,
+    val llmIterations: Int = 3,
+    val mobileBertIterations: Int = 5,
+    val useQaIterations: Int = 5,
+    val dtlnIterations: Int = 5,
+    val yoloIterations: Int = 5,
+    
+    // Warmups
+    val defaultWarmup: Int = 2,
+    val heavyModelWarmup: Int = 1, // For LLM, Whisper
+    val asrWarmup: Int = 0 // Whisper specific
+)
