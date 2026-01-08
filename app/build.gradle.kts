@@ -158,7 +158,7 @@ dependencies {
     implementation("com.google.ai.edge.litert:litert-gpu:1.0.1")
     implementation("com.google.ai.edge.litert:litert-gpu-api:1.0.1")
     implementation("com.google.mediapipe:tasks-genai:0.10.14")
-    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1") // Required for USE QA (TFSentencepieceTokenizeOp)
+
     
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.10.0")

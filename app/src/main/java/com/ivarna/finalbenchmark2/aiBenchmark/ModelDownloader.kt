@@ -142,8 +142,7 @@ object ModelRepository {
     const val MINILM_FILENAME = "all-MiniLM-L6-v2-quant.tflite"
 
     // Universal Sentence Encoder QA (Question Answering)
-    const val USE_QA_URL = "$BASE_URL_V2/universal_sentence_encoder_qa.tflite"
-    const val USE_QA_FILENAME = "universal_sentence_encoder_qa.tflite"
+
 
     // MobileBERT (Text Classification / Feature Extraction)
     const val MOBILEBERT_URL = "$BASE_URL_V2/mobilebert.tflite"
@@ -170,7 +169,7 @@ object ModelRepository {
         ModelInfo(EFFICIENTDET_URL, EFFICIENTDET_FILENAME, "EfficientDet", "~4MB"),
         ModelInfo(YOLO_V8_URL, YOLO_V8_FILENAME, "YOLOv8n", "~6MB"),
         ModelInfo(MINILM_URL, MINILM_FILENAME, "MiniLM", "~22MB"),
-        ModelInfo(USE_QA_URL, USE_QA_FILENAME, "USE QA", "~6MB"),
+
         ModelInfo(MOBILEBERT_URL, MOBILEBERT_FILENAME, "MobileBERT", "~96MB"),
         ModelInfo(WHISPER_URL, WHISPER_FILENAME, "Whisper Tiny", "~40MB"),
         ModelInfo(DTLN_URL, DTLN_FILENAME, "DTLN Noise Suppression", "~1MB"),

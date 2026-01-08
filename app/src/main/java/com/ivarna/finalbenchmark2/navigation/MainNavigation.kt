@@ -351,8 +351,11 @@ fun MainNavigation(
                     ResultScreen(
                             summaryJson = summaryJson,
                             onRunAgain = {
+                                // Determine type from summaryJson to restart correct benchmark
+                                val isAi = summaryJson.contains("\"type\":\"AI\"") || summaryJson.contains("\"type\": \"AI\"")
+                                val type = if (isAi) "AI" else "CPU"
                                 navController.popBackStack()
-                                navController.navigate("benchmark/Auto/CPU")
+                                navController.navigate("benchmark/Auto/$type")
                             },
                             onBackToHome = {
                                 navController.popBackStack()

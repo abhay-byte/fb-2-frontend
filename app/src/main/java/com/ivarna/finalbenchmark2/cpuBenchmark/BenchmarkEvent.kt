@@ -76,7 +76,7 @@ data class AiWorkloadParams(
     val asrIterations: Int = 1,
     val llmIterations: Int = 3,
     val mobileBertIterations: Int = 5,
-    val useQaIterations: Int = 5,
+
     val dtlnIterations: Int = 5,
     val yoloIterations: Int = 5,
     

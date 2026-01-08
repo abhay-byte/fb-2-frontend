@@ -760,7 +760,8 @@ class BenchmarkViewModel(
                                                 opsPerSecond =
                                                         resultObject.getDouble("opsPerSecond"),
                                                 isValid = resultObject.getBoolean("isValid"),
-                                                metricsJson = resultObject.getString("metricsJson")
+                                                metricsJson = resultObject.getString("metricsJson"),
+                                                accelerationMode = if (resultObject.has("acceleration_mode")) resultObject.getString("acceleration_mode") else null
                                         )
                                 detailedResults.add(result)
                         }
@@ -893,10 +894,16 @@ class BenchmarkViewModel(
                 // Stop the foreground service
                 BenchmarkForegroundService.stop(application)
                 
-                // Reset state
+                // Reset state completely
                 isBenchmarkRunning = false
                 _uiState.update { 
-                    it.copy(isRunning = false) 
+                    it.copy(
+                        isRunning = false,
+                        progress = 0f,
+                        testStates = it.testStates.map { state -> 
+                            state.copy(status = TestStatus.PENDING, timeText = "", result = null) 
+                        }
+                    ) 
                 }
                 _benchmarkState.value = BenchmarkState.Idle
         }

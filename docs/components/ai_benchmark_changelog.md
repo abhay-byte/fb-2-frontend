@@ -9,10 +9,8 @@
   - **Result**: Benchmark now completes in ~15-20s while maintaining accuracy validity.
 
 ### Bug Fixes
-- **USE QA Failure**:
-  - **Issue**: `Universal Sentence Encoder QA` failed with `Unresolved custom op: TFSentencepieceTokenizeOp`.
-  - **Fix 1**: Added `org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1` dependency to `build.gradle.kts`.
-  - **Fix 2**: Updated `AiBenchmarkManager.runUseQa` to pass `String` array inputs instead of dummy Integer tensors, matching the model's signature.
+- **USE QA Removed**:
+  - **Reason**: Persistent `TFSentencepieceTokenizeOp` failures despite `flex` delegate and dependency inclusions. Removed to ensure platform stability.
 
 ### Architecture Changes
 - **Scalable Workload System**:
@@ -23,3 +21,10 @@
 
 ### UI Integration
 - Verified that the Home Screen dropdown correctly passes `slow`, `mid`, or `flagship` tiers to the benchmark engine, enabling user control over AI test duration.
+
+### Fixes (Session 2 - Approach B)
+- **Specialized Runners**: Implemented custom inference logic for `MiniLM`, `MobileBERT`, and `DTLN`.
+  - **Bypassed Generic Logic**: Replaced the generic "one-size-fits-all" inference runner with dedicated code paths for these complex models.
+  - **DTLN**: Implemented explicit **State Loop** to feed output states back into inputs for correct temporal processing.
+
+  - **MiniLM / MobileBERT**: Used exact `Int32` input buffers matching model signatures, bypassing generic auto-validation.

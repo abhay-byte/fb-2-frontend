@@ -37,7 +37,7 @@ Defines the 10 supported AI models, their download URLs, and filenames.
 | **LLM Inference** | `Gemma 2B` (via GenAI Edge) | Generative AI |
 | **Legacy Classification** | `MobileNet V1` | Baseline Vision |
 | **Object Detection V2** | `YOLOv8n` | Modern Real-time Detection |
-| **Question Answering** | `Universal Sentence Encoder QA` | Contextual Q&A |
+
 | **Text Classification** | `MobileBERT` | Sentiment/Classification |
 | **Noise Suppression** | `DTLN` (Dual-Signal LSTM) | Audio Enhancement |
 
@@ -61,5 +61,5 @@ Located in `AiBenchmarkManager.kt`, this function returns an `AiWorkloadParams` 
 
 ## Recent Optimizations (v1.2+)
 - **Whisper ASR**: Reduced execution time by ~85% by optimizing iteration count (1 run vs 7 runs).
-- **USE QA**: Fixed compatibility issues by adding `tensorflow-lite-select-tf-ops` and utilizing String input tensors.
+
 - **Scalability**: Introduced `AiWorkloadParams` to allow dynamic scaling of test duration without code changes.
